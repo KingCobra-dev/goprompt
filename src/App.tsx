@@ -71,26 +71,43 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>({ type: 'home' });
 
   // Simple test to see if React is working
-  // Contrast validation logs
-  const getLuminance = (hex: string) => {
-    const r = parseInt(hex.slice(1,3),16)/255;
-    const g = parseInt(hex.slice(3,5),16)/255;
-    const b = parseInt(hex.slice(5,7),16)/255;
-    const [rr, gg, bb] = [r, g, b].map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-    return 0.2126 * rr + 0.7152 * gg + 0.0722 * bb;
-  };
-  const getContrast = (c1: string, c2: string) => {
-    const l1 = getLuminance(c1);
-    const l2 = getLuminance(c2);
-    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
-  };
-  const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-  const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
-  const contrast = getContrast(primary, background);
-  console.log('Primary on background contrast ratio:', contrast.toFixed(2));
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-  const accentContrast = getContrast(accent, background);
-  console.log('Accent on background contrast ratio:', accentContrast.toFixed(2));
+  // Contrast validation logs (safely wrapped)
+  try {
+    const getLuminance = (hex: string) => {
+      // Ensure hex is a valid hex color
+      if (!hex || !hex.startsWith('#') || hex.length !== 7) {
+        return 0;
+      }
+      const r = parseInt(hex.slice(1,3),16)/255;
+      const g = parseInt(hex.slice(3,5),16)/255;
+      const b = parseInt(hex.slice(5,7),16)/255;
+      const [rr, gg, bb] = [r, g, b].map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+      return 0.2126 * rr + 0.7152 * gg + 0.0722 * bb;
+    };
+    const getContrast = (c1: string, c2: string) => {
+      const l1 = getLuminance(c1);
+      const l2 = getLuminance(c2);
+      return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    };
+    
+    if (typeof document !== 'undefined') {
+      const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+      const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+      
+      if (primary && background && primary.startsWith('#') && background.startsWith('#')) {
+        const contrast = getContrast(primary, background);
+        console.log('Primary on background contrast ratio:', contrast.toFixed(2));
+        
+        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+        if (accent && accent.startsWith('#')) {
+          const accentContrast = getContrast(accent, background);
+          console.log('Accent on background contrast ratio:', accentContrast.toFixed(2));
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Color contrast calculation failed:', error);
+  }
   console.log('AppContent rendering, state:', state);
 
   const handleAuthClick = () => {
