@@ -287,6 +287,14 @@ export const comments = {
 
 // Hearts API
 export const hearts = {
+  getByUser: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('hearts')
+      .select('user_id, prompt_id, created_at')
+      .eq('user_id', userId)
+    return { data, error }
+  },
+
   toggle: async (promptId: string): Promise<{ data: { action: 'added' | 'removed' } | null; error: string | null }> => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -342,6 +350,14 @@ export const hearts = {
 
 // Saves API
 export const saves = {
+  getByUser: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('saves')
+      .select('user_id, prompt_id, collection_id, created_at')
+      .eq('user_id', userId)
+    return { data, error }
+  },
+
   toggle: async (promptId: string, collectionId?: string): Promise<{ data: { action: 'added' | 'removed' } | null; error: string | null }> => {
     try {
       const { data: { user } } = await supabase.auth.getUser()

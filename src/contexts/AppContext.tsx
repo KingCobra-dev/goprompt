@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { User, UserRole, Prompt, Comment, Heart, Save, Follow, Collection, Notification, Draft, SearchFilters, Portfolio, PromptPack, PromptFeedback, DigestSettings, UserPackLibrary } from '../lib/types';
 import { prompts, comments, promptFeedbacks, promptPacks } from '../lib/data';
-import { prompts as promptsAPI } from '../lib/api';
+import { prompts as promptsAPI, hearts, saves } from '../lib/api';
 import { supabase } from '../lib/supabase';
 import { profiles } from '../lib/api';
 import { getInviteLimit, ADMIN_EMAILS } from '../lib/admin';
@@ -35,8 +35,10 @@ type AppAction =
   | { type: 'ADD_PROMPT'; payload: Prompt }
   | { type: 'UPDATE_PROMPT'; payload: { id: string; updates: Partial<Prompt> } }
   | { type: 'DELETE_PROMPT'; payload: string }
+  | { type: 'SET_HEARTS'; payload: Heart[] }
   | { type: 'HEART_PROMPT'; payload: { promptId: string } }
   | { type: 'UNHEART_PROMPT'; payload: { promptId: string } }
+  | { type: 'SET_SAVES'; payload: Save[] }
   | { type: 'SAVE_PROMPT'; payload: { promptId: string; collectionId?: string } }
   | { type: 'UNSAVE_PROMPT'; payload: string }
   | { type: 'FORK_PROMPT'; payload: { originalId: string; newPrompt: Prompt } }
@@ -126,6 +128,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
         prompts: state.prompts.filter(p => p.id !== action.payload)
       };
 
+    case 'SET_HEARTS':
+      return { ...state, hearts: action.payload };
+
     case 'HEART_PROMPT': {
       const { promptId } = action.payload;
       if (!state.user) return state;
@@ -180,6 +185,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
         prompts: updatedPrompts 
       };
     }
+
+    case 'SET_SAVES':
+      return { ...state, saves: action.payload };
 
     case 'SAVE_PROMPT': {
       const { promptId, collectionId } = action.payload;
@@ -576,6 +584,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         else if (event === 'SIGNED_OUT') {
           dispatch({ type: 'SET_USER', payload: null });
+          dispatch({ type: 'SET_HEARTS', payload: [] });
+          dispatch({ type: 'SET_SAVES', payload: [] });
 
           // Clear Supabase session data from localStorage
           try {
@@ -683,6 +693,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         dispatch({ type: 'SET_USER', payload: user });
 
+        // Fetch user's hearts and saves
+        const { data: userHearts, error: heartsError } = await hearts.getByUser(user.id);
+        if (userHearts && !heartsError) {
+          const transformedHearts = userHearts.map(heart => ({
+            userId: heart.user_id,
+            promptId: heart.prompt_id,
+            createdAt: heart.created_at
+          }));
+          dispatch({ type: 'SET_HEARTS', payload: transformedHearts });
+        } else {
+          console.error('[loadUserProfile] Error fetching hearts:', heartsError);
+        }
+
+        const { data: userSaves, error: savesError } = await saves.getByUser(user.id);
+        if (userSaves && !savesError) {
+          const transformedSaves = userSaves.map(save => ({
+            userId: save.user_id,
+            promptId: save.prompt_id,
+            collectionId: save.collection_id,
+            createdAt: save.created_at
+          }));
+          dispatch({ type: 'SET_SAVES', payload: transformedSaves });
+        } else {
+          console.error('[loadUserProfile] Error fetching saves:', savesError);
+        }
+
         // Fetch all prompts from database
         const { data: fetchedPrompts, error: promptsError } = await promptsAPI.getAll();
         if (fetchedPrompts && !promptsError) {
@@ -773,6 +809,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.log('[loadUserProfile] New profile created with final role:', user.role);
 
           dispatch({ type: 'SET_USER', payload: user });
+
+          // Fetch user's hearts and saves (will be empty for new users but establishes consistency)
+          const { data: userHearts, error: heartsError } = await hearts.getByUser(user.id);
+          if (userHearts && !heartsError) {
+            const transformedHearts = userHearts.map(heart => ({
+              userId: heart.user_id,
+              promptId: heart.prompt_id,
+              createdAt: heart.created_at
+            }));
+            dispatch({ type: 'SET_HEARTS', payload: transformedHearts });
+          } else {
+            dispatch({ type: 'SET_HEARTS', payload: [] }); // Empty array for new users
+          }
+
+          const { data: userSaves, error: savesError } = await saves.getByUser(user.id);
+          if (userSaves && !savesError) {
+            const transformedSaves = userSaves.map(save => ({
+              userId: save.user_id,
+              promptId: save.prompt_id,
+              collectionId: save.collection_id,
+              createdAt: save.created_at
+            }));
+            dispatch({ type: 'SET_SAVES', payload: transformedSaves });
+          } else {
+            dispatch({ type: 'SET_SAVES', payload: [] }); // Empty array for new users
+          }
 
           // Fetch all prompts from database
           const { data: fetchedPrompts, error: promptsError } = await promptsAPI.getAll();
