@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { SuccessBadge } from "./ui/SuccessBadge";
@@ -90,22 +90,38 @@ export function PromptCard({
   const { state, dispatch } = useApp();
   const [heartAnimating, setHeartAnimating] = useState(false);
   const [saveAnimating, setSaveAnimating] = useState(false);
+  const [optimisticHeartCount, setOptimisticHeartCount] = useState<number | null>(null);
+  const [optimisticSaveCount, setOptimisticSaveCount] = useState<number | null>(null);
 
-  // Calculate the actual heart state from context
-  const isHearted = state.hearts.some(h =>
-    h.userId === state.user?.id && h.promptId === _id
+  // Memoized calculations for better performance
+  const isHearted = useMemo(() => 
+    state.hearts.some(h => h.userId === state.user?.id && h.promptId === _id),
+    [state.hearts, state.user?.id, _id]
   );
 
-  // Calculate the actual save state from context
-  const isActuallySaved = state.saves.some(s =>
-    s.userId === state.user?.id && s.promptId === _id
+  const isActuallySaved = useMemo(() => 
+    state.saves.some(s => s.userId === state.user?.id && s.promptId === _id),
+    [state.saves, state.user?.id, _id]
   );
 
-  const handleHeart = async () => {
+  // Calculate actual counts with optimistic updates
+  const currentPrompt = useMemo(() => 
+    state.prompts.find(p => p.id === _id),
+    [state.prompts, _id]
+  );
+  
+  const currentHeartCount = optimisticHeartCount ?? currentPrompt?.hearts ?? stats?.hearts ?? 0;
+  const currentSaveCount = optimisticSaveCount ?? currentPrompt?.saveCount ?? stats?.saves ?? 0;
+
+  const handleHeart = useCallback(async () => {
      if (!state.user) {
        console.log('User not authenticated');
        return;
      }
+
+     // Immediate optimistic update for instant visual feedback
+     const newCount = isHearted ? currentHeartCount - 1 : currentHeartCount + 1;
+     setOptimisticHeartCount(newCount);
 
      // Trigger animation
      setHeartAnimating(true);
@@ -117,7 +133,7 @@ export function PromptCard({
        console.log('Heart result:', result);
 
        if (!result.error && result.data) {
-         // Update global state immediately for instant visual feedback
+         // Update global state
          if (result.data.action === 'added') {
            console.log('Adding heart - updating UI');
            dispatch({ type: 'HEART_PROMPT', payload: { promptId: _id } });
@@ -125,19 +141,29 @@ export function PromptCard({
            console.log('Removing heart - updating UI');
            dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: _id } });
          }
+         // Clear optimistic update after successful API call
+         setTimeout(() => setOptimisticHeartCount(null), 100);
        } else {
          console.error('Heart error:', result.error);
+         // Revert optimistic update on error
+         setOptimisticHeartCount(null);
        }
      } catch (error) {
        console.error('Heart exception:', error);
+       // Revert optimistic update on error
+       setOptimisticHeartCount(null);
      }
-   };
+   }, [state.user, isHearted, currentHeartCount, _id, dispatch]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!state.user) {
       console.log('User not authenticated');
       return;
     }
+
+    // Immediate optimistic update for instant visual feedback
+    const newCount = isActuallySaved ? currentSaveCount - 1 : currentSaveCount + 1;
+    setOptimisticSaveCount(newCount);
 
     // Trigger animation
     setSaveAnimating(true);
@@ -149,7 +175,7 @@ export function PromptCard({
       console.log('Save result:', result);
 
       if (!result.error && result.data) {
-        // Update global state immediately for instant visual feedback
+        // Update global state
         if (result.data.action === 'added') {
           console.log('Adding save - updating UI');
           dispatch({ type: 'SAVE_PROMPT', payload: { promptId: _id } });
@@ -157,28 +183,52 @@ export function PromptCard({
           console.log('Removing save - updating UI');
           dispatch({ type: 'UNSAVE_PROMPT', payload: _id });
         }
+        // Clear optimistic update after successful API call
+        setTimeout(() => setOptimisticSaveCount(null), 100);
       } else {
         console.error('Save error:', result.error);
+        // Revert optimistic update on error
+        setOptimisticSaveCount(null);
       }
     } catch (error) {
       console.error('Save exception:', error);
+      // Revert optimistic update on error
+      setOptimisticSaveCount(null);
     }
-  };
+  }, [state.user, isActuallySaved, currentSaveCount, _id, dispatch]);
 
-  const categoryData = categories.find(cat =>
-    cat.id === category?.toLowerCase() ||
-    cat.label?.toLowerCase() === category?.toLowerCase() ||
-    cat.name?.toLowerCase() === category?.toLowerCase()
+  // Memoized category data lookup for performance
+  const categoryData = useMemo(() => 
+    categories.find(cat =>
+      cat.id === category?.toLowerCase() ||
+      cat.label?.toLowerCase() === category?.toLowerCase() ||
+      cat.name?.toLowerCase() === category?.toLowerCase()
+    ), [category]
   );
-  const primaryImage = images?.find(img => img.isPrimary) || images?.[0];
+
+  // Memoized primary image calculation
+  const primaryImage = useMemo(() => 
+    images?.find(img => img.isPrimary) || images?.[0],
+    [images]
+  );
+
+  // Memoized click handler
+  const handleClick = useCallback(() => {
+    console.log('PromptCard onClick fired for id:', _id);
+    onClick?.();
+  }, [_id, onClick]);
+
+  // Memoized share handler
+  const handleShare = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Share button clicked for id:', _id);
+    onShare?.();
+  }, [_id, onShare]);
   
   return (
     <Card
-      className="group hover:shadow-lg transition-all duration-200 cursor-pointer h-full flex flex-col overflow-hidden"
-      onClick={() => {
-        console.log('PromptCard onClick fired for id:', _id);
-        onClick?.();
-      }}
+      className="group hover:shadow-lg transition-all duration-150 cursor-pointer h-full flex flex-col overflow-hidden"
+      onClick={handleClick}
     >
       {/* Primary Image */}
       {primaryImage && (
@@ -186,14 +236,14 @@ export function PromptCard({
           <ImageWithFallback
             src={primaryImage.url}
             alt={primaryImage.altText}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-150"
           />
         </div>
       )}
 
       <CardContent className="p-4 flex-1 flex flex-col space-y-3">
         {/* Title */}
-        <h3 className="line-clamp-2 group-hover:text-primary transition-colors">
+        <h3 className="line-clamp-2 group-hover:text-primary transition-colors duration-150">
           {title}
         </h3>
 
@@ -274,9 +324,9 @@ export function PromptCard({
                 e.stopPropagation();
                 handleHeart();
               }}
-              className={isHearted ? 'bg-red-50 text-red-600' : ''}
+              className={`transition-all duration-100 ${isHearted ? 'bg-red-50 text-red-600' : ''}`}
             >
-              <Heart className={`h-3 w-3 mr-2 transition-all duration-300 ease-out ${
+              <Heart className={`h-3 w-3 mr-2 transition-all duration-200 ease-out ${
                 isHearted
                   ? 'fill-current scale-110'
                   : 'scale-100'
@@ -287,15 +337,17 @@ export function PromptCard({
               }`}
               style={{
                 transform: heartAnimating ? 'scale(1.2) rotate(-5deg)' : undefined,
-                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
               }} />
-              {stats?.hearts || 0}
+              <span className="transition-all duration-100">
+                {currentHeartCount}
+              </span>
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className={`h-8 gap-1 px-2 relative overflow-hidden ${
+              className={`h-8 gap-1 px-2 relative overflow-hidden transition-all duration-100 ${
                 isActuallySaved ? 'bg-primary/10 text-primary' : ''
               }`}
               onClick={(e: React.MouseEvent) => {
@@ -304,7 +356,7 @@ export function PromptCard({
               }}
             >
               <BookmarkPlus
-                className={`h-3 w-3 transition-all duration-300 ease-out ${
+                className={`h-3 w-3 transition-all duration-200 ease-out ${
                   isActuallySaved
                     ? 'fill-current text-primary scale-110'
                     : 'scale-100'
@@ -315,25 +367,21 @@ export function PromptCard({
                 }`}
                 style={{
                   transform: saveAnimating ? 'scale(1.2) rotate(-5deg)' : undefined,
-                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
                 }}
               />
-              <span className={`transition-colors duration-300 ${
+              <span className={`transition-all duration-100 ${
                 isActuallySaved ? 'text-primary' : ''
               } ${saveAnimating ? 'animate-pulse' : ''}`}>
-                {stats?.saves || 0}
+                {currentSaveCount}
               </span>
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 px-2"
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                console.log('Share button clicked for id:', _id);
-                onShare?.();
-              }}
+              className="h-8 px-2 transition-all duration-100"
+              onClick={handleShare}
             >
               <Share className="h-3 w-3" />
             </Button>
