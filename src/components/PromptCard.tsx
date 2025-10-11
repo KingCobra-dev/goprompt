@@ -91,21 +91,15 @@ export function PromptCard({
   const [heartAnimating, setHeartAnimating] = useState(false);
   const [saveAnimating, setSaveAnimating] = useState(false);
 
-  // Calculate the actual heart state from context
-  const isHearted = state.user ? state.hearts.some(h =>
+  // Calculate the actual heart state from context (only if hearts/saves are loaded)
+  const isHearted = (state.user && state.heartsAndSavesLoaded) ? state.hearts.some(h =>
     h.userId === state.user.id && h.promptId === _id
   ) : false;
 
-  // Calculate the actual save state from context
-  const isActuallySaved = state.user ? state.saves.some(s =>
+  // Calculate the actual save state from context (only if hearts/saves are loaded)
+  const isActuallySaved = (state.user && state.heartsAndSavesLoaded) ? state.saves.some(s =>
     s.userId === state.user.id && s.promptId === _id
   ) : false;
-
-  // Debug logging
-  console.log(`[PromptCard ${_id}] User:`, state.user?.id, `Hearts in state:`, state.hearts.length, `Saves in state:`, state.saves.length);
-  console.log(`[PromptCard ${_id}] User hearts for this prompt:`, state.hearts.filter(h => h.promptId === _id));
-  console.log(`[PromptCard ${_id}] User saves for this prompt:`, state.saves.filter(s => s.promptId === _id));
-  console.log(`[PromptCard ${_id}] isHearted:`, isHearted, `isActuallySaved:`, isActuallySaved);
 
   // Calculate actual counts from the current prompt in context state
   const currentPrompt = state.prompts.find(p => p.id === _id);

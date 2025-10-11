@@ -25,6 +25,7 @@ interface AppState {
   userPackLibrary: UserPackLibrary | null;
   theme: 'light' | 'dark';
   loading: boolean;
+  heartsAndSavesLoaded: boolean;
   error: string | null;
 }
 
@@ -39,6 +40,7 @@ type AppAction =
   | { type: 'HEART_PROMPT'; payload: { promptId: string } }
   | { type: 'UNHEART_PROMPT'; payload: { promptId: string } }
   | { type: 'SET_SAVES'; payload: Save[] }
+  | { type: 'SET_HEARTS_AND_SAVES_LOADED'; payload: boolean }
   | { type: 'SAVE_PROMPT'; payload: { promptId: string; collectionId?: string } }
   | { type: 'UNSAVE_PROMPT'; payload: string }
   | { type: 'FORK_PROMPT'; payload: { originalId: string; newPrompt: Prompt } }
@@ -94,6 +96,7 @@ const initialState: AppState = {
   userPackLibrary: null,
   theme: 'light',
   loading: false,
+  heartsAndSavesLoaded: false,
   error: null
 };
 
@@ -375,6 +378,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
 
+    case 'SET_HEARTS_AND_SAVES_LOADED':
+      return { ...state, heartsAndSavesLoaded: action.payload };
+
     case 'SET_ERROR':
       return { ...state, error: action.payload };
 
@@ -586,6 +592,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           dispatch({ type: 'SET_USER', payload: null });
           dispatch({ type: 'SET_HEARTS', payload: [] });
           dispatch({ type: 'SET_SAVES', payload: [] });
+          dispatch({ type: 'SET_HEARTS_AND_SAVES_LOADED', payload: false });
 
           // Clear Supabase session data from localStorage
           try {
@@ -693,11 +700,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         dispatch({ type: 'SET_USER', payload: user });
 
+        // Set hearts and saves as not loaded initially
+        dispatch({ type: 'SET_HEARTS_AND_SAVES_LOADED', payload: false });
+
         // Fetch user's hearts and saves
-        console.log('[loadUserProfile] Fetching hearts for user:', user.id);
         const { data: userHearts, error: heartsError } = await hearts.getByUser(user.id);
         if (userHearts && !heartsError) {
-          console.log('[loadUserProfile] Found hearts:', userHearts.length);
           const transformedHearts = userHearts.map(heart => ({
             userId: heart.user_id,
             promptId: heart.prompt_id,
@@ -706,12 +714,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           dispatch({ type: 'SET_HEARTS', payload: transformedHearts });
         } else {
           console.error('[loadUserProfile] Error fetching hearts:', heartsError);
+          dispatch({ type: 'SET_HEARTS', payload: [] });
         }
 
-        console.log('[loadUserProfile] Fetching saves for user:', user.id);
         const { data: userSaves, error: savesError } = await saves.getByUser(user.id);
         if (userSaves && !savesError) {
-          console.log('[loadUserProfile] Found saves:', userSaves.length);
           const transformedSaves = userSaves.map(save => ({
             userId: save.user_id,
             promptId: save.prompt_id,
@@ -721,7 +728,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           dispatch({ type: 'SET_SAVES', payload: transformedSaves });
         } else {
           console.error('[loadUserProfile] Error fetching saves:', savesError);
+          dispatch({ type: 'SET_SAVES', payload: [] });
         }
+
+        // Mark hearts and saves as loaded
+        dispatch({ type: 'SET_HEARTS_AND_SAVES_LOADED', payload: true });
 
         // Fetch all prompts from database
         const { data: fetchedPrompts, error: promptsError } = await promptsAPI.getAll();
@@ -814,6 +825,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
           dispatch({ type: 'SET_USER', payload: user });
 
+          // Set hearts and saves as not loaded initially
+          dispatch({ type: 'SET_HEARTS_AND_SAVES_LOADED', payload: false });
+
           // Fetch user's hearts and saves (will be empty for new users but establishes consistency)
           const { data: userHearts, error: heartsError } = await hearts.getByUser(user.id);
           if (userHearts && !heartsError) {
@@ -839,6 +853,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           } else {
             dispatch({ type: 'SET_SAVES', payload: [] }); // Empty array for new users
           }
+
+          // Mark hearts and saves as loaded
+          dispatch({ type: 'SET_HEARTS_AND_SAVES_LOADED', payload: true });
 
           // Fetch all prompts from database
           const { data: fetchedPrompts, error: promptsError } = await promptsAPI.getAll();
