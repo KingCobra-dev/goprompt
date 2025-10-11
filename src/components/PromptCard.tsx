@@ -9,7 +9,7 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { categories } from "../lib/data";
 import { PromptImage } from "../lib/types";
 import { useApp } from '../contexts/AppContext';
-import { hearts } from '../lib/api';
+import { hearts, saves } from '../lib/api';
 
 interface PromptCardProps {
    id: string;
@@ -31,7 +31,7 @@ interface PromptCardProps {
   };
   successRate?: number;
   successVotesCount?: number;
-  isSaved?: boolean;
+  isSaved?: boolean; // Keep for backwards compatibility, but internally use context state
   createdAt: string;
   parentAuthor?: {
     name: string;
@@ -39,8 +39,8 @@ interface PromptCardProps {
     role?: 'general' | 'pro' | 'admin';
   };
   onClick?: () => void;
-  onHeart?: () => void;
-  onSave?: () => void;
+  onHeart?: () => void; // Keep for backwards compatibility
+  onSave?: () => void; // Keep for backwards compatibility
   onShare?: () => void;
 }
 
@@ -79,17 +79,27 @@ export function PromptCard({
   stats,
   successRate,
   successVotesCount,
-  isSaved = false,
+  isSaved: _isSaved = false, // Renamed to indicate it's not used internally
   createdAt,
   parentAuthor,
   onClick,
-  onHeart,
-  onSave,
+  onHeart: _onHeart, // Renamed to indicate it's not used internally
+  onSave: _onSave, // Renamed to indicate it's not used internally
   onShare
 }: PromptCardProps) {
   const { state, dispatch } = useApp();
   const [heartAnimating, setHeartAnimating] = useState(false);
   const [saveAnimating, setSaveAnimating] = useState(false);
+
+  // Calculate the actual heart state from context
+  const isHearted = state.hearts.some(h =>
+    h.userId === state.user?.id && h.promptId === _id
+  );
+
+  // Calculate the actual save state from context
+  const isActuallySaved = state.saves.some(s =>
+    s.userId === state.user?.id && s.promptId === _id
+  );
 
   const handleHeart = async () => {
      if (!state.user) {
@@ -123,9 +133,37 @@ export function PromptCard({
      }
    };
 
-  const isHearted = state.hearts.some(h =>
-    h.userId === state.user?.id && h.promptId === _id
-  );
+  const handleSave = async () => {
+    if (!state.user) {
+      console.log('User not authenticated');
+      return;
+    }
+
+    // Trigger animation
+    setSaveAnimating(true);
+    setTimeout(() => setSaveAnimating(false), 400);
+
+    console.log('Toggling save for prompt:', _id, 'Current isSaved:', isActuallySaved);
+    try {
+      const result = await saves.toggle(_id);
+      console.log('Save result:', result);
+
+      if (!result.error && result.data) {
+        // Update global state immediately for instant visual feedback
+        if (result.data.action === 'added') {
+          console.log('Adding save - updating UI');
+          dispatch({ type: 'SAVE_PROMPT', payload: { promptId: _id } });
+        } else {
+          console.log('Removing save - updating UI');
+          dispatch({ type: 'UNSAVE_PROMPT', payload: _id });
+        }
+      } else {
+        console.error('Save error:', result.error);
+      }
+    } catch (error) {
+      console.error('Save exception:', error);
+    }
+  };
 
   const categoryData = categories.find(cat =>
     cat.id === category?.toLowerCase() ||
@@ -257,22 +295,18 @@ export function PromptCard({
             <Button
               size="sm"
               variant="ghost"
-              className="h-8 gap-1 px-2 relative overflow-hidden"
+              className={`h-8 gap-1 px-2 relative overflow-hidden ${
+                isActuallySaved ? 'bg-primary/10 text-primary' : ''
+              }`}
               onClick={(e: React.MouseEvent) => {
                 e.stopPropagation();
-                console.log('Save button clicked for id:', _id);
-
-                // Trigger animation
-                setSaveAnimating(true);
-                setTimeout(() => setSaveAnimating(false), 400);
-
-                onSave?.();
+                handleSave();
               }}
             >
               <BookmarkPlus
                 className={`h-3 w-3 transition-all duration-300 ease-out ${
-                  isSaved
-                    ? 'fill-primary text-primary scale-110'
+                  isActuallySaved
+                    ? 'fill-current text-primary scale-110'
                     : 'scale-100'
                 } ${
                   saveAnimating
@@ -285,7 +319,7 @@ export function PromptCard({
                 }}
               />
               <span className={`transition-colors duration-300 ${
-                isSaved ? 'text-primary' : ''
+                isActuallySaved ? 'text-primary' : ''
               } ${saveAnimating ? 'animate-pulse' : ''}`}>
                 {stats?.saves || 0}
               </span>
