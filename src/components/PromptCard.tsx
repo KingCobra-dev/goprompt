@@ -101,6 +101,11 @@ export function PromptCard({
     s.userId === state.user?.id && s.promptId === _id
   );
 
+  // Debug logging
+  console.log(`[PromptCard ${_id}] Hearts in state:`, state.hearts.length, 'User hearts for this prompt:', state.hearts.filter(h => h.promptId === _id));
+  console.log(`[PromptCard ${_id}] Saves in state:`, state.saves.length, 'User saves for this prompt:', state.saves.filter(s => s.promptId === _id));
+  console.log(`[PromptCard ${_id}] isHearted:`, isHearted, 'isActuallySaved:', isActuallySaved);
+
   // Calculate actual counts from the current prompt in context state
   const currentPrompt = state.prompts.find(p => p.id === _id);
   const currentHeartCount = currentPrompt?.hearts || stats?.hearts || 0;

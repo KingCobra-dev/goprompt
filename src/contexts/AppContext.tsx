@@ -694,8 +694,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         dispatch({ type: 'SET_USER', payload: user });
 
         // Fetch user's hearts and saves
+        console.log('[loadUserProfile] Fetching hearts for user:', user.id);
         const { data: userHearts, error: heartsError } = await hearts.getByUser(user.id);
         if (userHearts && !heartsError) {
+          console.log('[loadUserProfile] Found hearts:', userHearts.length);
           const transformedHearts = userHearts.map(heart => ({
             userId: heart.user_id,
             promptId: heart.prompt_id,
@@ -706,8 +708,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.error('[loadUserProfile] Error fetching hearts:', heartsError);
         }
 
+        console.log('[loadUserProfile] Fetching saves for user:', user.id);
         const { data: userSaves, error: savesError } = await saves.getByUser(user.id);
         if (userSaves && !savesError) {
+          console.log('[loadUserProfile] Found saves:', userSaves.length);
           const transformedSaves = userSaves.map(save => ({
             userId: save.user_id,
             promptId: save.prompt_id,
