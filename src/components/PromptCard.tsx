@@ -92,19 +92,20 @@ export function PromptCard({
   const [saveAnimating, setSaveAnimating] = useState(false);
 
   // Calculate the actual heart state from context
-  const isHearted = state.hearts.some(h =>
-    h.userId === state.user?.id && h.promptId === _id
-  );
+  const isHearted = state.user ? state.hearts.some(h =>
+    h.userId === state.user.id && h.promptId === _id
+  ) : false;
 
   // Calculate the actual save state from context
-  const isActuallySaved = state.saves.some(s =>
-    s.userId === state.user?.id && s.promptId === _id
-  );
+  const isActuallySaved = state.user ? state.saves.some(s =>
+    s.userId === state.user.id && s.promptId === _id
+  ) : false;
 
   // Debug logging
-  console.log(`[PromptCard ${_id}] Hearts in state:`, state.hearts.length, 'User hearts for this prompt:', state.hearts.filter(h => h.promptId === _id));
-  console.log(`[PromptCard ${_id}] Saves in state:`, state.saves.length, 'User saves for this prompt:', state.saves.filter(s => s.promptId === _id));
-  console.log(`[PromptCard ${_id}] isHearted:`, isHearted, 'isActuallySaved:', isActuallySaved);
+  console.log(`[PromptCard ${_id}] User:`, state.user?.id, `Hearts in state:`, state.hearts.length, `Saves in state:`, state.saves.length);
+  console.log(`[PromptCard ${_id}] User hearts for this prompt:`, state.hearts.filter(h => h.promptId === _id));
+  console.log(`[PromptCard ${_id}] User saves for this prompt:`, state.saves.filter(s => s.promptId === _id));
+  console.log(`[PromptCard ${_id}] isHearted:`, isHearted, `isActuallySaved:`, isActuallySaved);
 
   // Calculate actual counts from the current prompt in context state
   const currentPrompt = state.prompts.find(p => p.id === _id);
