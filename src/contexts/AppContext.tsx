@@ -625,9 +625,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         const user: User = {
           id: authUser.id,
-          username: authUser.user_metadata?.username || authUser.email?.split('@')[0] || 'user',
+          username: authUser.user_metadata?.username || (authUser.email ? authUser.email.split('@')[0] : 'user'),
           email: authUser.email || '',
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+          name: authUser.user_metadata?.name || (authUser.email ? authUser.email.split('@')[0] : 'User'),
           bio: '',
           reputation: 0,
           createdAt: authUser.created_at || new Date().toISOString(),
@@ -778,9 +778,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         const newProfile = {
           id: authUser.id,
-          username: authUser.user_metadata?.username || authUser.email?.split('@')[0] || 'user',
+          username: authUser.user_metadata?.username || (authUser.email ? authUser.email.split('@')[0] : 'user'),
           email: authUser.email || '',
-          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'User',
+          name: authUser.user_metadata?.name || (authUser.email ? authUser.email.split('@')[0] : 'User'),
           bio: '',
           reputation: 0,
           created_at: authUser.created_at || new Date().toISOString(),

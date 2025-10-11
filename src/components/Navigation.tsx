@@ -55,6 +55,7 @@ export function Navigation({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 

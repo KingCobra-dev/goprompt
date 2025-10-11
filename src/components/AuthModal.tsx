@@ -91,7 +91,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
       }
 
-      const username = email.split('@')[0];
+      const username = email ? email.split('@')[0] : 'user';
       const { data, error: signUpError } = await auth.signUp(email, password, username);
 
       if (signUpError) {

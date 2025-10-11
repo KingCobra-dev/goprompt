@@ -194,7 +194,7 @@ export function UserProfilePage({
             <CardContent className="pt-6">
               <div className="flex items-start gap-6">
                 <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-medium">
-                  {user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  {user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
                 </div>
 
                 <div className="flex-1">

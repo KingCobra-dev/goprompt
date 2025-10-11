@@ -46,6 +46,7 @@ interface PromptCardProps {
 
 // Get initials from name
 function getInitials(name: string): string {
+  if (!name || typeof name !== 'string') return 'U';
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
