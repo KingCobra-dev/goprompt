@@ -5,17 +5,19 @@ import { Database } from './supabase'
 // Type aliases for easier use
 type Tables = Database['public']['Tables']
 
-// Auth API
+// Auth API - Simplified for Supabase only
 export const auth = {
-  signUp: async (email: string, password: string, username: string) => {
+  signUp: async (email: string, password: string, name: string) => {
+    const username = email.split('@')[0]
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
+          name,
           username,
-        }
-      }
+        },
+      },
     })
     return { data, error }
   },
@@ -29,38 +31,26 @@ export const auth = {
   },
 
   signOut: async () => {
-    // Use 'local' scope to remove session from current browser only
-    // This ensures the session is completely cleared from localStorage
     const { error } = await supabase.auth.signOut({ scope: 'local' })
-    
+
     // Clear any cached user data
     localStorage.removeItem('supabase.auth.token')
     sessionStorage.clear()
-    
-    return { error }
-  },
 
-  resetPassword: async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email)
     return { error }
   },
 
   getCurrentUser: async () => {
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
     return { user, error }
   },
 
   onAuthStateChange: (callback: (event: string, session: any) => void) => {
     return supabase.auth.onAuthStateChange(callback)
   },
-
-  validateInviteCode: async (code: string) => {
-    return await invitees.validateCode(code)
-  },
-
-  trackInviteUsage: async (code: string, userId: string, email: string) => {
-    return await invitees.trackUsage(code, userId, email)
-  }
 }
 
 // Profile API
@@ -84,7 +74,10 @@ export const profiles = {
     return { data, error: null }
   },
 
-  update: async (id: string, updates: Partial<Tables['profiles']['Update']>) => {
+  update: async (
+    id: string,
+    updates: Partial<Tables['profiles']['Update']>
+  ) => {
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
@@ -101,7 +94,7 @@ export const profiles = {
       .select()
       .single()
     return { data, error }
-  }
+  },
 }
 
 // Prompts API
@@ -116,7 +109,8 @@ export const prompts = {
   }) => {
     let query = supabase
       .from('prompts')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           id,
@@ -128,7 +122,8 @@ export const prompts = {
           twitter
         ),
         prompt_images (*)
-      `)
+      `
+      )
       .eq('visibility', 'public')
       .order('created_at', { ascending: false })
 
@@ -141,7 +136,9 @@ export const prompts = {
     }
 
     if (filters?.search) {
-      query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
+      query = query.or(
+        `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
+      )
     }
 
     if (filters?.limit) {
@@ -149,7 +146,10 @@ export const prompts = {
     }
 
     if (filters?.offset) {
-      query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1)
+      query = query.range(
+        filters.offset,
+        filters.offset + (filters.limit || 10) - 1
+      )
     }
 
     const { data, error } = await query
@@ -159,7 +159,8 @@ export const prompts = {
   getById: async (id: string) => {
     const { data, error } = await supabase
       .from('prompts')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           id,
@@ -171,7 +172,8 @@ export const prompts = {
           twitter
         ),
         prompt_images (*)
-      `)
+      `
+      )
       .eq('id', id)
       .single()
 
@@ -190,10 +192,12 @@ export const prompts = {
   getByUser: async (userId: string, limit?: number) => {
     let query = supabase
       .from('prompts')
-      .select(`
+      .select(
+        `
         *,
         prompt_images (*)
-      `)
+      `
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
@@ -225,17 +229,16 @@ export const prompts = {
   },
 
   delete: async (id: string) => {
-    const { error } = await supabase
-      .from('prompts')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('prompts').delete().eq('id', id)
     return { error }
   },
 
   incrementView: async (id: string) => {
-    const { error } = await supabase.rpc('increment_prompt_view', { prompt_id: id })
+    const { error } = await supabase.rpc('increment_prompt_view', {
+      prompt_id: id,
+    })
     return { error }
-  }
+  },
 }
 
 // Comments API
@@ -243,14 +246,16 @@ export const comments = {
   getByPrompt: async (promptId: string) => {
     const { data, error } = await supabase
       .from('comments')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           id,
           username,
           name
         )
-      `)
+      `
+      )
       .eq('prompt_id', promptId)
       .eq('is_deleted', false)
       .order('created_at', { ascending: true })
@@ -282,22 +287,21 @@ export const comments = {
       .update({ is_deleted: true })
       .eq('id', id)
     return { error }
-  }
+  },
 }
 
 // Hearts API
 export const hearts = {
-  getByUser: async (userId: string) => {
-    const { data, error } = await supabase
-      .from('hearts')
-      .select('user_id, prompt_id, created_at')
-      .eq('user_id', userId)
-    return { data, error }
-  },
-
-  toggle: async (promptId: string): Promise<{ data: { action: 'added' | 'removed' } | null; error: string | null }> => {
+  toggle: async (
+    promptId: string
+  ): Promise<{
+    data: { action: 'added' | 'removed' } | null
+    error: string | null
+  }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) return { data: null, error: 'Not authenticated' }
 
       // Use database for all prompts
@@ -321,9 +325,12 @@ export const hearts = {
         if (deleteError) return { data: null, error: 'Failed to remove heart' }
 
         // Decrement count
-        const { error: updateError } = await supabase.rpc('decrement_hearts', { prompt_id: promptId })
+        const { error: updateError } = await supabase.rpc('decrement_hearts', {
+          prompt_id: promptId,
+        })
 
-        if (updateError) return { data: null, error: 'Failed to update heart count' }
+        if (updateError)
+          return { data: null, error: 'Failed to update heart count' }
 
         return { data: { action: 'removed' }, error: null }
       } else {
@@ -335,32 +342,39 @@ export const hearts = {
         if (insertError) return { data: null, error: 'Failed to add heart' }
 
         // Increment count
-        const { error: updateError } = await supabase.rpc('increment_hearts', { prompt_id: promptId })
+        const { error: updateError } = await supabase.rpc('increment_hearts', {
+          prompt_id: promptId,
+        })
 
-        if (updateError) return { data: null, error: 'Failed to update heart count' }
+        if (updateError)
+          return { data: null, error: 'Failed to update heart count' }
 
         return { data: { action: 'added' }, error: null }
       }
     } catch (error: any) {
       console.error('Heart toggle error:', error)
-      return { data: null, error: error.message || 'An unexpected error occurred while toggling heart' }
+      return {
+        data: null,
+        error:
+          error.message || 'An unexpected error occurred while toggling heart',
+      }
     }
-  }
+  },
 }
 
 // Saves API
 export const saves = {
-  getByUser: async (userId: string) => {
-    const { data, error } = await supabase
-      .from('saves')
-      .select('user_id, prompt_id, collection_id, created_at')
-      .eq('user_id', userId)
-    return { data, error }
-  },
-
-  toggle: async (promptId: string, collectionId?: string): Promise<{ data: { action: 'added' | 'removed' } | null; error: string | null }> => {
+  toggle: async (
+    promptId: string,
+    collectionId?: string
+  ): Promise<{
+    data: { action: 'added' | 'removed' } | null
+    error: string | null
+  }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) return { data: null, error: 'Not authenticated' }
 
       // Use database for all prompts
@@ -384,31 +398,45 @@ export const saves = {
         if (deleteError) return { data: null, error: 'Failed to remove save' }
 
         // Decrement count
-        const { error: updateError } = await supabase.rpc('decrement_saves', { prompt_id: promptId })
+        const { error: updateError } = await supabase.rpc('decrement_saves', {
+          prompt_id: promptId,
+        })
 
-        if (updateError) return { data: null, error: 'Failed to update save count' }
+        if (updateError)
+          return { data: null, error: 'Failed to update save count' }
 
         return { data: { action: 'removed' }, error: null }
       } else {
         // Add save
         const { error: insertError } = await supabase
           .from('saves')
-          .insert({ user_id: user.id, prompt_id: promptId, collection_id: collectionId })
+          .insert({
+            user_id: user.id,
+            prompt_id: promptId,
+            collection_id: collectionId,
+          })
 
         if (insertError) return { data: null, error: 'Failed to add save' }
 
         // Increment count
-        const { error: updateError } = await supabase.rpc('increment_saves', { prompt_id: promptId })
+        const { error: updateError } = await supabase.rpc('increment_saves', {
+          prompt_id: promptId,
+        })
 
-        if (updateError) return { data: null, error: 'Failed to update save count' }
+        if (updateError)
+          return { data: null, error: 'Failed to update save count' }
 
         return { data: { action: 'added' }, error: null }
       }
     } catch (error: any) {
       console.error('Save toggle error:', error)
-      return { data: null, error: error.message || 'An unexpected error occurred while toggling save' }
+      return {
+        data: null,
+        error:
+          error.message || 'An unexpected error occurred while toggling save',
+      }
     }
-  }
+  },
 }
 
 // Collections API
@@ -442,12 +470,9 @@ export const collections = {
   },
 
   delete: async (id: string) => {
-    const { error } = await supabase
-      .from('collections')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('collections').delete().eq('id', id)
     return { error }
-  }
+  },
 }
 
 // Portfolios API
@@ -455,7 +480,8 @@ export const portfolios = {
   getByUser: async (userId: string) => {
     const { data, error } = await supabase
       .from('portfolios')
-      .select(`
+      .select(
+        `
         *,
         portfolio_prompts (
           id,
@@ -467,7 +493,8 @@ export const portfolios = {
           order_index,
           added_at
         )
-      `)
+      `
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     return { data, error }
@@ -476,7 +503,8 @@ export const portfolios = {
   getBySubdomain: async (subdomain: string) => {
     const { data, error } = await supabase
       .from('portfolios')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           id,
@@ -512,7 +540,8 @@ export const portfolios = {
             prompt_images (*)
           )
         )
-      `)
+      `
+      )
       .eq('subdomain', subdomain)
       .eq('is_published', true)
       .single()
@@ -549,12 +578,9 @@ export const portfolios = {
   },
 
   delete: async (id: string) => {
-    const { error } = await supabase
-      .from('portfolios')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('portfolios').delete().eq('id', id)
     return { error }
-  }
+  },
 }
 
 // Prompt Packs API
@@ -602,7 +628,7 @@ export const promptPacks = {
       .insert({
         user_id: userId,
         pack_id: packId,
-        pack_name: packName
+        pack_name: packName,
       })
       .select()
       .single()
@@ -616,7 +642,7 @@ export const promptPacks = {
       .eq('user_id', userId)
       .eq('pack_id', packId)
     return { error }
-  }
+  },
 }
 
 // Storage API (for images)
@@ -629,18 +655,14 @@ export const storage = {
   },
 
   deleteImage: async (bucket: string, paths: string[]) => {
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .remove(paths)
+    const { data, error } = await supabase.storage.from(bucket).remove(paths)
     return { data, error }
   },
 
   getPublicUrl: (bucket: string, path: string) => {
-    const { data } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path)
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path)
     return data
-  }
+  },
 }
 
 // Templates API
@@ -679,7 +701,7 @@ export const templates = {
       .delete()
       .eq('id', id)
     return { error }
-  }
+  },
 }
 
 // Admin API
@@ -689,52 +711,54 @@ export const admin = {
       // Get total users
       const { count: totalUsers, error: usersError } = await supabase
         .from('profiles')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
 
-      if (usersError) throw usersError;
+      if (usersError) throw usersError
 
       // Get total prompts
       const { count: totalPrompts, error: promptsError } = await supabase
         .from('prompts')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
 
-      if (promptsError) throw promptsError;
+      if (promptsError) throw promptsError
 
       // Get average success rate (hearts + saves) / view_count
       const { data: successData, error: successError } = await supabase
         .from('prompts')
         .select('hearts, save_count, view_count')
-        .gt('view_count', 0);
+        .gt('view_count', 0)
 
-      if (successError) throw successError;
+      if (successError) throw successError
 
-      const avgSuccessRate = successData && successData.length > 0
-        ? successData.reduce((acc, prompt) => {
-            const successVotes = (prompt.hearts || 0) + (prompt.save_count || 0);
-            return acc + (successVotes / prompt.view_count);
-          }, 0) / successData.length
-        : 0;
+      const avgSuccessRate =
+        successData && successData.length > 0
+          ? successData.reduce((acc: number, prompt: any) => {
+              const successVotes =
+                (prompt.hearts || 0) + (prompt.save_count || 0)
+              return acc + successVotes / (prompt.view_count || 1)
+            }, 0) / successData.length
+          : 0
 
       // Get monthly revenue (assuming subscription amounts are stored somewhere)
       // For now, we'll count active subscriptions as a proxy
       const { count: monthlyRevenue, error: revenueError } = await supabase
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
+        .eq('status', 'active')
 
-      if (revenueError) throw revenueError;
+      if (revenueError) throw revenueError
 
       return {
         data: {
           totalUsers: totalUsers || 0,
           totalPrompts: totalPrompts || 0,
           avgSuccessRate: Math.round(avgSuccessRate * 100) / 100, // Round to 2 decimal places
-          monthlyRevenue: monthlyRevenue || 0
+          monthlyRevenue: monthlyRevenue || 0,
         },
-        error: null
-      };
+        error: null,
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -746,9 +770,9 @@ export const admin = {
         .select('created_at')
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
-        .order('created_at');
+        .order('created_at')
 
-      if (userError) throw userError;
+      if (userError) throw userError
 
       // Get prompt creations over time
       const { data: promptTrends, error: promptError } = await supabase
@@ -756,9 +780,9 @@ export const admin = {
         .select('created_at')
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
-        .order('created_at');
+        .order('created_at')
 
-      if (promptError) throw promptError;
+      if (promptError) throw promptError
 
       // Get success votes (hearts + saves) over time
       const { data: successTrends, error: successError } = await supabase
@@ -766,26 +790,26 @@ export const admin = {
         .select('created_at')
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
-        .order('created_at');
+        .order('created_at')
 
-      if (successError) throw successError;
+      if (successError) throw successError
 
       const saveTrends = await supabase
         .from('saves')
         .select('created_at')
         .gte('created_at', dateRange.start)
         .lte('created_at', dateRange.end)
-        .order('created_at');
+        .order('created_at')
 
       // Group by date
       const groupByDate = (data: any[], dateField: string) => {
-        const grouped: { [key: string]: number } = {};
-        data.forEach(item => {
-          const date = new Date(item[dateField]).toISOString().split('T')[0];
-          grouped[date] = (grouped[date] || 0) + 1;
-        });
-        return Object.entries(grouped).map(([date, count]) => ({ date, count }));
-      };
+        const grouped: { [key: string]: number } = {}
+        data.forEach((item: any) => {
+          const date = new Date(item[dateField]).toISOString().split('T')[0]
+          grouped[date] = (grouped[date] || 0) + 1
+        })
+        return Object.entries(grouped).map(([date, count]) => ({ date, count }))
+      }
 
       return {
         data: {
@@ -793,21 +817,26 @@ export const admin = {
           promptCreations: groupByDate(promptTrends || [], 'created_at'),
           successVotes: [
             ...groupByDate(successTrends || [], 'created_at'),
-            ...(saveTrends.data ? groupByDate(saveTrends.data, 'created_at') : [])
-          ].reduce((acc, curr) => {
-            const existing = acc.find(item => item.date === curr.date);
-            if (existing) {
-              existing.count += curr.count;
-            } else {
-              acc.push(curr);
-            }
-            return acc;
-          }, [] as { date: string; count: number }[])
+            ...(saveTrends.data
+              ? groupByDate(saveTrends.data, 'created_at')
+              : []),
+          ].reduce(
+            (acc, curr) => {
+              const existing = acc.find(item => item.date === curr.date)
+              if (existing) {
+                existing.count += curr.count
+              } else {
+                acc.push(curr)
+              }
+              return acc
+            },
+            [] as { date: string; count: number }[]
+          ),
         },
-        error: null
-      };
+        error: null,
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -817,98 +846,108 @@ export const admin = {
       const { count: moderationQueue, error: moderationError } = await supabase
         .from('prompts')
         .select('*', { count: 'exact', head: true })
-        .eq('visibility', 'unlisted');
+        .eq('visibility', 'unlisted')
 
-      if (moderationError) throw moderationError;
+      if (moderationError) throw moderationError
 
       // Get failed payments (past_due subscriptions)
       const { count: failedPayments, error: paymentError } = await supabase
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'past_due');
+        .eq('status', 'past_due')
 
-      if (paymentError) throw paymentError;
+      if (paymentError) throw paymentError
 
       // System errors - placeholder for now (could be from error logs table)
-      const systemErrors = 0;
+      const systemErrors = 0
 
       return {
         data: {
           moderationQueue: moderationQueue || 0,
           failedPayments: failedPayments || 0,
-          systemErrors
+          systemErrors,
         },
-        error: null
-      };
+        error: null,
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   // User Management APIs
   getUsers: async (filters?: {
-    search?: string;
-    role?: string;
-    status?: 'active' | 'banned' | 'disabled';
-    limit?: number;
-    offset?: number;
+    search?: string
+    role?: string
+    status?: 'active' | 'banned' | 'disabled'
+    limit?: number
+    offset?: number
   }) => {
     try {
       let query = supabase
         .from('profiles')
-        .select(`
+        .select(
+          `
           *,
           subscriptions (
             status,
             plan
           )
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order('created_at', { ascending: false })
 
       if (filters?.search) {
-        query = query.or(`username.ilike.%${filters.search}%,name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+        query = query.or(
+          `username.ilike.%${filters.search}%,name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+        )
       }
 
       if (filters?.role) {
-        query = query.eq('role', filters.role);
+        query = query.eq('role', filters.role)
       }
 
       if (filters?.status) {
         if (filters.status === 'banned') {
-          query = query.eq('is_banned', true);
+          query = query.eq('is_banned', true)
         } else if (filters.status === 'disabled') {
-          query = query.eq('is_disabled', true);
+          query = query.eq('is_disabled', true)
         } else if (filters.status === 'active') {
-          query = query.eq('is_banned', false).eq('is_disabled', false);
+          query = query.eq('is_banned', false).eq('is_disabled', false)
         }
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit)
       }
 
       if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null, count };
+      return { data, error: null, count }
     } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
+      return { data: null, error: error.message, count: 0 }
     }
   },
 
-  updateUserProfile: async (userId: string, updates: Partial<Tables['profiles']['Update']>) => {
+  updateUserProfile: async (
+    userId: string,
+    updates: Partial<Tables['profiles']['Update']>
+  ) => {
     const { data, error } = await supabase
       .from('profiles')
       .update(updates)
       .eq('id', userId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   updateUserRole: async (userId: string, role: 'general' | 'pro' | 'admin') => {
@@ -917,8 +956,8 @@ export const admin = {
       .update({ role })
       .eq('id', userId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   banUser: async (userId: string, reason?: string) => {
@@ -927,12 +966,12 @@ export const admin = {
       .update({
         is_banned: true,
         ban_reason: reason,
-        banned_at: new Date().toISOString()
+        banned_at: new Date().toISOString(),
       })
       .eq('id', userId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   unbanUser: async (userId: string) => {
@@ -941,12 +980,12 @@ export const admin = {
       .update({
         is_banned: false,
         ban_reason: null,
-        banned_at: null
+        banned_at: null,
       })
       .eq('id', userId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   disableUser: async (userId: string, reason?: string) => {
@@ -955,12 +994,12 @@ export const admin = {
       .update({
         is_disabled: true,
         disable_reason: reason,
-        disabled_at: new Date().toISOString()
+        disabled_at: new Date().toISOString(),
       })
       .eq('id', userId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   enableUser: async (userId: string) => {
@@ -969,12 +1008,12 @@ export const admin = {
       .update({
         is_disabled: false,
         disable_reason: null,
-        disabled_at: null
+        disabled_at: null,
       })
       .eq('id', userId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   // Content Moderation APIs
@@ -982,7 +1021,8 @@ export const admin = {
     try {
       const { data, error } = await supabase
         .from('prompts')
-        .select(`
+        .select(
+          `
           *,
           profiles:user_id (
             id,
@@ -994,15 +1034,16 @@ export const admin = {
             twitter
           ),
           prompt_images (*)
-        `)
+        `
+        )
         .eq('visibility', 'unlisted')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -1012,26 +1053,26 @@ export const admin = {
       .update({ visibility: 'public' })
       .eq('id', promptId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   removePrompt: async (promptId: string) => {
-    const { error } = await supabase
-      .from('prompts')
-      .delete()
-      .eq('id', promptId);
-    return { error };
+    const { error } = await supabase.from('prompts').delete().eq('id', promptId)
+    return { error }
   },
 
-  updatePrompt: async (promptId: string, updates: Partial<Tables['prompts']['Update']>) => {
+  updatePrompt: async (
+    promptId: string,
+    updates: Partial<Tables['prompts']['Update']>
+  ) => {
     const { data, error } = await supabase
       .from('prompts')
       .update(updates)
       .eq('id', promptId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   bulkApprovePrompts: async (promptIds: string[]) => {
@@ -1039,223 +1080,231 @@ export const admin = {
       .from('prompts')
       .update({ visibility: 'public' })
       .in('id', promptIds)
-      .select();
-    return { data, error };
+      .select()
+    return { data, error }
   },
 
   bulkRemovePrompts: async (promptIds: string[]) => {
     const { error } = await supabase
       .from('prompts')
       .delete()
-      .in('id', promptIds);
-    return { error };
+      .in('id', promptIds)
+    return { error }
   },
 
   // Analytics API functions
   getAnalyticsMetrics: async (filters?: {
-    dateRange?: { start: string; end: string };
-    planType?: string;
-    category?: string;
+    dateRange?: { start: string; end: string }
+    planType?: string
+    category?: string
   }) => {
     try {
       // Get total users with optional plan filter
-      let usersQuery = supabase.from('profiles').select('*', { count: 'exact', head: true });
+      let usersQuery = supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
       if (filters?.planType && filters.planType !== 'all') {
-        usersQuery = usersQuery.eq('subscription_plan', filters.planType);
+        usersQuery = usersQuery.eq('subscription_plan', filters.planType)
       }
-      const { count: totalUsers, error: usersError } = await usersQuery;
-      if (usersError) throw usersError;
+      const { count: totalUsers, error: usersError } = await usersQuery
+      if (usersError) throw usersError
 
       // Get total prompts with optional category filter
-      let promptsQuery = supabase.from('prompts').select('*', { count: 'exact', head: true });
+      let promptsQuery = supabase
+        .from('prompts')
+        .select('*', { count: 'exact', head: true })
       if (filters?.category && filters.category !== 'all') {
-        promptsQuery = promptsQuery.eq('category', filters.category);
+        promptsQuery = promptsQuery.eq('category', filters.category)
       }
-      const { count: totalPrompts, error: promptsError } = await promptsQuery;
-      if (promptsError) throw promptsError;
+      const { count: totalPrompts, error: promptsError } = await promptsQuery
+      if (promptsError) throw promptsError
 
       // Calculate monthly active users (users with activity in current month)
-      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-      const monthStart = `${currentMonth}-01`;
-      const nextMonth = new Date(currentMonth + '-01');
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-      const monthEnd = nextMonth.toISOString().slice(0, 10);
+      const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM format
+      const monthStart = `${currentMonth}-01`
+      const nextMonth = new Date(currentMonth + '-01')
+      nextMonth.setMonth(nextMonth.getMonth() + 1)
+      const monthEnd = nextMonth.toISOString().slice(0, 10)
 
       // Get distinct users who created prompts this month
       const { data: promptUsers, error: promptUsersError } = await supabase
         .from('prompts')
         .select('user_id')
         .gte('created_at', monthStart)
-        .lt('created_at', monthEnd);
-      if (promptUsersError) throw promptUsersError;
+        .lt('created_at', monthEnd)
+      if (promptUsersError) throw promptUsersError
 
       // Get distinct users who hearted prompts this month
       const { data: heartUsers, error: heartUsersError } = await supabase
         .from('hearts')
         .select('user_id')
         .gte('created_at', monthStart)
-        .lt('created_at', monthEnd);
-      if (heartUsersError) throw heartUsersError;
+        .lt('created_at', monthEnd)
+      if (heartUsersError) throw heartUsersError
 
       // Get distinct users who saved prompts this month
       const { data: saveUsers, error: saveUsersError } = await supabase
         .from('saves')
         .select('user_id')
         .gte('created_at', monthStart)
-        .lt('created_at', monthEnd);
-      if (saveUsersError) throw saveUsersError;
+        .lt('created_at', monthEnd)
+      if (saveUsersError) throw saveUsersError
 
       // Get distinct users who commented this month
       const { data: commentUsers, error: commentUsersError } = await supabase
         .from('comments')
         .select('user_id')
         .gte('created_at', monthStart)
-        .lt('created_at', monthEnd);
-      if (commentUsersError) throw commentUsersError;
+        .lt('created_at', monthEnd)
+      if (commentUsersError) throw commentUsersError
 
       // Combine all active users
-      const activeUserIds = new Set([
-        ...(promptUsers || []).map(p => p.user_id),
-        ...(heartUsers || []).map(h => h.user_id),
-        ...(saveUsers || []).map(s => s.user_id),
-        ...(commentUsers || []).map(c => c.user_id)
-      ]);
+      const activeUserIds = new Set<string>([
+        ...(promptUsers || []).map((p: any) => p.user_id as string),
+        ...(heartUsers || []).map((h: any) => h.user_id as string),
+        ...(saveUsers || []).map((s: any) => s.user_id as string),
+        ...(commentUsers || []).map((c: any) => c.user_id as string),
+      ])
 
-      const monthlyActiveUsers = activeUserIds.size;
+      const monthlyActiveUsers = activeUserIds.size
 
       // Get average success rate
       let successQuery = supabase
         .from('prompts')
         .select('hearts, save_count, view_count')
-        .gt('view_count', 0);
+        .gt('view_count', 0)
       if (filters?.category && filters.category !== 'all') {
-        successQuery = successQuery.eq('category', filters.category);
+        successQuery = successQuery.eq('category', filters.category)
       }
-      const { data: successData, error: successError } = await successQuery;
-      if (successError) throw successError;
+      const { data: successData, error: successError } = await successQuery
+      if (successError) throw successError
 
-      const avgSuccessRate = successData && successData.length > 0
-        ? successData.reduce((acc, prompt) => {
-            const successVotes = (prompt.hearts || 0) + (prompt.save_count || 0);
-            return acc + (successVotes / prompt.view_count);
-          }, 0) / successData.length
-        : 0;
+      const avgSuccessRate =
+        successData && successData.length > 0
+          ? successData.reduce((acc: number, prompt: any) => {
+              const successVotes =
+                (prompt.hearts || 0) + (prompt.save_count || 0)
+              return acc + successVotes / (prompt.view_count || 1)
+            }, 0) / successData.length
+          : 0
 
       return {
         data: {
           totalUsers: totalUsers || 0,
           totalPrompts: totalPrompts || 0,
           monthlyActiveUsers,
-          avgSuccessRate: Math.round(avgSuccessRate * 100) / 100
+          avgSuccessRate: Math.round(avgSuccessRate * 100) / 100,
         },
-        error: null
-      };
+        error: null,
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   getAnalyticsTrends: async (filters?: {
-    dateRange?: { start: string; end: string };
-    planType?: string;
-    category?: string;
+    dateRange?: { start: string; end: string }
+    planType?: string
+    category?: string
   }) => {
     try {
       const dateRange = filters?.dateRange || {
-        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
-      };
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        end: new Date().toISOString().split('T')[0],
+      }
 
       // Get prompts by day
       let promptsQuery = supabase
         .from('prompts')
         .select('created_at')
         .gte('created_at', dateRange.start)
-        .lte('created_at', dateRange.end);
+        .lte('created_at', dateRange.end)
       if (filters?.category && filters.category !== 'all') {
-        promptsQuery = promptsQuery.eq('category', filters.category);
+        promptsQuery = promptsQuery.eq('category', filters.category)
       }
-      const { data: promptsData, error: promptsError } = await promptsQuery;
-      if (promptsError) throw promptsError;
+      const { data: promptsData, error: promptsError } = await promptsQuery
+      if (promptsError) throw promptsError
 
       // Get success votes (hearts + saves) by day
       const { data: heartsData, error: heartsError } = await supabase
         .from('hearts')
         .select('created_at')
         .gte('created_at', dateRange.start)
-        .lte('created_at', dateRange.end);
+        .lte('created_at', dateRange.end)
 
-      if (heartsError) throw heartsError;
+      if (heartsError) throw heartsError
 
       const { data: savesData, error: savesError } = await supabase
         .from('saves')
         .select('created_at')
         .gte('created_at', dateRange.start)
-        .lte('created_at', dateRange.end);
+        .lte('created_at', dateRange.end)
 
-      if (savesError) throw savesError;
+      if (savesError) throw savesError
 
       // Group by date helper
       const groupByDate = (data: any[], dateField: string) => {
-        const grouped: { [key: string]: number } = {};
+        const grouped: { [key: string]: number } = {}
         data.forEach(item => {
-          const date = new Date(item[dateField]).toISOString().split('T')[0];
-          grouped[date] = (grouped[date] || 0) + 1;
-        });
-        return Object.entries(grouped).map(([date, count]) => ({ date, count }));
-      };
+          const date = new Date(item[dateField]).toISOString().split('T')[0]
+          grouped[date] = (grouped[date] || 0) + 1
+        })
+        return Object.entries(grouped).map(([date, count]) => ({ date, count }))
+      }
 
       // Get monthly active users for the last 12 months
-      const monthlyActiveUsers = [];
+      const monthlyActiveUsers = []
       for (let i = 11; i >= 0; i--) {
-        const targetDate = new Date();
-        targetDate.setMonth(targetDate.getMonth() - i);
-        const monthStr = targetDate.toISOString().slice(0, 7);
-        const monthStart = `${monthStr}-01`;
-        const nextMonth = new Date(monthStart);
-        nextMonth.setMonth(nextMonth.getMonth() + 1);
-        const monthEnd = nextMonth.toISOString().slice(0, 10);
+        const targetDate = new Date()
+        targetDate.setMonth(targetDate.getMonth() - i)
+        const monthStr = targetDate.toISOString().slice(0, 7)
+        const monthStart = `${monthStr}-01`
+        const nextMonth = new Date(monthStart)
+        nextMonth.setMonth(nextMonth.getMonth() + 1)
+        const monthEnd = nextMonth.toISOString().slice(0, 10)
 
         // Get distinct users who created prompts this month
         const { data: promptUsers } = await supabase
           .from('prompts')
           .select('user_id')
           .gte('created_at', monthStart)
-          .lt('created_at', monthEnd);
+          .lt('created_at', monthEnd)
 
         // Get distinct users who hearted prompts this month
         const { data: heartUsers } = await supabase
           .from('hearts')
           .select('user_id')
           .gte('created_at', monthStart)
-          .lt('created_at', monthEnd);
+          .lt('created_at', monthEnd)
 
         // Get distinct users who saved prompts this month
         const { data: saveUsers } = await supabase
           .from('saves')
           .select('user_id')
           .gte('created_at', monthStart)
-          .lt('created_at', monthEnd);
+          .lt('created_at', monthEnd)
 
         // Get distinct users who commented this month
         const { data: commentUsers } = await supabase
           .from('comments')
           .select('user_id')
           .gte('created_at', monthStart)
-          .lt('created_at', monthEnd);
+          .lt('created_at', monthEnd)
 
         // Combine all active users
-        const activeUserIds = new Set([
-          ...(promptUsers || []).map(p => p.user_id),
-          ...(heartUsers || []).map(h => h.user_id),
-          ...(saveUsers || []).map(s => s.user_id),
-          ...(commentUsers || []).map(c => c.user_id)
-        ]);
+        const activeUserIds = new Set<string>([
+          ...(promptUsers || []).map((p: any) => p.user_id as string),
+          ...(heartUsers || []).map((h: any) => h.user_id as string),
+          ...(saveUsers || []).map((s: any) => s.user_id as string),
+          ...(commentUsers || []).map((c: any) => c.user_id as string),
+        ])
 
         monthlyActiveUsers.push({
           month: monthStr,
-          count: activeUserIds.size
-        });
+          count: activeUserIds.size,
+        })
       }
 
       return {
@@ -1264,36 +1313,43 @@ export const admin = {
           monthlyActiveUsers,
           successVotes: [
             ...groupByDate(heartsData || [], 'created_at'),
-            ...(savesData ? groupByDate(savesData, 'created_at') : [])
-          ].reduce((acc, curr) => {
-            const existing = acc.find(item => item.date === curr.date);
-            if (existing) {
-              existing.count += curr.count;
-            } else {
-              acc.push(curr);
-            }
-            return acc;
-          }, [] as { date: string; count: number }[])
+            ...(savesData ? groupByDate(savesData, 'created_at') : []),
+          ].reduce(
+            (
+              acc: { date: string; count: number }[],
+              curr: { date: string; count: number }
+            ) => {
+              const existing = acc.find(item => item.date === curr.date)
+              if (existing) {
+                existing.count += curr.count
+              } else {
+                acc.push(curr)
+              }
+              return acc
+            },
+            [] as { date: string; count: number }[]
+          ),
         },
-        error: null
-      };
+        error: null,
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   // Subscription Management APIs
   getAllSubscriptions: async (filters?: {
-    search?: string;
-    plan?: 'free' | 'pro';
-    status?: 'active' | 'cancelled' | 'past_due';
-    limit?: number;
-    offset?: number;
+    search?: string
+    plan?: 'free' | 'pro'
+    status?: 'active' | 'cancelled' | 'past_due'
+    limit?: number
+    offset?: number
   }) => {
     try {
       let query = supabase
         .from('subscriptions')
-        .select(`
+        .select(
+          `
           *,
           profiles:user_id (
             id,
@@ -1301,36 +1357,42 @@ export const admin = {
             name,
             email
           )
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order('created_at', { ascending: false })
 
       if (filters?.search) {
-        query = query.or(`profiles.username.ilike.%${filters.search}%,profiles.name.ilike.%${filters.search}%,profiles.email.ilike.%${filters.search}%`);
+        query = query.or(
+          `profiles.username.ilike.%${filters.search}%,profiles.name.ilike.%${filters.search}%,profiles.email.ilike.%${filters.search}%`
+        )
       }
 
       if (filters?.plan) {
-        query = query.eq('plan', filters.plan);
+        query = query.eq('plan', filters.plan)
       }
 
       if (filters?.status) {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status)
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit)
       }
 
       if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null, count };
+      return { data, error: null, count }
     } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
+      return { data: null, error: error.message, count: 0 }
     }
   },
 
@@ -1338,7 +1400,8 @@ export const admin = {
     try {
       const { data, error } = await supabase
         .from('subscriptions')
-        .select(`
+        .select(
+          `
           *,
           profiles:user_id (
             id,
@@ -1346,47 +1409,51 @@ export const admin = {
             name,
             email
           )
-        `)
+        `
+        )
         .eq('id', subscriptionId)
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateSubscriptionPlan: async (subscriptionId: string, newPlan: 'free' | 'pro') => {
+  updateSubscriptionPlan: async (
+    subscriptionId: string,
+    newPlan: 'free' | 'pro'
+  ) => {
     try {
       // Update subscription plan in database
       const { data, error } = await supabase
         .from('subscriptions')
         .update({
           plan: newPlan,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', subscriptionId)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
       // Also update profile subscription_plan
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           subscription_plan: newPlan,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', data.user_id);
+        .eq('id', data.user_id)
 
-      if (profileError) throw profileError;
+      if (profileError) throw profileError
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -1398,28 +1465,28 @@ export const admin = {
           status: 'cancelled',
           cancelled_at: new Date().toISOString(),
           cancel_reason: reason,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', subscriptionId)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
       // Update profile status
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           subscription_status: 'cancelled',
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq('id', data.user_id);
+        .eq('id', data.user_id)
 
-      if (profileError) throw profileError;
+      if (profileError) throw profileError
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -1428,27 +1495,29 @@ export const admin = {
       const { data, error } = await supabase
         .from('subscriptions')
         .update({
-          current_period_end: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date().toISOString()
+          current_period_end: new Date(
+            Date.now() + days * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', subscriptionId)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   // Invoice Management APIs (placeholder - would integrate with Stripe)
-  getAllInvoices: async (filters?: {
-    search?: string;
-    status?: 'paid' | 'open' | 'void' | 'draft';
-    limit?: number;
-    offset?: number;
+  getAllInvoices: async (_filters?: {
+    search?: string
+    status?: 'paid' | 'open' | 'void' | 'draft'
+    limit?: number
+    offset?: number
   }) => {
     try {
       // This would typically fetch from Stripe API
@@ -1457,24 +1526,28 @@ export const admin = {
         data: [],
         error: null,
         count: 0,
-        message: 'Invoice integration requires Stripe webhook setup'
-      };
+        message: 'Invoice integration requires Stripe webhook setup',
+      }
     } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
+      return { data: null, error: error.message, count: 0 }
     }
   },
 
-  processRefund: async (invoiceId: string, amount?: number, reason?: string) => {
+  processRefund: async (
+    _invoiceId: string,
+    _amount?: number,
+    _reason?: string
+  ) => {
     try {
       // This would call Stripe API to process refund
       // For now, return placeholder
       return {
         data: null,
         error: null,
-        message: 'Refund processing requires Stripe integration'
-      };
+        message: 'Refund processing requires Stripe integration',
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -1485,64 +1558,65 @@ export const admin = {
       return {
         data: [],
         error: null,
-        message: 'Coupon management requires Stripe integration'
-      };
+        message: 'Coupon management requires Stripe integration',
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  createCoupon: async (couponData: any) => {
+  createCoupon: async (_couponData: any) => {
     try {
       // This would create coupon in Stripe
       return {
         data: null,
         error: null,
-        message: 'Coupon creation requires Stripe integration'
-      };
+        message: 'Coupon creation requires Stripe integration',
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateCoupon: async (couponId: string, updates: any) => {
+  updateCoupon: async (_couponId: string, _updates: any) => {
     try {
       // This would update coupon in Stripe
       return {
         data: null,
         error: null,
-        message: 'Coupon update requires Stripe integration'
-      };
+        message: 'Coupon update requires Stripe integration',
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  deleteCoupon: async (couponId: string) => {
+  deleteCoupon: async (_couponId: string) => {
     try {
       // This would delete coupon in Stripe
       return {
         data: null,
         error: null,
-        message: 'Coupon deletion requires Stripe integration'
-      };
+        message: 'Coupon deletion requires Stripe integration',
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   // Invite & Affiliate Management APIs
   getAllInviteCodes: async (filters?: {
-    search?: string;
-    status?: 'pending' | 'accepted' | 'expired' | 'revoked' | 'waitlist';
-    type?: 'single' | 'reusable';
-    limit?: number;
-    offset?: number;
+    search?: string
+    status?: 'pending' | 'accepted' | 'expired' | 'revoked' | 'waitlist'
+    type?: 'single' | 'reusable'
+    limit?: number
+    offset?: number
   }) => {
     try {
       let query = supabase
         .from('invitees')
-        .select(`
+        .select(
+          `
           *,
           profiles:invited_by (
             id,
@@ -1550,75 +1624,86 @@ export const admin = {
             name,
             email
           )
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order('created_at', { ascending: false })
 
       if (filters?.search) {
-        query = query.or(`invite_code.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
+        query = query.or(
+          `invite_code.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+        )
       }
 
       if (filters?.status) {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status)
       }
 
       if (filters?.type) {
         if (filters.type === 'reusable') {
-          query = query.is('email', null);
+          query = query.is('email', null)
         } else if (filters.type === 'single') {
-          query = query.not('email', 'is', null);
+          query = query.not('email', 'is', null)
         }
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit)
       }
 
       if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null, count };
+      return { data, error: null, count }
     } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
+      return { data: null, error: error.message, count: 0 }
     }
   },
 
-  generateInviteCodes: async (count: number, options?: {
-    expiresInDays?: number;
-    invitedBy?: string;
-    isReusable?: boolean;
-  }) => {
+  generateInviteCodes: async (
+    count: number,
+    options?: {
+      expiresInDays?: number
+      invitedBy?: string
+      isReusable?: boolean
+    }
+  ) => {
     try {
-      const codes = [];
+      const codes = []
       const expiresAt = options?.expiresInDays
-        ? new Date(Date.now() + options.expiresInDays * 24 * 60 * 60 * 1000).toISOString()
-        : null;
+        ? new Date(
+            Date.now() + options.expiresInDays * 24 * 60 * 60 * 1000
+          ).toISOString()
+        : null
 
       for (let i = 0; i < count; i++) {
-        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const code = Math.random().toString(36).substring(2, 10).toUpperCase()
         codes.push({
           invite_code: code,
           email: options?.isReusable ? null : undefined,
           invited_by: options?.invitedBy || null,
           expires_at: expiresAt,
-          status: 'pending'
-        });
+          status: 'pending',
+        })
       }
 
       const { data, error } = await supabase
         .from('invitees')
         .insert(codes)
-        .select();
+        .select()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -1628,31 +1713,35 @@ export const admin = {
       .update({ status: 'revoked' })
       .eq('id', inviteId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
-  updateInviteLimits: async (userId: string, limits: { invites_remaining: number }) => {
+  updateInviteLimits: async (
+    userId: string,
+    limits: { invites_remaining: number }
+  ) => {
     const { data, error } = await supabase
       .from('profiles')
       .update(limits)
       .eq('id', userId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   getAllAffiliates: async (filters?: {
-    search?: string;
-    tier?: 'bronze' | 'silver' | 'gold';
-    status?: 'active' | 'inactive';
-    limit?: number;
-    offset?: number;
+    search?: string
+    tier?: 'bronze' | 'silver' | 'gold'
+    status?: 'active' | 'inactive'
+    limit?: number
+    offset?: number
   }) => {
     try {
       let query = supabase
         .from('affiliates')
-        .select(`
+        .select(
+          `
           *,
           profiles:user_id (
             id,
@@ -1660,95 +1749,107 @@ export const admin = {
             name,
             email
           )
-        `)
-        .order('created_at', { ascending: false });
+        `
+        )
+        .order('created_at', { ascending: false })
 
       if (filters?.search) {
-        query = query.or(`referral_code.ilike.%${filters.search}%,profiles.username.ilike.%${filters.search}%,profiles.name.ilike.%${filters.search}%`);
+        query = query.or(
+          `referral_code.ilike.%${filters.search}%,profiles.username.ilike.%${filters.search}%,profiles.name.ilike.%${filters.search}%`
+        )
       }
 
       if (filters?.tier) {
-        query = query.eq('tier', filters.tier);
+        query = query.eq('tier', filters.tier)
       }
 
       if (filters?.status) {
         if (filters.status === 'active') {
-          query = query.eq('profiles.is_affiliate', true);
+          query = query.eq('profiles.is_affiliate', true)
         } else if (filters.status === 'inactive') {
-          query = query.eq('profiles.is_affiliate', false);
+          query = query.eq('profiles.is_affiliate', false)
         }
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit)
       }
 
       if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 10) - 1
+        )
       }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null, count };
+      return { data, error: null, count }
     } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
+      return { data: null, error: error.message, count: 0 }
     }
   },
 
   approveAffiliate: async (userId: string) => {
     try {
       // Generate unique referral code
-      const referralCode = `REF${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const referralCode = `REF${Math.random().toString(36).substring(2, 8).toUpperCase()}`
 
       // Create affiliate record
       const { data: affiliateData, error: affiliateError } = await supabase
         .from('affiliates')
         .insert({
           user_id: userId,
-          referral_code: referralCode
+          referral_code: referralCode,
         })
         .select()
-        .single();
+        .single()
 
-      if (affiliateError) throw affiliateError;
+      if (affiliateError) throw affiliateError
 
       // Update profile
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ is_affiliate: true })
-        .eq('id', userId);
+        .eq('id', userId)
 
-      if (profileError) throw profileError;
+      if (profileError) throw profileError
 
-      return { data: affiliateData, error: null };
+      return { data: affiliateData, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateAffiliateTier: async (affiliateId: string, tier: 'bronze' | 'silver' | 'gold') => {
+  updateAffiliateTier: async (
+    affiliateId: string,
+    tier: 'bronze' | 'silver' | 'gold'
+  ) => {
     const { data, error } = await supabase
       .from('affiliates')
       .update({ tier })
       .eq('id', affiliateId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   getAffiliateAnalytics: async (dateRange?: { start: string; end: string }) => {
     try {
       const dateFilter = dateRange || {
-        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
-      };
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split('T')[0],
+        end: new Date().toISOString().split('T')[0],
+      }
 
       // Get referral conversions
       const { data: referrals, error: referralsError } = await supabase
         .from('affiliate_referrals')
-        .select(`
+        .select(
+          `
           *,
           affiliates (
             referral_code,
@@ -1762,33 +1863,43 @@ export const admin = {
             name,
             created_at
           )
-        `)
+        `
+        )
         .gte('created_at', dateFilter.start)
         .lte('created_at', dateFilter.end)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (referralsError) throw referralsError;
+      if (referralsError) throw referralsError
 
       // Get affiliate stats
-      const { data: affiliates, error: affiliatesError } = await supabase
-        .from('affiliates')
-        .select(`
+      const { data: affiliates, error: affiliatesError } = await supabase.from(
+        'affiliates'
+      ).select(`
           *,
           profiles:user_id (
             username,
             name
           )
-        `);
+        `)
 
-      if (affiliatesError) throw affiliatesError;
+      if (affiliatesError) throw affiliatesError
 
       // Calculate conversion rates and earnings
-      const totalReferrals = referrals?.length || 0;
-      const paidReferrals = referrals?.filter(r => r.status === 'paid').length || 0;
-      const conversionRate = totalReferrals > 0 ? (paidReferrals / totalReferrals) * 100 : 0;
+      const totalReferrals = referrals?.length || 0
+      const paidReferrals =
+        referrals?.filter((r: any) => r.status === 'paid').length || 0
+      const conversionRate =
+        totalReferrals > 0 ? (paidReferrals / totalReferrals) * 100 : 0
 
-      const totalEarnings = referrals?.reduce((sum, r) => sum + (r.commission || 0), 0) || 0;
-      const pendingEarnings = referrals?.filter(r => r.status === 'pending').reduce((sum, r) => sum + (r.commission || 0), 0) || 0;
+      const totalEarnings =
+        referrals?.reduce(
+          (sum: number, r: any) => sum + (r.commission || 0),
+          0
+        ) || 0
+      const pendingEarnings =
+        referrals
+          ?.filter((r: any) => r.status === 'pending')
+          .reduce((sum: number, r: any) => sum + (r.commission || 0), 0) || 0
 
       return {
         data: {
@@ -1798,12 +1909,12 @@ export const admin = {
           totalEarnings,
           pendingEarnings,
           referrals: referrals || [],
-          affiliates: affiliates || []
+          affiliates: affiliates || [],
         },
-        error: null
-      };
+        error: null,
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -1811,7 +1922,8 @@ export const admin = {
     try {
       const { data, error } = await supabase
         .from('affiliate_referrals')
-        .select(`
+        .select(
+          `
           *,
           affiliates (
             referral_code,
@@ -1820,15 +1932,16 @@ export const admin = {
               name
             )
           )
-        `)
+        `
+        )
         .eq('status', 'pending')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -1837,12 +1950,12 @@ export const admin = {
       .from('affiliate_referrals')
       .update({
         status: 'paid',
-        paid_at: new Date().toISOString()
+        paid_at: new Date().toISOString(),
       })
       .eq('id', referralId)
       .select()
-      .single();
-    return { data, error };
+      .single()
+    return { data, error }
   },
 
   getCommissionSettings: async () => {
@@ -1855,21 +1968,21 @@ export const admin = {
           silver: 35,
           gold: 40,
           minimumPayout: 50,
-          payoutDelayDays: 60
+          payoutDelayDays: 60,
         },
-        error: null
-      };
+        error: null,
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   updateCommissionSettings: async (settings: {
-    bronze?: number;
-    silver?: number;
-    gold?: number;
-    minimumPayout?: number;
-    payoutDelayDays?: number;
+    bronze?: number
+    silver?: number
+    gold?: number
+    minimumPayout?: number
+    payoutDelayDays?: number
   }) => {
     try {
       // For now, just return success
@@ -1877,59 +1990,62 @@ export const admin = {
       return {
         data: settings,
         error: null,
-        message: 'Commission settings updated successfully'
-      };
+        message: 'Commission settings updated successfully',
+      }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   // System Logs & Health APIs
   getSystemLogs: async (filters?: {
-    level?: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
-    source?: 'frontend' | 'backend' | 'database' | 'api' | 'system' | 'external';
-    limit?: number;
-    offset?: number;
-    startDate?: string;
-    endDate?: string;
+    level?: 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+    source?: 'frontend' | 'backend' | 'database' | 'api' | 'system' | 'external'
+    limit?: number
+    offset?: number
+    startDate?: string
+    endDate?: string
   }) => {
     try {
       let query = supabase
         .from('system_logs')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
       if (filters?.level) {
-        query = query.eq('level', filters.level);
+        query = query.eq('level', filters.level)
       }
 
       if (filters?.source) {
-        query = query.eq('source', filters.source);
+        query = query.eq('source', filters.source)
       }
 
       if (filters?.startDate) {
-        query = query.gte('created_at', filters.startDate);
+        query = query.gte('created_at', filters.startDate)
       }
 
       if (filters?.endDate) {
-        query = query.lte('created_at', filters.endDate);
+        query = query.lte('created_at', filters.endDate)
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit)
       }
 
       if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 50) - 1
+        )
       }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null, count };
+      return { data, error: null, count }
     } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
+      return { data: null, error: error.message, count: 0 }
     }
   },
 
@@ -1938,17 +2054,24 @@ export const admin = {
       const { data, error } = await supabase
         .from('health_checks')
         .select('*')
-        .order('checked_at', { ascending: false });
+        .order('checked_at', { ascending: false })
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateHealthCheck: async (type: string, name: string, status: string, responseTime?: number, details?: any, errorMessage?: string) => {
+  updateHealthCheck: async (
+    type: string,
+    name: string,
+    status: string,
+    responseTime?: number,
+    details?: any,
+    errorMessage?: string
+  ) => {
     try {
       const { data, error } = await supabase.rpc('update_health_check', {
         p_type: type,
@@ -1956,71 +2079,76 @@ export const admin = {
         p_status: status,
         p_response_time_ms: responseTime,
         p_details: details || {},
-        p_error_message: errorMessage
-      });
+        p_error_message: errorMessage,
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   getBackgroundJobs: async (filters?: {
-    status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-    jobType?: string;
-    limit?: number;
-    offset?: number;
+    status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+    jobType?: string
+    limit?: number
+    offset?: number
   }) => {
     try {
       let query = supabase
         .from('background_jobs')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
       if (filters?.status) {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status)
       }
 
       if (filters?.jobType) {
-        query = query.eq('job_type', filters.jobType);
+        query = query.eq('job_type', filters.jobType)
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit)
       }
 
       if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || 50) - 1);
+        query = query.range(
+          filters.offset,
+          filters.offset + (filters.limit || 50) - 1
+        )
       }
 
-      const { data, error, count } = await query;
+      const { data, error, count } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null, count };
+      return { data, error: null, count }
     } catch (error: any) {
-      return { data: null, error: error.message, count: 0 };
+      return { data: null, error: error.message, count: 0 }
     }
   },
 
   triggerManualJob: async (jobType: string, parameters?: any) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { data: null, error: 'Not authenticated' };
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return { data: null, error: 'Not authenticated' }
 
       const { data, error } = await supabase.rpc('trigger_manual_job', {
         p_job_type: jobType,
         p_parameters: parameters || {},
-        p_created_by: user.id
-      });
+        p_created_by: user.id,
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -2029,61 +2157,61 @@ export const admin = {
       let query = supabase
         .from('job_history')
         .select('*')
-        .order('completed_at', { ascending: false });
+        .order('completed_at', { ascending: false })
 
       if (jobId) {
-        query = query.eq('job_id', jobId);
+        query = query.eq('job_id', jobId)
       }
 
       if (limit) {
-        query = query.limit(limit);
+        query = query.limit(limit)
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   getSystemMetrics: async (filters?: {
-    metricName?: string;
-    startDate?: string;
-    endDate?: string;
-    limit?: number;
+    metricName?: string
+    startDate?: string
+    endDate?: string
+    limit?: number
   }) => {
     try {
       let query = supabase
         .from('system_metrics')
         .select('*')
-        .order('collected_at', { ascending: false });
+        .order('collected_at', { ascending: false })
 
       if (filters?.metricName) {
-        query = query.eq('metric_name', filters.metricName);
+        query = query.eq('metric_name', filters.metricName)
       }
 
       if (filters?.startDate) {
-        query = query.gte('collected_at', filters.startDate);
+        query = query.gte('collected_at', filters.startDate)
       }
 
       if (filters?.endDate) {
-        query = query.lte('collected_at', filters.endDate);
+        query = query.lte('collected_at', filters.endDate)
       }
 
       if (filters?.limit) {
-        query = query.limit(filters.limit);
+        query = query.limit(filters.limit)
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -2095,63 +2223,71 @@ export const admin = {
         .from('email_templates')
         .select('*')
         .order('type', { ascending: true })
-        .order('name', { ascending: true });
+        .order('name', { ascending: true })
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   createEmailTemplate: async (template: {
-    type: 'welcome' | 'billing' | 'notification' | 'password_reset' | 'verification';
-    name: string;
-    subject: string;
-    html_content: string;
-    text_content?: string;
-    variables?: string[];
+    type:
+      | 'welcome'
+      | 'billing'
+      | 'notification'
+      | 'password_reset'
+      | 'verification'
+    name: string
+    subject: string
+    html_content: string
+    text_content?: string
+    variables?: string[]
   }) => {
     try {
       const { data, error } = await supabase
         .from('email_templates')
         .insert({
           ...template,
-          variables: template.variables || []
+          variables: template.variables || [],
         })
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateEmailTemplate: async (id: string, updates: Partial<{
-    name: string;
-    subject: string;
-    html_content: string;
-    text_content: string;
-    variables: string[];
-    is_active: boolean;
-  }>) => {
+  updateEmailTemplate: async (
+    id: string,
+    updates: Partial<{
+      name: string
+      subject: string
+      html_content: string
+      text_content: string
+      variables: string[]
+      is_active: boolean
+    }>
+  ) => {
     try {
       const { data, error } = await supabase
         .from('email_templates')
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -2160,45 +2296,47 @@ export const admin = {
       const { error } = await supabase
         .from('email_templates')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { error: null };
+      return { error: null }
     } catch (error: any) {
-      return { error: error.message };
+      return { error: error.message }
     }
   },
 
   // Feature Flags
-  getFeatureFlags: async (environment?: 'development' | 'staging' | 'production') => {
+  getFeatureFlags: async (
+    environment?: 'development' | 'staging' | 'production'
+  ) => {
     try {
       let query = supabase
         .from('feature_flags')
         .select('*')
-        .order('name', { ascending: true });
+        .order('name', { ascending: true })
 
       if (environment) {
-        query = query.eq('environment', environment);
+        query = query.eq('environment', environment)
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   createFeatureFlag: async (flag: {
-    name: string;
-    description?: string;
-    enabled: boolean;
-    environment: 'development' | 'staging' | 'production';
-    rollout_percentage?: number;
-    conditions?: any;
+    name: string
+    description?: string
+    enabled: boolean
+    environment: 'development' | 'staging' | 'production'
+    rollout_percentage?: number
+    conditions?: any
   }) => {
     try {
       const { data, error } = await supabase
@@ -2206,38 +2344,41 @@ export const admin = {
         .insert({
           ...flag,
           rollout_percentage: flag.rollout_percentage || 100,
-          conditions: flag.conditions || {}
+          conditions: flag.conditions || {},
         })
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateFeatureFlag: async (id: string, updates: Partial<{
-    description: string;
-    enabled: boolean;
-    rollout_percentage: number;
-    conditions: any;
-  }>) => {
+  updateFeatureFlag: async (
+    id: string,
+    updates: Partial<{
+      description: string
+      enabled: boolean
+      rollout_percentage: number
+      conditions: any
+    }>
+  ) => {
     try {
       const { data, error } = await supabase
         .from('feature_flags')
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
@@ -2246,140 +2387,154 @@ export const admin = {
       const { error } = await supabase
         .from('feature_flags')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { error: null };
+      return { error: null }
     } catch (error: any) {
-      return { error: error.message };
+      return { error: error.message }
     }
   },
 
   // API Keys
-  getApiKeys: async (environment?: 'development' | 'staging' | 'production') => {
+  getApiKeys: async (
+    environment?: 'development' | 'staging' | 'production'
+  ) => {
     try {
       let query = supabase
         .from('api_keys')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
       if (environment) {
-        query = query.eq('environment', environment);
+        query = query.eq('environment', environment)
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   createApiKey: async (keyData: {
-    name: string;
-    permissions: string[];
-    environment: 'development' | 'staging' | 'production';
-    expires_at?: string;
+    name: string
+    permissions: string[]
+    environment: 'development' | 'staging' | 'production'
+    expires_at?: string
   }) => {
     try {
       // Generate a secure API key
-      const apiKey = 'pk_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      const keyHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(apiKey));
-      const keyHashHex = Array.from(new Uint8Array(keyHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+      const apiKey =
+        'pk_' +
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15)
+      const keyHash = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(apiKey)
+      )
+      const keyHashHex = Array.from(new Uint8Array(keyHash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')
 
       const { data, error } = await supabase
         .from('api_keys')
         .insert({
           ...keyData,
           key_hash: keyHashHex,
-          permissions: keyData.permissions || []
+          permissions: keyData.permissions || [],
         })
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
       // Return the data with the plain key (only shown once)
-      return { data: { ...data, plain_key: apiKey }, error: null };
+      return { data: { ...data, plain_key: apiKey }, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateApiKey: async (id: string, updates: Partial<{
-    name: string;
-    permissions: string[];
-    is_active: boolean;
-    expires_at: string;
-  }>) => {
+  updateApiKey: async (
+    id: string,
+    updates: Partial<{
+      name: string
+      permissions: string[]
+      is_active: boolean
+      expires_at: string
+    }>
+  ) => {
     try {
       const { data, error } = await supabase
         .from('api_keys')
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   deleteApiKey: async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('api_keys')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('api_keys').delete().eq('id', id)
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { error: null };
+      return { error: null }
     } catch (error: any) {
-      return { error: error.message };
+      return { error: error.message }
     }
   },
 
   // Webhooks
-  getWebhooks: async (environment?: 'development' | 'staging' | 'production') => {
+  getWebhooks: async (
+    environment?: 'development' | 'staging' | 'production'
+  ) => {
     try {
       let query = supabase
         .from('webhooks')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
       if (environment) {
-        query = query.eq('environment', environment);
+        query = query.eq('environment', environment)
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   createWebhook: async (webhookData: {
-    name: string;
-    url: string;
-    events: string[];
-    headers?: any;
-    environment: 'development' | 'staging' | 'production';
-    retry_count?: number;
-    timeout_seconds?: number;
+    name: string
+    url: string
+    events: string[]
+    headers?: any
+    environment: 'development' | 'staging' | 'production'
+    retry_count?: number
+    timeout_seconds?: number
   }) => {
     try {
       // Generate a secure webhook secret
-      const secret = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const secret =
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15)
 
       const { data, error } = await supabase
         .from('webhooks')
@@ -2389,56 +2544,56 @@ export const admin = {
           headers: webhookData.headers || {},
           events: webhookData.events || [],
           retry_count: webhookData.retry_count || 3,
-          timeout_seconds: webhookData.timeout_seconds || 30
+          timeout_seconds: webhookData.timeout_seconds || 30,
         })
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
-  updateWebhook: async (id: string, updates: Partial<{
-    name: string;
-    url: string;
-    events: string[];
-    headers: any;
-    is_active: boolean;
-    retry_count: number;
-    timeout_seconds: number;
-  }>) => {
+  updateWebhook: async (
+    id: string,
+    updates: Partial<{
+      name: string
+      url: string
+      events: string[]
+      headers: any
+      is_active: boolean
+      retry_count: number
+      timeout_seconds: number
+    }>
+  ) => {
     try {
       const { data, error } = await supabase
         .from('webhooks')
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
   },
 
   deleteWebhook: async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('webhooks')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('webhooks').delete().eq('id', id)
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { error: null };
+      return { error: null }
     } catch (error: any) {
-      return { error: error.message };
+      return { error: error.message }
     }
   },
 
@@ -2448,104 +2603,36 @@ export const admin = {
         .from('webhook_deliveries')
         .select('*')
         .eq('webhook_id', webhookId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
 
       if (limit) {
-        query = query.limit(limit);
+        query = query.limit(limit)
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query
 
-      if (error) throw error;
+      if (error) throw error
 
-      return { data, error: null };
+      return { data, error: null }
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message }
     }
-  }
-}
-
-// Invitees API
-export const invitees = {
-  // Validate reusable invite code
-  validateCode: async (code: string) => {
-    const { data, error } = await supabase
-      .from('invitees')
-      .select('*')
-      .eq('invite_code', code.toUpperCase())
-      .is('email', null) // Reusable codes have no specific email
-      .single();
-
-    if (error || !data) {
-      return {
-        data: { valid: false, error: 'Invalid or expired invite code' },
-        error: null
-      };
-    }
-
-    // Check if expired
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
-      return {
-        data: { valid: false, error: 'This invite code has expired' },
-        error: null
-      };
-    }
-
-    // Check status
-    if (data.status === 'revoked') {
-      return {
-        data: { valid: false, error: 'This invite code has been revoked' },
-        error: null
-      };
-    }
-
-    return {
-      data: {
-        valid: true,
-        invite_id: data.id,
-        code: data.invite_code,
-        isReusable: true
-      },
-      error: null
-    };
   },
-
-  // Track code usage (but don't mark as used since it's reusable)
-  trackUsage: async (inviteCode: string, _userId: string, userEmail: string) => {
-    // Create a usage record in invitees table
-    const { data, error } = await supabase
-      .from('invitees')
-      .insert({
-        invite_code: inviteCode,
-        email: userEmail,
-        status: 'accepted',
-        accepted_at: new Date().toISOString(),
-        invited_by: null
-      })
-      .select()
-      .single();
-    return { data, error };
-  },
-
-  addToWaitlist: async (email: string) => {
-    const { data, error } = await supabase
-      .from('invitees')
-      .insert({
-        email: email,
-        invite_code: Math.random().toString(36).substring(2, 10).toUpperCase(),
-        status: 'waitlist'
-      })
-      .select()
-      .single();
-    return { data, error };
-  }
 }
 
 // Success Votes API
 export const successVotes = {
-  submitVote: async (promptId: string, voteValue: number): Promise<{ data: { action: 'added' | 'updated' } | null; error: string | null }> => {
+  submitVote: async (
+    promptId: string,
+    voteValue: number
+  ): Promise<{
+    data: { action: 'added' | 'updated' } | null
+    error: string | null
+  }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) return { data: null, error: 'Not authenticated' }
 
       // Check if user already voted
@@ -2573,7 +2660,7 @@ export const successVotes = {
           .insert({
             user_id: user.id,
             prompt_id: promptId,
-            vote_value: voteValue
+            vote_value: voteValue,
           })
 
         if (insertError) return { data: null, error: 'Failed to submit vote' }
@@ -2582,13 +2669,21 @@ export const successVotes = {
       }
     } catch (error: any) {
       console.error('Success vote error:', error)
-      return { data: null, error: error.message || 'An unexpected error occurred while submitting vote' }
+      return {
+        data: null,
+        error:
+          error.message || 'An unexpected error occurred while submitting vote',
+      }
     }
   },
 
-  getUserVote: async (promptId: string): Promise<{ data: { voteValue: number } | null; error: string | null }> => {
+  getUserVote: async (
+    promptId: string
+  ): Promise<{ data: { voteValue: number } | null; error: string | null }> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) return { data: null, error: 'Not authenticated' }
 
       const { data, error } = await supabase
@@ -2608,7 +2703,12 @@ export const successVotes = {
     }
   },
 
-  getPromptStats: async (promptId: string): Promise<{ data: { successRate: number; voteCount: number } | null; error: string | null }> => {
+  getPromptStats: async (
+    promptId: string
+  ): Promise<{
+    data: { successRate: number; voteCount: number } | null
+    error: string | null
+  }> => {
     try {
       const { data, error } = await supabase
         .from('prompts')
@@ -2621,12 +2721,12 @@ export const successVotes = {
       return {
         data: {
           successRate: data.success_rate || 0,
-          voteCount: data.success_votes_count || 0
+          voteCount: data.success_votes_count || 0,
         },
-        error: null
+        error: null,
       }
     } catch (error: any) {
       return { data: null, error: error.message }
     }
-  }
+  },
 }

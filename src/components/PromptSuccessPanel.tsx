@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Progress } from './ui/progress';
-import { Star, Users, TrendingUp } from 'lucide-react';
-import { successVotes } from '../lib/api';
-import { useApp } from '../contexts/AppContext';
-import { toast } from 'sonner';
+import { useState, useEffect } from 'react'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Progress } from './ui/progress'
+import { Star, Users, TrendingUp } from 'lucide-react'
+import { successVotes } from '../lib/api'
+import { useApp } from '../contexts/AppContext'
+import { toast } from 'sonner'
 
 interface PromptSuccessPanelProps {
-  averageRating: number;
-  totalVotes: number;
-  successRate: number;
-  commonUseCases: string[];
-  improvementSuggestions: string[];
-  promptId: string;
+  averageRating: number
+  totalVotes: number
+  successRate: number
+  commonUseCases: string[]
+  improvementSuggestions: string[]
+  promptId: string
 }
 
 export function PromptSuccessPanel({
@@ -23,68 +23,71 @@ export function PromptSuccessPanel({
   successRate,
   commonUseCases,
   improvementSuggestions,
-  promptId
+  promptId,
 }: PromptSuccessPanelProps) {
-  const { state } = useApp();
-  const [userRating, setUserRating] = useState<number | null>(null);
-  const [currentRating, setCurrentRating] = useState(averageRating);
-  const [currentVotes, setCurrentVotes] = useState(totalVotes);
-  const [currentSuccessRate, setCurrentSuccessRate] = useState(successRate);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasVoted, setHasVoted] = useState(false);
+  const { state } = useApp()
+  const [userRating, setUserRating] = useState<number | null>(null)
+  const [currentRating, setCurrentRating] = useState(averageRating)
+  const [currentVotes, setCurrentVotes] = useState(totalVotes)
+  const [currentSuccessRate, setCurrentSuccessRate] = useState(successRate)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasVoted, setHasVoted] = useState(false)
 
   // Load user's existing vote on mount
   useEffect(() => {
     const loadUserVote = async () => {
-      if (!state.user) return;
+      if (!state.user) return
 
       try {
-        const { data: voteData } = await successVotes.getUserVote(promptId);
+        const { data: voteData } = await successVotes.getUserVote(promptId)
         if (voteData) {
-          setUserRating(voteData.voteValue);
-          setHasVoted(true);
+          setUserRating(voteData.voteValue)
+          setHasVoted(true)
         }
       } catch (err) {
-        console.error('Error loading user vote:', err);
+        console.error('Error loading user vote:', err)
       }
-    };
+    }
 
-    loadUserVote();
-  }, [promptId, state.user]);
+    loadUserVote()
+  }, [promptId, state.user])
 
   const handleRatingSubmit = async () => {
-    if (!state.user || !userRating || isSubmitting) return;
+    if (!state.user || !userRating || isSubmitting) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      const { data, error } = await successVotes.submitVote(promptId, userRating);
+      const { data, error } = await successVotes.submitVote(
+        promptId,
+        userRating
+      )
 
       if (error) {
-        toast.error('Failed to submit rating');
-        return;
+        toast.error('Failed to submit rating')
+        return
       }
 
       if (data) {
-        setHasVoted(true);
+        setHasVoted(true)
         // Refresh stats
-        const { data: statsData } = await successVotes.getPromptStats(promptId);
+        const { data: statsData } = await successVotes.getPromptStats(promptId)
         if (statsData) {
-          setCurrentRating(statsData.successRate);
-          setCurrentVotes(statsData.voteCount);
-          setCurrentSuccessRate((statsData.successRate / 5) * 100);
+          setCurrentRating(statsData.successRate)
+          setCurrentVotes(statsData.voteCount)
+          setCurrentSuccessRate((statsData.successRate / 5) * 100)
         }
-        toast.success('Thank you for your feedback!');
+        toast.success('Thank you for your feedback!')
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to submit rating');
+      toast.error(err.message || 'Failed to submit rating')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const renderStars = (interactive: boolean = false) => {
-    const rating = interactive ? userRating : currentRating;
-    return [1, 2, 3, 4, 5].map((star) => (
+    const rating = interactive ? userRating : currentRating
+    return [1, 2, 3, 4, 5].map(star => (
       <button
         key={star}
         onClick={interactive ? () => setUserRating(star) : undefined}
@@ -99,16 +102,18 @@ export function PromptSuccessPanel({
       >
         ★
       </button>
-    ));
-  };
+    ))
+  }
 
   const getPerformanceBadge = () => {
-    if (currentSuccessRate >= 80) return { text: 'Excellent', variant: 'default' as const };
-    if (currentSuccessRate >= 60) return { text: 'Good', variant: 'secondary' as const };
-    return { text: 'Needs Work', variant: 'outline' as const };
-  };
+    if (currentSuccessRate >= 80)
+      return { text: 'Excellent', variant: 'default' as const }
+    if (currentSuccessRate >= 60)
+      return { text: 'Good', variant: 'secondary' as const }
+    return { text: 'Needs Work', variant: 'outline' as const }
+  }
 
-  const badge = getPerformanceBadge();
+  const badge = getPerformanceBadge()
 
   return (
     <div className="space-y-6">
@@ -134,7 +139,9 @@ export function PromptSuccessPanel({
                 </div>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Users className="h-3 w-3" />
-                  <span>{currentVotes} vote{currentVotes !== 1 ? 's' : ''}</span>
+                  <span>
+                    {currentVotes} vote{currentVotes !== 1 ? 's' : ''}
+                  </span>
                 </div>
               </div>
             </div>
@@ -156,12 +163,11 @@ export function PromptSuccessPanel({
               <div className="text-sm font-medium">
                 {hasVoted ? 'Your rating:' : 'Rate this prompt:'}
               </div>
-              <div className="flex items-center gap-1">
-                {renderStars(true)}
-              </div>
+              <div className="flex items-center gap-1">{renderStars(true)}</div>
               {hasVoted && userRating && (
                 <div className="text-sm text-muted-foreground">
-                  You rated this prompt {userRating} star{userRating !== 1 ? 's' : ''}
+                  You rated this prompt {userRating} star
+                  {userRating !== 1 ? 's' : ''}
                 </div>
               )}
               {!hasVoted && userRating && (
@@ -177,7 +183,10 @@ export function PromptSuccessPanel({
           ) : (
             <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded">
               <div className="font-medium mb-1">Want to rate this prompt?</div>
-              <div>Sign in to share your feedback and help others find the best prompts.</div>
+              <div>
+                Sign in to share your feedback and help others find the best
+                prompts.
+              </div>
             </div>
           )}
         </CardContent>
@@ -191,7 +200,8 @@ export function PromptSuccessPanel({
             Community Insights
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            See how this prompt performs across different use cases and get improvement suggestions
+            See how this prompt performs across different use cases and get
+            improvement suggestions
           </p>
         </CardHeader>
         <CardContent>
@@ -202,7 +212,10 @@ export function PromptSuccessPanel({
               {commonUseCases.length > 0 ? (
                 <div className="space-y-2">
                   {commonUseCases.map((useCase, index) => (
-                    <div key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <div
+                      key={index}
+                      className="flex items-start gap-2 text-sm text-muted-foreground"
+                    >
                       <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
                       <span>{useCase}</span>
                     </div>
@@ -221,7 +234,10 @@ export function PromptSuccessPanel({
               {improvementSuggestions.length > 0 ? (
                 <div className="space-y-2">
                   {improvementSuggestions.map((suggestion, index) => (
-                    <div key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <div
+                      key={index}
+                      className="flex items-start gap-2 text-sm text-muted-foreground"
+                    >
                       <div className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
                       <span>{suggestion}</span>
                     </div>
@@ -239,8 +255,11 @@ export function PromptSuccessPanel({
 
       {/* Bottom Caption */}
       <div className="text-center text-sm text-muted-foreground">
-        <p>Your feedback helps the community find the best prompts for their needs.</p>
+        <p>
+          Your feedback helps the community find the best prompts for their
+          needs.
+        </p>
       </div>
     </div>
-  );
+  )
 }

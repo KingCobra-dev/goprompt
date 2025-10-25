@@ -1,20 +1,22 @@
-import React from 'react';
-
 function App() {
   return (
-    <div style={{
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif',
-      maxWidth: '800px',
-      margin: '0 auto'
-    }}>
-      <header style={{
-        textAlign: 'center',
-        marginBottom: '40px',
+    <div
+      style={{
         padding: '20px',
-        backgroundColor: '#f8f9fa',
-        borderRadius: '8px'
-      }}>
+        fontFamily: 'Arial, sans-serif',
+        maxWidth: '800px',
+        margin: '0 auto',
+      }}
+    >
+      <header
+        style={{
+          textAlign: 'center',
+          marginBottom: '40px',
+          padding: '20px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '8px',
+        }}
+      >
         <h1 style={{ color: '#0969da', margin: '0 0 10px 0' }}>
           🎉 PromptsGo is Working!
         </h1>
@@ -44,17 +46,20 @@ function App() {
           </ol>
         </section>
 
-        <section style={{
-          padding: '20px',
-          backgroundColor: '#f6f8fa',
-          borderRadius: '8px',
-          border: '1px solid #d1d9e0'
-        }}>
+        <section
+          style={{
+            padding: '20px',
+            backgroundColor: '#f6f8fa',
+            borderRadius: '8px',
+            border: '1px solid #d1d9e0',
+          }}
+        >
           <h3 style={{ color: '#24292f', margin: '0 0 15px 0' }}>
             🚀 Ready to Continue?
           </h3>
           <p style={{ margin: '0 0 15px 0', color: '#656d76' }}>
-            Once you run the database schema in Supabase, the full application will load.
+            Once you run the database schema in Supabase, the full application
+            will load.
           </p>
           <button
             onClick={() => window.location.reload()}
@@ -65,7 +70,7 @@ function App() {
               padding: '10px 20px',
               borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '14px'
+              fontSize: '14px',
             }}
           >
             🔄 Check Again
@@ -73,17 +78,19 @@ function App() {
         </section>
       </main>
 
-      <footer style={{
-        marginTop: '40px',
-        padding: '20px',
-        textAlign: 'center',
-        color: '#656d76',
-        borderTop: '1px solid #d1d9e0'
-      }}>
+      <footer
+        style={{
+          marginTop: '40px',
+          padding: '20px',
+          textAlign: 'center',
+          color: '#656d76',
+          borderTop: '1px solid #d1d9e0',
+        }}
+      >
         <p>PromptsGo - Professional AI Prompt Management</p>
       </footer>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

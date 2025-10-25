@@ -1,56 +1,61 @@
-import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { PromptCard } from './PromptCard';
-import { useApp } from '../contexts/AppContext';
-import { Prompt } from '../lib/types';
-import { ArrowLeft, BookmarkPlus, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { Button } from './ui/button'
+import { Card, CardContent } from './ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { PromptCard } from './prompts/PromptCard'
+import { useApp } from '../contexts/AppContext'
+import { Prompt } from '../lib/types'
+import { ArrowLeft, BookmarkPlus, Heart } from 'lucide-react'
 
 interface SavedPromptsPageProps {
-  onBack: () => void;
-  onPromptClick: (promptId: string) => void;
+  onBack: () => void
+  onPromptClick: (promptId: string) => void
 }
 
-export function SavedPromptsPage({ onBack, onPromptClick }: SavedPromptsPageProps) {
-  const { state, dispatch } = useApp();
-  const [savedPrompts, setSavedPrompts] = useState<Prompt[]>([]);
-  const [heartedPrompts, setHeartedPrompts] = useState<Prompt[]>([]);
-  const [activeTab, setActiveTab] = useState('saved');
+export function SavedPromptsPage({
+  onBack,
+  onPromptClick,
+}: SavedPromptsPageProps) {
+  const { state, dispatch } = useApp()
+  const [savedPrompts, setSavedPrompts] = useState<Prompt[]>([])
+  const [heartedPrompts, setHeartedPrompts] = useState<Prompt[]>([])
+  const [activeTab, setActiveTab] = useState('saved')
 
   useEffect(() => {
-    if (!state.user) return;
+    if (!state.user) return
 
     // Get user's saved prompts
-    const userSaves = state.saves.filter(s => s.userId === state.user!.id);
-    const saved = state.prompts.filter(p => 
+    const userSaves = state.saves.filter(s => s.userId === state.user!.id)
+    const saved = state.prompts.filter(p =>
       userSaves.some(s => s.promptId === p.id)
-    );
-    setSavedPrompts(saved);
+    )
+    setSavedPrompts(saved)
 
     // Get user's hearted prompts
-    const userHearts = state.hearts.filter(h => h.userId === state.user!.id);
-    const hearted = state.prompts.filter(p => 
+    const userHearts = state.hearts.filter(h => h.userId === state.user!.id)
+    const hearted = state.prompts.filter(p =>
       userHearts.some(h => h.promptId === p.id)
-    );
-    setHeartedPrompts(hearted);
-  }, [state.user, state.saves, state.hearts, state.prompts]);
+    )
+    setHeartedPrompts(hearted)
+  }, [state.user, state.saves, state.hearts, state.prompts])
 
   if (!state.user) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h2 className="text-2xl mb-4">Please sign in to view saved prompts</h2>
+          <h2 className="text-2xl mb-4">
+            Please sign in to view saved prompts
+          </h2>
           <Button onClick={onBack}>← Back</Button>
         </div>
       </div>
-    );
+    )
   }
 
-  const renderPromptGrid = (prompts: Prompt[]) => (
+  const renderPromptGrid = (prompts: Prompt[]) =>
     prompts.length > 0 ? (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {prompts.map((prompt) => (
+        {prompts.map(prompt => (
           <PromptCard
             key={prompt.id}
             id={prompt.id}
@@ -59,7 +64,7 @@ export function SavedPromptsPage({ onBack, onPromptClick }: SavedPromptsPageProp
             author={{
               name: prompt.author.name,
               username: prompt.author.username,
-              subscriptionPlan: prompt.author.subscriptionPlan
+              subscriptionPlan: prompt.author.subscriptionPlan,
             }}
             category={prompt.category}
             tags={prompt.tags}
@@ -67,44 +72,55 @@ export function SavedPromptsPage({ onBack, onPromptClick }: SavedPromptsPageProp
             stats={{
               hearts: prompt.hearts,
               saves: prompt.saveCount,
-              forks: prompt.forkCount
+              forks: prompt.forkCount,
             }}
             isSaved={prompt.isSaved}
             isHearted={prompt.isHearted}
             createdAt={prompt.createdAt}
-            parentAuthor={prompt.parentId ? 
-              state.prompts.find(p => p.id === prompt.parentId)?.author : undefined
+            parentAuthor={
+              prompt.parentId
+                ? state.prompts.find(p => p.id === prompt.parentId)?.author
+                : undefined
             }
             onClick={() => onPromptClick(prompt.id)}
             onHeart={() => {
               if (prompt.isHearted) {
-                dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: prompt.id } });
+                dispatch({
+                  type: 'UNHEART_PROMPT',
+                  payload: { promptId: prompt.id },
+                })
               } else {
-                dispatch({ type: 'HEART_PROMPT', payload: { promptId: prompt.id } });
+                dispatch({
+                  type: 'HEART_PROMPT',
+                  payload: { promptId: prompt.id },
+                })
               }
             }}
             onSave={() => {
               if (prompt.isSaved) {
-                dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id });
+                dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id })
               } else {
-                dispatch({ type: 'SAVE_PROMPT', payload: { promptId: prompt.id } });
+                dispatch({
+                  type: 'SAVE_PROMPT',
+                  payload: { promptId: prompt.id },
+                })
               }
             }}
             onShare={async () => {
-              const url = `${window.location.origin}/prompts/${prompt.slug}`;
+              const url = `${window.location.origin}/prompts/${prompt.slug}`
               try {
                 if (navigator.share) {
                   await navigator.share({
                     title: prompt.title,
                     text: prompt.description,
-                    url: url
-                  });
+                    url: url,
+                  })
                 } else {
-                  await navigator.clipboard.writeText(url);
+                  await navigator.clipboard.writeText(url)
                   // Could show a toast notification here
                 }
               } catch (err) {
-                console.error('Failed to share:', err);
+                console.error('Failed to share:', err)
               }
             }}
           />
@@ -118,20 +134,25 @@ export function SavedPromptsPage({ onBack, onPromptClick }: SavedPromptsPageProp
               <>
                 <BookmarkPlus className="h-12 w-12 mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No saved prompts</h3>
-                <p>You haven't saved any prompts yet. Start exploring to find prompts you like!</p>
+                <p>
+                  You haven't saved any prompts yet. Start exploring to find
+                  prompts you like!
+                </p>
               </>
             ) : (
               <>
                 <Heart className="h-12 w-12 mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No hearted prompts</h3>
-                <p>You haven't hearted any prompts yet. Show some love to creators by hearting their work!</p>
+                <p>
+                  You haven't hearted any prompts yet. Show some love to
+                  creators by hearting their work!
+                </p>
               </>
             )}
           </div>
         </CardContent>
       </Card>
     )
-  );
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -143,7 +164,9 @@ export function SavedPromptsPage({ onBack, onPromptClick }: SavedPromptsPageProp
         </Button>
         <div>
           <h1 className="text-2xl">My Saved Content</h1>
-          <p className="text-muted-foreground">Manage your saved and hearted prompts</p>
+          <p className="text-muted-foreground">
+            Manage your saved and hearted prompts
+          </p>
         </div>
       </div>
 
@@ -185,5 +208,5 @@ export function SavedPromptsPage({ onBack, onPromptClick }: SavedPromptsPageProp
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

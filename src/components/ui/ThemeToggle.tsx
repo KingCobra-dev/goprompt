@@ -1,14 +1,14 @@
-import { Moon, Sun } from "lucide-react";
-import { Button } from "./button";
-import { useApp } from "../../contexts/AppContext";
+import { Moon, Sun } from 'lucide-react'
+import { Button } from './button'
+import { useApp } from '../../contexts/AppContext'
 
 export function ThemeToggle() {
-  const { state, dispatch } = useApp();
+  const { state, dispatch } = useApp()
 
   const toggleTheme = () => {
-    const newTheme = state.theme === 'light' ? 'dark' : 'light';
-    dispatch({ type: 'SET_THEME', payload: newTheme });
-  };
+    const newTheme = state.theme === 'light' ? 'dark' : 'light'
+    dispatch({ type: 'SET_THEME', payload: newTheme })
+  }
 
   return (
     <Button
@@ -25,5 +25,5 @@ export function ThemeToggle() {
         <Sun className="h-4 w-4 text-muted-foreground hover:text-foreground" />
       )}
     </Button>
-  );
+  )
 }

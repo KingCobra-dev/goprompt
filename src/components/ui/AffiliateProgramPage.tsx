@@ -1,30 +1,35 @@
-import { Button } from "./button";
-import { Card, CardContent, CardHeader, CardTitle } from "./card";
-import { Alert, AlertDescription } from "./alert";
-import { useApp } from "../../contexts/AppContext";
-import { ArrowLeft, DollarSign, CheckCircle } from "lucide-react";
+import { Button } from './button'
+import { Card, CardContent, CardHeader, CardTitle } from './card'
+import { Alert, AlertDescription } from './alert'
+import { useApp } from '../../contexts/AppContext'
+import { ArrowLeft, DollarSign, CheckCircle } from 'lucide-react'
 
 interface AffiliateProgramPageProps {
-  onBack?: () => void;
-  onNavigateToDashboard?: () => void;
+  onBack?: () => void
+  onNavigateToDashboard?: () => void
 }
 
-export function AffiliateProgramPage({ onBack, onNavigateToDashboard }: AffiliateProgramPageProps) {
-  const { state, dispatch } = useApp();
+export function AffiliateProgramPage({
+  onBack,
+  onNavigateToDashboard,
+}: AffiliateProgramPageProps) {
+  const { state, dispatch } = useApp()
 
   const handleBecomeAffiliate = () => {
-    if (!state.user) return;
+    if (!state.user) return
 
     // In a real app, this would make an API call to apply for affiliate status
     // For now, we'll simulate approval
     dispatch({
       type: 'UPDATE_USER',
-      payload: { isAffiliate: true }
-    });
+      payload: { isAffiliate: true },
+    })
 
     // Show success message (could be a toast notification)
-    alert('Congratulations! You have been approved as an affiliate. You can now access your dashboard.');
-  };
+    alert(
+      'Congratulations! You have been approved as an affiliate. You can now access your dashboard.'
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -43,7 +48,9 @@ export function AffiliateProgramPage({ onBack, onNavigateToDashboard }: Affiliat
           <h1 className="text-4xl font-bold">PromptsGo Affiliate Program</h1>
         </div>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Turn your network, expertise, and influence into rewards. By joining the PromptsGo Affiliate Program, you earn commissions for every new member who subscribes through your referral.
+          Turn your network, expertise, and influence into rewards. By joining
+          the PromptsGo Affiliate Program, you earn commissions for every new
+          member who subscribes through your referral.
         </p>
       </div>
 
@@ -85,7 +92,10 @@ export function AffiliateProgramPage({ onBack, onNavigateToDashboard }: Affiliat
           <CardContent>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground">
               <li>Track clicks, conversions, and earnings.</li>
-              <li>Access pre-built marketing materials: banners, social posts, email templates.</li>
+              <li>
+                Access pre-built marketing materials: banners, social posts,
+                email templates.
+              </li>
               <li>See your progress toward the next tier.</li>
             </ul>
           </CardContent>
@@ -98,7 +108,9 @@ export function AffiliateProgramPage({ onBack, onNavigateToDashboard }: Affiliat
           <CardContent>
             <ul className="list-disc list-inside space-y-2 text-muted-foreground">
               <li>Must be an active PromptsGo user.</li>
-              <li>Applications reviewed manually for quality and authenticity.</li>
+              <li>
+                Applications reviewed manually for quality and authenticity.
+              </li>
             </ul>
           </CardContent>
         </Card>
@@ -123,25 +135,36 @@ export function AffiliateProgramPage({ onBack, onNavigateToDashboard }: Affiliat
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription className="text-green-800">
-                  You are already an approved affiliate! Access your dashboard to track performance.
+                  You are already an approved affiliate! Access your dashboard
+                  to track performance.
                 </AlertDescription>
               </Alert>
-              <Button size="lg" className="px-8 text-lg" onClick={onNavigateToDashboard}>
+              <Button
+                size="lg"
+                className="px-8 text-lg"
+                onClick={onNavigateToDashboard}
+              >
                 📊 Go to Affiliate Dashboard
               </Button>
             </>
           ) : (
             <>
-              <Button size="lg" className="px-8 text-lg" onClick={handleBecomeAffiliate}>
-                👉 Apply to become an Affiliate today and start earning with PromptsGo.
+              <Button
+                size="lg"
+                className="px-8 text-lg"
+                onClick={handleBecomeAffiliate}
+              >
+                👉 Apply to become an Affiliate today and start earning with
+                PromptsGo.
               </Button>
               <p className="text-sm text-muted-foreground">
-                Applications are reviewed manually. You'll receive access to your dashboard once approved.
+                Applications are reviewed manually. You'll receive access to
+                your dashboard once approved.
               </p>
             </>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }

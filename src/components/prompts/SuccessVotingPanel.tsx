@@ -1,88 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Star, Users, TrendingUp } from 'lucide-react';
-import { successVotes } from '../../lib/api';
-import { useApp } from '../../contexts/AppContext';
+import { useState, useEffect } from 'react'
+import { Badge } from '../ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { Star, Users, TrendingUp } from 'lucide-react'
+import { successVotes } from '../../lib/api'
+import { useApp } from '../../contexts/AppContext'
 
 interface SuccessVotingPanelProps {
-  promptId: string;
-  initialSuccessRate?: number;
-  initialVoteCount?: number;
+  promptId: string
+  initialSuccessRate?: number
+  initialVoteCount?: number
 }
 
 export function SuccessVotingPanel({
   promptId,
   initialSuccessRate = 0,
-  initialVoteCount = 0
+  initialVoteCount = 0,
 }: SuccessVotingPanelProps) {
-  const { state } = useApp();
-  const [userVote, setUserVote] = useState<number | null>(null);
-  const [successRate, setSuccessRate] = useState(initialSuccessRate);
-  const [voteCount, setVoteCount] = useState(initialVoteCount);
-  const [isVoting, setIsVoting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { state } = useApp()
+  const [userVote, setUserVote] = useState<number | null>(null)
+  const [successRate, setSuccessRate] = useState(initialSuccessRate)
+  const [voteCount, setVoteCount] = useState(initialVoteCount)
+  const [isVoting, setIsVoting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Load user's existing vote and current stats
   useEffect(() => {
     const loadVoteData = async () => {
-      if (!state.user) return;
+      if (!state.user) return
 
       try {
         // Load user's vote
-        const { data: voteData } = await successVotes.getUserVote(promptId);
+        const { data: voteData } = await successVotes.getUserVote(promptId)
         if (voteData) {
-          setUserVote(voteData.voteValue);
+          setUserVote(voteData.voteValue)
         }
 
         // Load current stats
-        const { data: statsData } = await successVotes.getPromptStats(promptId);
+        const { data: statsData } = await successVotes.getPromptStats(promptId)
         if (statsData) {
-          setSuccessRate(statsData.successRate);
-          setVoteCount(statsData.voteCount);
+          setSuccessRate(statsData.successRate)
+          setVoteCount(statsData.voteCount)
         }
       } catch (err) {
-        console.error('Error loading vote data:', err);
+        console.error('Error loading vote data:', err)
       }
-    };
+    }
 
-    loadVoteData();
-  }, [promptId, state.user]);
+    loadVoteData()
+  }, [promptId, state.user])
 
   const handleVote = async (voteValue: number) => {
-    if (!state.user) return;
+    if (!state.user) return
 
-    setIsVoting(true);
-    setError(null);
+    setIsVoting(true)
+    setError(null)
 
     try {
-      const { data, error } = await successVotes.submitVote(promptId, voteValue);
+      const { data, error } = await successVotes.submitVote(promptId, voteValue)
 
       if (error) {
-        setError(error);
-        return;
+        setError(error)
+        return
       }
 
       if (data) {
-        setUserVote(voteValue);
+        setUserVote(voteValue)
 
         // Reload stats after voting
-        const { data: statsData } = await successVotes.getPromptStats(promptId);
+        const { data: statsData } = await successVotes.getPromptStats(promptId)
         if (statsData) {
-          setSuccessRate(statsData.successRate);
-          setVoteCount(statsData.voteCount);
+          setSuccessRate(statsData.successRate)
+          setVoteCount(statsData.voteCount)
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to submit vote');
+      setError(err.message || 'Failed to submit vote')
     } finally {
-      setIsVoting(false);
+      setIsVoting(false)
     }
-  };
+  }
 
   const renderStars = () => {
-    return [1, 2, 3, 4, 5].map((star) => (
+    return [1, 2, 3, 4, 5].map(star => (
       <button
         key={star}
         onClick={() => handleVote(star)}
@@ -96,8 +95,8 @@ export function SuccessVotingPanel({
       >
         ★
       </button>
-    ));
-  };
+    ))
+  }
 
   return (
     <Card className="w-full">
@@ -121,15 +120,21 @@ export function SuccessVotingPanel({
               </div>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Users className="h-3 w-3" />
-                <span>{voteCount} vote{voteCount !== 1 ? 's' : ''}</span>
+                <span>
+                  {voteCount} vote{voteCount !== 1 ? 's' : ''}
+                </span>
               </div>
             </div>
           </div>
 
           <Badge variant="secondary" className="text-sm">
-            {successRate >= 4 ? 'Excellent' :
-             successRate >= 3 ? 'Good' :
-             successRate >= 2 ? 'Fair' : 'Needs Work'}
+            {successRate >= 4
+              ? 'Excellent'
+              : successRate >= 3
+                ? 'Good'
+                : successRate >= 2
+                  ? 'Fair'
+                  : 'Needs Work'}
           </Badge>
         </div>
 
@@ -140,9 +145,7 @@ export function SuccessVotingPanel({
               {userVote ? 'Update your rating:' : 'Rate this prompt:'}
             </div>
 
-            <div className="flex items-center gap-1">
-              {renderStars()}
-            </div>
+            <div className="flex items-center gap-1">{renderStars()}</div>
 
             {userVote && (
               <div className="text-sm text-muted-foreground">
@@ -159,7 +162,10 @@ export function SuccessVotingPanel({
         ) : (
           <div className="text-sm text-muted-foreground bg-gray-50 p-3 rounded">
             <div className="font-medium mb-1">Want to rate this prompt?</div>
-            <div>Sign in to share your feedback and help others find the best prompts.</div>
+            <div>
+              Sign in to share your feedback and help others find the best
+              prompts.
+            </div>
           </div>
         )}
 
@@ -178,5 +184,5 @@ export function SuccessVotingPanel({
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

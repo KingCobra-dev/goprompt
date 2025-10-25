@@ -1,20 +1,30 @@
-import { useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { ArrowLeft, Lock, Users, Plus, Crown } from 'lucide-react';
-import { PromptPack } from '../lib/types';
+import { useState } from 'react'
+import { useApp } from '../contexts/AppContext'
+import { Button } from './ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Badge } from './ui/badge'
+import { ArrowLeft, Users, Plus, Crown } from 'lucide-react'
+import { PromptPack } from '../lib/types'
 
 interface IndustryPacksPageProps {
-  onBack: () => void;
-  onPackClick: (packId: string) => void;
-  onCreatePackClick?: () => void;
+  onBack: () => void
+  onPackClick: (packId: string) => void
+  onCreatePackClick?: () => void
 }
 
-export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: IndustryPacksPageProps) {
-  const { state, dispatch } = useApp();
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+export function IndustryPacksPage({
+  onBack,
+  onPackClick,
+  onCreatePackClick,
+}: IndustryPacksPageProps) {
+  const { state, dispatch } = useApp()
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
   const categories = [
     { id: 'all', name: 'All Packs' },
@@ -24,65 +34,78 @@ export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: In
     { id: 'business', name: 'Business' },
     { id: 'data', name: 'Data Analysis' },
     { id: 'education', name: 'Education' },
-    { id: 'technical', name: 'Technical' }
-  ];
+    { id: 'technical', name: 'Technical' },
+  ]
 
   // Use packs from state (which includes official packs)
   // state.promptPacks now contains all packs including official ones
-  const allPacks = state.promptPacks;
+  const allPacks = state.promptPacks
 
   const filteredPacks = allPacks.filter(pack => {
     // Filter by category
-    if (selectedCategory !== 'all' && pack.category !== selectedCategory) return false;
+    if (selectedCategory !== 'all' && pack.category !== selectedCategory)
+      return false
 
     // Filter by search query from global search filters
-    if (state.searchFilters.query && typeof state.searchFilters.query === 'string' && state.searchFilters.query.trim()) {
-      const query = state.searchFilters.query.toLowerCase();
-      return pack.name.toLowerCase().includes(query) ||
-             pack.description.toLowerCase().includes(query) ||
-             pack.tags.some(tag => tag.toLowerCase().includes(query));
+    if (
+      state.searchFilters.query &&
+      typeof state.searchFilters.query === 'string' &&
+      state.searchFilters.query.trim()
+    ) {
+      const query = state.searchFilters.query.toLowerCase()
+      return (
+        pack.name.toLowerCase().includes(query) ||
+        pack.description.toLowerCase().includes(query) ||
+        pack.tags.some(tag => tag.toLowerCase().includes(query))
+      )
     }
 
-    return true;
-  });
+    return true
+  })
 
   const handleAddPack = (pack: PromptPack) => {
-    if (!state.user) return;
+    if (!state.user) return
 
     // Check if pack already added
-    const alreadyAdded = state.userPackLibrary?.packs?.some(p => p.packId === pack.id);
+    const alreadyAdded = state.userPackLibrary?.packs?.some(
+      p => p.packId === pack.id
+    )
     if (alreadyAdded) {
-      alert(`"${pack.name}" is already in your collection!`);
-      return;
+      alert(`"${pack.name}" is already in your collection!`)
+      return
     }
 
     // For free users, limit to 2 packs
     if (state.user.subscriptionStatus !== 'active') {
-      const userPackCount = state.userPackLibrary?.packs?.length || 0;
+      const userPackCount = state.userPackLibrary?.packs?.length || 0
       if (userPackCount >= 2) {
-        alert('Free users can add up to 2 packs. Upgrade to Pro for unlimited access!');
-        return;
+        alert(
+          'Free users can add up to 2 packs. Upgrade to Pro for unlimited access!'
+        )
+        return
       }
     }
 
     // Add pack to user's library
-    dispatch({ 
-      type: 'ADD_PACK_TO_LIBRARY', 
-      payload: { packId: pack.id, packName: pack.name } 
-    });
+    dispatch({
+      type: 'ADD_PACK_TO_LIBRARY',
+      payload: { packId: pack.id, packName: pack.name },
+    })
 
     // Add pack prompts to user's saved prompts
     pack.promptIds.forEach(promptId => {
-      dispatch({ type: 'SAVE_PROMPT', payload: { promptId } });
-    });
+      dispatch({ type: 'SAVE_PROMPT', payload: { promptId } })
+    })
 
-    alert(`Added "${pack.name}" pack to your collection!`);
-  };
+    alert(`Added "${pack.name}" pack to your collection!`)
+  }
 
   const handlePurchasePack = (pack: PromptPack) => {
     // This would integrate with payment system
-    alert(`Purchase ${pack.name} for $${pack.price}. Payment integration coming soon!`);
-  };
+    alert(
+      `Purchase ${pack.name} for $${pack.price}. Payment integration coming soon!`
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,14 +120,18 @@ export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: In
             <div>
               <h1 className="mb-2">Prompt Packs</h1>
               <p className="text-muted-foreground">
-                Curated collections of professional prompts organized by industry, professionals and use case
+                Curated collections of professional prompts organized by
+                industry, professionals and use case
               </p>
             </div>
           </div>
-          
+
           {/* Create Pack Button for logged-in users */}
           {state.user && onCreatePackClick && (
-            <Button onClick={onCreatePackClick} className="flex items-center gap-2">
+            <Button
+              onClick={onCreatePackClick}
+              className="flex items-center gap-2"
+            >
               <Plus className="w-4 h-4" />
               Create Pack
             </Button>
@@ -116,7 +143,7 @@ export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: In
           {categories.map(category => (
             <Button
               key={category.id}
-              variant={selectedCategory === category.id ? "default" : "outline"}
+              variant={selectedCategory === category.id ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedCategory(category.id)}
               className="rounded-full"
@@ -129,7 +156,10 @@ export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: In
         {/* Packs Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPacks.map(pack => (
-            <Card key={pack.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+            <Card
+              key={pack.id}
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+            >
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -153,7 +183,7 @@ export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: In
                   </div>
                 </div>
               </CardHeader>
-              
+
               <CardContent>
                 <div className="space-y-4">
                   {/* Tags */}
@@ -188,7 +218,7 @@ export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: In
                     >
                       View Details
                     </Button>
-                    
+
                     {pack.isPremium ? (
                       <Button
                         size="sm"
@@ -225,5 +255,5 @@ export function IndustryPacksPage({ onBack, onPackClick, onCreatePackClick }: In
         )}
       </div>
     </div>
-  );
+  )
 }

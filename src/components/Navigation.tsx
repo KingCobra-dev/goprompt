@@ -1,64 +1,98 @@
-import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from "./ui/dropdown-menu";
-import { Badge } from "./ui/badge";
-import { SubscriptionBadge } from "./ui/SubscriptionBadge";
-import { ThemeToggle } from "./ui/ThemeToggle";
-import { useApp } from "../contexts/AppContext";
-import { auth } from "../lib/api";
-import { isAdmin } from "../lib/admin";
-import { Search, Plus, Menu, User, Settings, LogOut, Home, Compass, BookmarkPlus, Package, Shield, Upload, Users, BarChart, Eye, DollarSign, Gift, Activity } from "lucide-react";
+import { useState, useEffect } from 'react'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from './ui/dropdown-menu'
+// Badge import removed (unused)
+import { SubscriptionBadge } from './ui/SubscriptionBadge'
+import { ThemeToggle } from './ui/ThemeToggle'
+import { useApp } from '../contexts/AppContext'
+import { auth } from '../lib/api'
+import { isAdmin } from '../lib/admin'
+import {
+  Search,
+  Plus,
+  Menu,
+  User,
+  Settings,
+  LogOut,
+  Home,
+  Compass,
+  BookmarkPlus,
+  Package,
+  Shield,
+  Upload,
+  Users,
+  BarChart,
+  Eye,
+  DollarSign,
+  Gift,
+  Activity,
+} from 'lucide-react'
 
 interface NavigationProps {
-     user?: {
-       name: string;
-       username: string;
-       reputation: number;
-       role?: 'general' | 'pro' | 'admin';
-       subscriptionStatus?: 'active' | 'cancelled' | 'past_due';
-     } | null;
-   onAuthClick: () => void;
-   onProfileClick?: () => void;
-   onCreateClick?: () => void;
-   onExploreClick?: (searchQuery?: string) => void;
-   onHomeClick?: () => void;
-   onSavedClick?: () => void;
-   onSettingsClick?: () => void;
-   onPromptPacksClick?: () => void;
-   onAdminClick?: (feature: string) => void;
- }
+  user?: {
+    name: string
+    username: string
+    reputation: number
+    role?: 'general' | 'pro' | 'admin'
+    subscriptionStatus?: 'active' | 'cancelled' | 'past_due'
+  } | null
+  onAuthClick: () => void
+  onProfileClick?: () => void
+  onCreateClick?: () => void
+  onExploreClick?: (searchQuery?: string) => void
+  onHomeClick?: () => void
+  onSavedClick?: () => void
+  onSettingsClick?: () => void
+  onPromptPacksClick?: () => void
+  onAdminClick?: (feature: string) => void
+}
 
 export function Navigation({
-   user,
-   onAuthClick,
-   onProfileClick,
-   onCreateClick,
-   onExploreClick,
-   onHomeClick,
-   onSavedClick,
-   onSettingsClick,
-   onPromptPacksClick,
-   onAdminClick
- }: NavigationProps) {
-   const { state, dispatch } = useApp();
-   const currentUser = state.user;
+  user,
+  onAuthClick,
+  onProfileClick,
+  onCreateClick,
+  onExploreClick,
+  onHomeClick,
+  onSavedClick,
+  onSettingsClick,
+  onPromptPacksClick,
+  onAdminClick,
+}: NavigationProps) {
+  const { state, dispatch } = useApp()
+  const currentUser = state.user
   const [searchQuery, setSearchQuery] = useState(
-    typeof state.searchFilters.query === 'string' ? state.searchFilters.query : ""
-  );
+    typeof state.searchFilters.query === 'string'
+      ? state.searchFilters.query
+      : ''
+  )
 
   // Sync local search query with global search filters
   useEffect(() => {
-    const query = typeof state.searchFilters.query === 'string' ? state.searchFilters.query : "";
-    setSearchQuery(query);
-  }, [state.searchFilters.query]);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const query =
+      typeof state.searchFilters.query === 'string'
+        ? state.searchFilters.query
+        : ''
+    setSearchQuery(query)
+  }, [state.searchFilters.query])
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const getInitials = (name: string) => {
-    if (!name || typeof name !== 'string') return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -66,12 +100,18 @@ export function Navigation({
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 p-0 h-auto hover:bg-transparent hover:text-muted-foreground cursor-pointer transition-colors"
+              onClick={onHomeClick}
+            >
               <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">P</span>
+                <span className="text-primary-foreground font-bold text-sm">
+                  P
+                </span>
               </div>
               <span className="font-bold text-xl">PromptsGo</span>
-            </div>
+            </Button>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6">
@@ -86,7 +126,7 @@ export function Navigation({
               <Button
                 variant="ghost"
                 className="flex items-center gap-2 nav-button group"
-                onClick={onExploreClick}
+                onClick={() => onExploreClick?.()}
               >
                 <Compass className="h-4 w-4 group-hover:text-accent" />
                 Explore
@@ -109,16 +149,19 @@ export function Navigation({
               <Input
                 placeholder="Search prompts, creators, tags..."
                 value={searchQuery}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSearchQuery(value);
+                onChange={e => {
+                  const value = e.target.value
+                  setSearchQuery(value)
                   // Update global search filters immediately
-                  dispatch({ type: 'SET_SEARCH_FILTERS', payload: { query: value } });
+                  dispatch({
+                    type: 'SET_SEARCH_FILTERS',
+                    payload: { query: value },
+                  })
                 }}
-                onKeyPress={(e) => {
+                onKeyPress={e => {
                   if (e.key === 'Enter') {
                     // Navigate to explore page when Enter is pressed
-                    onExploreClick?.(searchQuery.trim());
+                    onExploreClick?.(searchQuery.trim())
                   }
                 }}
                 className="pl-10 pr-10"
@@ -130,7 +173,7 @@ export function Navigation({
                   className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
                   onClick={() => {
                     if (searchQuery.trim()) {
-                      onExploreClick?.(searchQuery.trim());
+                      onExploreClick?.(searchQuery.trim())
                     }
                   }}
                 >
@@ -151,7 +194,10 @@ export function Navigation({
                 {isAdmin(currentUser) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
                         <Shield className="h-4 w-4" />
                         <span className="hidden sm:inline">Admin</span>
                       </Button>
@@ -162,43 +208,67 @@ export function Navigation({
                         Admin Tools
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => onAdminClick?.('dashboard')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('dashboard')}
+                      >
                         <BarChart className="mr-2 h-4 w-4" />
                         Dashboard
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('bulk-import')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('bulk-import')}
+                      >
                         <Upload className="mr-2 h-4 w-4" />
                         Bulk Import Prompts
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('ui-playground')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('ui-playground')}
+                      >
                         <Eye className="mr-2 h-4 w-4" />
                         UI Playground
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('content-moderation')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('content-moderation')}
+                      >
                         <Shield className="mr-2 h-4 w-4" />
                         Content Moderation
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('user-management')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('user-management')}
+                      >
                         <Users className="mr-2 h-4 w-4" />
                         Manage Users
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('analytics-reports')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('analytics-reports')}
+                      >
                         <BarChart className="mr-2 h-4 w-4" />
                         Analytics & Reports
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('subscription-management')}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          onAdminClick?.('subscription-management')
+                        }
+                      >
                         <DollarSign className="mr-2 h-4 w-4" />
                         Subscription Management
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('invite-affiliate-management')}>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          onAdminClick?.('invite-affiliate-management')
+                        }
+                      >
                         <Gift className="mr-2 h-4 w-4" />
                         Invite & Affiliate Management
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('platform-settings')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('platform-settings')}
+                      >
                         <Settings className="mr-2 h-4 w-4" />
                         Platform Settings
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAdminClick?.('system-logs-health')}>
+                      <DropdownMenuItem
+                        onClick={() => onAdminClick?.('system-logs-health')}
+                      >
                         <Activity className="mr-2 h-4 w-4" />
                         System Logs & Health
                       </DropdownMenuItem>
@@ -215,22 +285,24 @@ export function Navigation({
                   <span className="hidden sm:inline">Create</span>
                 </Button>
 
-
                 {/* User Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 p-2">
+                    <Button
+                      variant="ghost"
+                      className="flex items-center gap-2 p-2"
+                    >
                       <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
                         {getInitials(user.name)}
                       </div>
                       <div className="hidden md:block text-left">
                         <div className="text-sm font-medium flex items-center gap-2">
-                            {user.name}
-                            <SubscriptionBadge
-                              role={user.role || 'general'}
-                              subscriptionStatus={user.subscriptionStatus}
-                            />
-                          </div>
+                          {user.name}
+                          <SubscriptionBadge
+                            role={user.role || 'general'}
+                            subscriptionStatus={user.subscriptionStatus}
+                          />
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {user.reputation} rep
                         </div>
@@ -246,7 +318,9 @@ export function Navigation({
                           subscriptionStatus={user.subscriptionStatus}
                         />
                       </div>
-                      <div className="text-sm text-muted-foreground">@{user.username}</div>
+                      <div className="text-sm text-muted-foreground">
+                        @{user.username}
+                      </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {user.reputation} reputation points
                       </div>
@@ -265,20 +339,22 @@ export function Navigation({
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={async () => {
-                      try {
-                        console.log('[Navigation] Signing out user...');
-                        // First clear user state
-                        dispatch({ type: 'SET_USER', payload: null });
-                        
-                        // Then sign out from Supabase (this will trigger SIGNED_OUT event)
-                        await auth.signOut();
-                        
-                        console.log('[Navigation] Sign out complete');
-                      } catch (error) {
-                        console.error('[Navigation] Sign out error:', error);
-                      }
-                    }}>
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        try {
+                          console.log('[Navigation] Signing out user...')
+                          // First clear user state
+                          dispatch({ type: 'SET_USER', payload: null })
+
+                          // Then sign out from Supabase (this will trigger SIGNED_OUT event)
+                          await auth.signOut()
+
+                          console.log('[Navigation] Sign out complete')
+                        } catch (error) {
+                          console.error('[Navigation] Sign out error:', error)
+                        }
+                      }}
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       Sign out
                     </DropdownMenuItem>
@@ -290,9 +366,7 @@ export function Navigation({
                 <Button variant="ghost" onClick={onAuthClick}>
                   Sign In
                 </Button>
-                <Button onClick={onAuthClick}>
-                  Get Started
-                </Button>
+                <Button onClick={onAuthClick}>Get Started</Button>
               </>
             )}
 
@@ -327,7 +401,7 @@ export function Navigation({
               <Button
                 variant="ghost"
                 className="justify-start nav-button group"
-                onClick={onExploreClick}
+                onClick={() => onExploreClick?.()}
               >
                 <Compass className="mr-2 h-4 w-4 group-hover:text-accent" />
                 Explore
@@ -345,5 +419,5 @@ export function Navigation({
         )}
       </div>
     </header>
-  );
+  )
 }

@@ -1,10 +1,9 @@
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Separator } from './ui/separator';
-import { ArrowLeft, Github, Twitter, Mail, Shield, FileText, Users, Lightbulb, Target, Heart } from 'lucide-react';
+import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { ArrowLeft, Users, Lightbulb, Target, Heart } from 'lucide-react'
 
 interface AboutPageProps {
-  onBack: () => void;
+  onBack: () => void
 }
 
 function AboutPage({ onBack }: AboutPageProps) {
@@ -22,7 +21,8 @@ function AboutPage({ onBack }: AboutPageProps) {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">About PromptsGo</h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Building the future of prompt engineering — where creativity meets collaboration
+          Building the future of prompt engineering — where creativity meets
+          collaboration
         </p>
       </div>
 
@@ -36,7 +36,9 @@ function AboutPage({ onBack }: AboutPageProps) {
         </CardHeader>
         <CardContent>
           <p className="text-lg leading-relaxed">
-            Prompts are becoming as important as code. Just as GitHub gave developers a home to share and improve software, we're building a home for the next generation of creators who work with AI.
+            Prompts are becoming as important as code. Just as GitHub gave
+            developers a home to share and improve software, we're building a
+            home for the next generation of creators who work with AI.
           </p>
         </CardContent>
       </Card>
@@ -51,7 +53,10 @@ function AboutPage({ onBack }: AboutPageProps) {
         </CardHeader>
         <CardContent>
           <p className="text-lg leading-relaxed">
-            PromptsGo exists to make prompts easier to create, discover, and showcase. Whether you're writing, coding, designing, or solving business problems, we believe prompts should be shared, remixed, and celebrated as professional work.
+            PromptsGo exists to make prompts easier to create, discover, and
+            showcase. Whether you're writing, coding, designing, or solving
+            business problems, we believe prompts should be shared, remixed, and
+            celebrated as professional work.
           </p>
         </CardContent>
       </Card>
@@ -66,7 +71,11 @@ function AboutPage({ onBack }: AboutPageProps) {
         </CardHeader>
         <CardContent>
           <p className="text-lg leading-relaxed">
-            From hobbyists exploring generative AI to consultants delivering client-ready solutions, PromptsGo is for anyone who relies on prompts every day. Here, you'll find a supportive community where ideas grow, collaboration is encouraged, and contributions are recognized.
+            From hobbyists exploring generative AI to consultants delivering
+            client-ready solutions, PromptsGo is for anyone who relies on
+            prompts every day. Here, you'll find a supportive community where
+            ideas grow, collaboration is encouraged, and contributions are
+            recognized.
           </p>
         </CardContent>
       </Card>
@@ -81,14 +90,16 @@ function AboutPage({ onBack }: AboutPageProps) {
         </CardHeader>
         <CardContent>
           <p className="text-lg leading-relaxed">
-            Right now, prompts are scattered across tweets, blogs, and chat threads. PromptsGo brings everything together in one place — structured, searchable, and community-driven. It's where you can build your profile, connect with others, and be part of shaping the future of prompt engineering.
+            Right now, prompts are scattered across tweets, blogs, and chat
+            threads. PromptsGo brings everything together in one place —
+            structured, searchable, and community-driven. It's where you can
+            build your profile, connect with others, and be part of shaping the
+            future of prompt engineering.
           </p>
         </CardContent>
       </Card>
-
-      
     </div>
-  );
+  )
 }
 
-export default AboutPage;
+export default AboutPage

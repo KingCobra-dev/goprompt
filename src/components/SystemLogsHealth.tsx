@@ -1,13 +1,32 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { useApp } from '../contexts/AppContext';
-import { admin as adminAPI } from '../lib/api';
-import { isAdmin } from '../lib/admin';
+import { useState, useEffect } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './ui/table'
+import { useApp } from '../contexts/AppContext'
+import { admin as adminAPI } from '../lib/api'
+import { isAdmin } from '../lib/admin'
 import {
   FileText,
   Activity,
@@ -16,186 +35,211 @@ import {
   Database,
   HardDrive,
   Zap,
-  RefreshCw
-} from 'lucide-react';
+  RefreshCw,
+} from 'lucide-react'
 
 interface SystemLog {
-  id: string;
-  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
-  source: 'frontend' | 'backend' | 'database' | 'api' | 'system' | 'external';
-  message: string;
-  details: any;
-  user_id?: string;
-  created_at: string;
+  id: string
+  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+  source: 'frontend' | 'backend' | 'database' | 'api' | 'system' | 'external'
+  message: string
+  details: any
+  user_id?: string
+  created_at: string
 }
 
 interface HealthCheck {
-  id: string;
-  type: 'database' | 'cache' | 'queue' | 'external_api' | 'storage' | 'system';
-  name: string;
-  status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
-  response_time_ms?: number;
-  details: any;
-  error_message?: string;
-  checked_at: string;
+  id: string
+  type: 'database' | 'cache' | 'queue' | 'external_api' | 'storage' | 'system'
+  name: string
+  status: 'healthy' | 'degraded' | 'unhealthy' | 'unknown'
+  response_time_ms?: number
+  details: any
+  error_message?: string
+  checked_at: string
 }
 
 interface BackgroundJob {
-  id: string;
-  name: string;
-  description?: string;
-  job_type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-  priority: number;
-  parameters: any;
-  created_at: string;
-  updated_at: string;
+  id: string
+  name: string
+  description?: string
+  job_type: string
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+  priority: number
+  parameters: any
+  created_at: string
+  updated_at: string
 }
 
 export function SystemLogsHealth() {
-  const { state } = useApp();
-  const user = state.user;
+  const { state } = useApp()
+  const user = state.user
 
   // Logs state
-  const [logs, setLogs] = useState<SystemLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(true);
+  const [logs, setLogs] = useState<SystemLog[]>([])
+  const [logsLoading, setLogsLoading] = useState(true)
   const [logFilters, setLogFilters] = useState<{
-    level: string;
-    source: string;
-    limit: number;
-    offset: number;
+    level: string
+    source: string
+    limit: number
+    offset: number
   }>({
     level: 'all',
     source: 'all',
     limit: 50,
-    offset: 0
-  });
+    offset: 0,
+  })
 
   // Health state
-  const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([]);
-  const [healthLoading, setHealthLoading] = useState(true);
+  const [healthChecks, setHealthChecks] = useState<HealthCheck[]>([])
+  const [healthLoading, setHealthLoading] = useState(true)
 
   // Jobs state
-  const [jobs, setJobs] = useState<BackgroundJob[]>([]);
-  const [jobsLoading, setJobsLoading] = useState(true);
-  const [triggeringJob, setTriggeringJob] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<BackgroundJob[]>([])
+  const [jobsLoading, setJobsLoading] = useState(true)
+  const [triggeringJob, setTriggeringJob] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isAdmin(user)) return;
+    if (!isAdmin(user)) return
 
-    loadLogs();
-    loadHealthChecks();
-    loadJobs();
-  }, [user, logFilters]);
+    loadLogs()
+    loadHealthChecks()
+    loadJobs()
+  }, [user, logFilters])
 
   const loadLogs = async () => {
-    setLogsLoading(true);
+    setLogsLoading(true)
     try {
       const filters = {
         ...logFilters,
-        level: logFilters.level === 'all' ? undefined : logFilters.level as any,
-        source: logFilters.source === 'all' ? undefined : logFilters.source as any
-      };
-      const { data, error } = await adminAPI.getSystemLogs(filters);
-      if (error) throw error;
-      setLogs(data || []);
+        level:
+          logFilters.level === 'all' ? undefined : (logFilters.level as any),
+        source:
+          logFilters.source === 'all' ? undefined : (logFilters.source as any),
+      }
+      const { data, error } = await adminAPI.getSystemLogs(filters)
+      if (error) throw error
+      setLogs(data || [])
     } catch (error) {
-      console.error('Error loading logs:', error);
+      console.error('Error loading logs:', error)
     } finally {
-      setLogsLoading(false);
+      setLogsLoading(false)
     }
-  };
+  }
 
   const loadHealthChecks = async () => {
-    setHealthLoading(true);
+    setHealthLoading(true)
     try {
-      const { data, error } = await adminAPI.getHealthChecks();
-      if (error) throw error;
-      setHealthChecks(data || []);
+      const { data, error } = await adminAPI.getHealthChecks()
+      if (error) throw error
+      setHealthChecks(data || [])
     } catch (error) {
-      console.error('Error loading health checks:', error);
+      console.error('Error loading health checks:', error)
     } finally {
-      setHealthLoading(false);
+      setHealthLoading(false)
     }
-  };
+  }
 
   const loadJobs = async () => {
-    setJobsLoading(true);
+    setJobsLoading(true)
     try {
-      const { data, error } = await adminAPI.getBackgroundJobs();
-      if (error) throw error;
-      setJobs(data || []);
+      const { data, error } = await adminAPI.getBackgroundJobs()
+      if (error) throw error
+      setJobs(data || [])
     } catch (error) {
-      console.error('Error loading jobs:', error);
+      console.error('Error loading jobs:', error)
     } finally {
-      setJobsLoading(false);
+      setJobsLoading(false)
     }
-  };
+  }
 
   const triggerJob = async (jobType: string, parameters: any = {}) => {
-    setTriggeringJob(jobType);
+    setTriggeringJob(jobType)
     try {
-      const { error } = await adminAPI.triggerManualJob(jobType, parameters);
-      if (error) throw error;
+      const { error } = await adminAPI.triggerManualJob(jobType, parameters)
+      if (error) throw error
       // Reload jobs after triggering
-      await loadJobs();
+      await loadJobs()
     } catch (error) {
-      console.error('Error triggering job:', error);
+      console.error('Error triggering job:', error)
     } finally {
-      setTriggeringJob(null);
+      setTriggeringJob(null)
     }
-  };
+  }
 
   const getLogLevelColor = (level: string) => {
     switch (level) {
-      case 'debug': return 'bg-gray-100 text-gray-800';
-      case 'info': return 'bg-blue-100 text-blue-800';
-      case 'warn': return 'bg-yellow-100 text-yellow-800';
-      case 'error': return 'bg-red-100 text-red-800';
-      case 'fatal': return 'bg-red-900 text-white';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'debug':
+        return 'bg-gray-100 text-gray-800'
+      case 'info':
+        return 'bg-blue-100 text-blue-800'
+      case 'warn':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'error':
+        return 'bg-red-100 text-red-800'
+      case 'fatal':
+        return 'bg-red-900 text-white'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
-  };
+  }
 
   const getHealthStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy': return 'bg-green-100 text-green-800';
-      case 'degraded': return 'bg-yellow-100 text-yellow-800';
-      case 'unhealthy': return 'bg-red-100 text-red-800';
-      case 'unknown': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'healthy':
+        return 'bg-green-100 text-green-800'
+      case 'degraded':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'unhealthy':
+        return 'bg-red-100 text-red-800'
+      case 'unknown':
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
-  };
+  }
 
   const getJobStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'running': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'cancelled': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800'
+      case 'running':
+        return 'bg-blue-100 text-blue-800'
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'failed':
+        return 'bg-red-100 text-red-800'
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
     }
-  };
+  }
 
   const getHealthIcon = (type: string) => {
     switch (type) {
-      case 'database': return <Database className="w-4 h-4" />;
-      case 'cache': return <HardDrive className="w-4 h-4" />;
-      case 'queue': return <Zap className="w-4 h-4" />;
-      default: return <Activity className="w-4 h-4" />;
+      case 'database':
+        return <Database className="w-4 h-4" />
+      case 'cache':
+        return <HardDrive className="w-4 h-4" />
+      case 'queue':
+        return <Zap className="w-4 h-4" />
+      default:
+        return <Activity className="w-4 h-4" />
     }
-  };
+  }
 
   if (!isAdmin(user)) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            Access Denied
+          </h1>
           <p>You don't have permission to access this page.</p>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -203,9 +247,18 @@ export function SystemLogsHealth() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">System Logs & Health</h1>
-          <p className="text-muted-foreground">Monitor system status, logs, and background jobs</p>
+          <p className="text-muted-foreground">
+            Monitor system status, logs, and background jobs
+          </p>
         </div>
-        <Button onClick={() => { loadLogs(); loadHealthChecks(); loadJobs(); }} variant="outline">
+        <Button
+          onClick={() => {
+            loadLogs()
+            loadHealthChecks()
+            loadJobs()
+          }}
+          variant="outline"
+        >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh All
         </Button>
@@ -229,7 +282,13 @@ export function SystemLogsHealth() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-4 mb-4">
-                <Select value={logFilters.level} onValueChange={(value: string) => { console.log('Selected level:', value); setLogFilters(prev => ({ ...prev, level: value as any })) }}>
+                <Select
+                  value={logFilters.level}
+                  onValueChange={(value: string) => {
+                    console.log('Selected level:', value)
+                    setLogFilters(prev => ({ ...prev, level: value as any }))
+                  }}
+                >
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Level" />
                   </SelectTrigger>
@@ -243,7 +302,13 @@ export function SystemLogsHealth() {
                   </SelectContent>
                 </Select>
 
-                <Select value={logFilters.source} onValueChange={(value: string) => { console.log('Selected source:', value); setLogFilters(prev => ({ ...prev, source: value as any })) }}>
+                <Select
+                  value={logFilters.source}
+                  onValueChange={(value: string) => {
+                    console.log('Selected source:', value)
+                    setLogFilters(prev => ({ ...prev, source: value as any }))
+                  }}
+                >
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Source" />
                   </SelectTrigger>
@@ -282,7 +347,7 @@ export function SystemLogsHealth() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {logs.map((log) => (
+                      {logs.map(log => (
                         <TableRow key={log.id}>
                           <TableCell className="text-sm">
                             {new Date(log.created_at).toLocaleString()}
@@ -292,8 +357,13 @@ export function SystemLogsHealth() {
                               {log.level.toUpperCase()}
                             </Badge>
                           </TableCell>
-                          <TableCell className="capitalize">{log.source}</TableCell>
-                          <TableCell className="max-w-md truncate" title={log.message}>
+                          <TableCell className="capitalize">
+                            {log.source}
+                          </TableCell>
+                          <TableCell
+                            className="max-w-md truncate"
+                            title={log.message}
+                          >
                             {log.message}
                           </TableCell>
                         </TableRow>
@@ -313,12 +383,23 @@ export function SystemLogsHealth() {
                 <Activity className="w-5 h-5" />
                 Health Monitoring
               </CardTitle>
-              <CardDescription>Current status of system components</CardDescription>
+              <CardDescription>
+                Current status of system components
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center mb-4">
                 <p className="text-sm text-muted-foreground">
-                  Last updated: {healthChecks.length > 0 ? new Date(Math.max(...healthChecks.map(h => new Date(h.checked_at).getTime()))).toLocaleString() : 'Never'}
+                  Last updated:{' '}
+                  {healthChecks.length > 0
+                    ? new Date(
+                        Math.max(
+                          ...healthChecks.map(h =>
+                            new Date(h.checked_at).getTime()
+                          )
+                        )
+                      ).toLocaleString()
+                    : 'Never'}
                 </p>
                 <Button onClick={loadHealthChecks} variant="outline" size="sm">
                   <RefreshCw className="w-4 h-4 mr-2" />
@@ -334,14 +415,16 @@ export function SystemLogsHealth() {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {healthChecks.map((check) => (
+                  {healthChecks.map(check => (
                     <Card key={check.id} className="p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           {getHealthIcon(check.type)}
                           <div>
                             <h3 className="font-medium">{check.name}</h3>
-                            <p className="text-sm text-muted-foreground capitalize">{check.type}</p>
+                            <p className="text-sm text-muted-foreground capitalize">
+                              {check.type}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -375,7 +458,9 @@ export function SystemLogsHealth() {
                 <Play className="w-5 h-5" />
                 Background Jobs
               </CardTitle>
-              <CardDescription>Manual job triggers and status monitoring</CardDescription>
+              <CardDescription>
+                Manual job triggers and status monitoring
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex justify-between items-center mb-4">
@@ -393,7 +478,11 @@ export function SystemLogsHealth() {
                   <h3 className="font-medium mb-3">Quick Actions</h3>
                   <div className="flex gap-2 flex-wrap">
                     <Button
-                      onClick={() => triggerJob('refresh_materialized_view', { view_name: 'success_stats' })}
+                      onClick={() =>
+                        triggerJob('refresh_materialized_view', {
+                          view_name: 'success_stats',
+                        })
+                      }
                       disabled={triggeringJob === 'refresh_materialized_view'}
                       variant="outline"
                       size="sm"
@@ -407,7 +496,9 @@ export function SystemLogsHealth() {
                     </Button>
 
                     <Button
-                      onClick={() => triggerJob('cleanup_logs', { retention_days: 30 })}
+                      onClick={() =>
+                        triggerJob('cleanup_logs', { retention_days: 30 })
+                      }
                       disabled={triggeringJob === 'cleanup_logs'}
                       variant="outline"
                       size="sm"
@@ -421,7 +512,11 @@ export function SystemLogsHealth() {
                     </Button>
 
                     <Button
-                      onClick={() => triggerJob('update_metrics', { metric_types: ['engagement', 'activity'] })}
+                      onClick={() =>
+                        triggerJob('update_metrics', {
+                          metric_types: ['engagement', 'activity'],
+                        })
+                      }
                       disabled={triggeringJob === 'update_metrics'}
                       variant="outline"
                       size="sm"
@@ -456,17 +551,21 @@ export function SystemLogsHealth() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {jobs.map((job) => (
+                      {jobs.map(job => (
                         <TableRow key={job.id}>
                           <TableCell>
                             <div>
                               <div className="font-medium">{job.name}</div>
                               {job.description && (
-                                <div className="text-sm text-muted-foreground">{job.description}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {job.description}
+                                </div>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="font-mono text-sm">{job.job_type}</TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {job.job_type}
+                          </TableCell>
                           <TableCell>
                             <Badge className={getJobStatusColor(job.status)}>
                               {job.status}
@@ -487,5 +586,5 @@ export function SystemLogsHealth() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }

@@ -1,40 +1,40 @@
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Checkbox } from "./ui/checkbox";
-import { Slider } from "./ui/slider";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
-import { X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Checkbox } from './ui/checkbox'
+import { Slider } from './ui/slider'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Separator } from './ui/separator'
+import { X } from 'lucide-react'
 
 interface FilterSidebarProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
 export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
   // Use static data to avoid any computation overhead
   const categories = [
-    { id: "electronics", label: "Electronics" },
-    { id: "clothing", label: "Clothing" },
-    { id: "books", label: "Books" },
-    { id: "home", label: "Home & Garden" },
-    { id: "sports", label: "Sports" },
-    { id: "beauty", label: "Beauty" },
-  ];
+    { id: 'electronics', label: 'Electronics' },
+    { id: 'clothing', label: 'Clothing' },
+    { id: 'books', label: 'Books' },
+    { id: 'home', label: 'Home & Garden' },
+    { id: 'sports', label: 'Sports' },
+    { id: 'beauty', label: 'Beauty' },
+  ]
 
   const brands = [
-    { id: "apple", label: "Apple" },
-    { id: "samsung", label: "Samsung" },
-    { id: "nike", label: "Nike" },
-    { id: "adidas", label: "Adidas" },
-    { id: "sony", label: "Sony" },
-  ];
+    { id: 'apple', label: 'Apple' },
+    { id: 'samsung', label: 'Samsung' },
+    { id: 'nike', label: 'Nike' },
+    { id: 'adidas', label: 'Adidas' },
+    { id: 'sony', label: 'Sony' },
+  ]
 
   // Remove fake active filters to avoid rendering overhead
-  const activeFilters: string[] = [];
+  const activeFilters: string[] = []
 
   return (
-    <div className={`${isOpen ? "block" : "hidden"} lg:block`}>
+    <div className={`${isOpen ? 'block' : 'hidden'} lg:block`}>
       <Card className="sticky top-4">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-lg">Filters</CardTitle>
@@ -54,12 +54,16 @@ export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Active Filters</span>
-                <Button variant="ghost" size="sm" className="h-auto p-0 text-xs">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
+                >
                   Clear All
                 </Button>
               </div>
               <div className="flex flex-wrap gap-1">
-                {activeFilters.map((filter) => (
+                {activeFilters.map(filter => (
                   <Badge key={filter} variant="secondary" className="text-xs">
                     {filter}
                     <X className="h-3 w-3 ml-1 cursor-pointer" />
@@ -75,7 +79,7 @@ export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
           <div className="space-y-3">
             <h4>Category</h4>
             <div className="space-y-2">
-              {categories.map((category) => (
+              {categories.map(category => (
                 <div key={category.id} className="flex items-center space-x-2">
                   <Checkbox id={category.id} />
                   <label
@@ -116,7 +120,7 @@ export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
           <div className="space-y-3">
             <h4>Rating</h4>
             <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((rating) => (
+              {[5, 4, 3, 2, 1].map(rating => (
                 <div key={rating} className="flex items-center space-x-2">
                   <Checkbox id={`rating-${rating}`} />
                   <label
@@ -136,7 +140,7 @@ export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
           <div className="space-y-3">
             <h4>Brand</h4>
             <div className="space-y-2">
-              {brands.map((brand) => (
+              {brands.map(brand => (
                 <div key={brand.id} className="flex items-center space-x-2">
                   <Checkbox id={brand.id} />
                   <label
@@ -152,5 +156,5 @@ export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

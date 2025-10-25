@@ -1,102 +1,104 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
   --font-size: 16px;
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-family-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  --font-family-headings: 'Crimson Text', serif;
-  
-  /* Claude-Inspired Color Palette */
-  --background: #F4F3EE;
-  --foreground: #3D3929;
-  --card: #FEFEFE;
-  --card-foreground: #3D3929;
-  --popover: #FEFEFE;
-  --popover-foreground: #3D3929;
-  --primary: #DA7756;
-  --primary-foreground: #FFFFFF;
-  --primary-hover: #C15F3C;
-  --secondary: #656D76;
-  --secondary-foreground: #FFFFFF;
-  --muted: #F4F3EE;
-  --muted-foreground: #3D3929;
-  --accent: #B87555;
-  --accent-foreground: #FFFFFF;
-  --accent-hover: #A66545;
-  --destructive: #CF222E;
-  --destructive-foreground: #FFFFFF;
-  --success: #FFD166;
-  --success-foreground: #3D3929;
-  --warning: #FFD166;
-  --warning-foreground: #3D3929;
-  --border: #3D3929;
-  --input: #FEFEFE;
-  --input-background: #FEFEFE;
-  --switch-background: #3D3929;
+  --font-family-mono:
+    'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono',
+    Consolas, 'Courier New', monospace;
+  --font-family-headings: 'Montserrat', sans-serif;
+
+  /* Blue and White Color Palette */
+  --background: #ffffff;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --card-foreground: #1e293b;
+  --popover: #ffffff;
+  --popover-foreground: #1e293b;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --primary-hover: #1d4ed8;
+  --secondary: #64748b;
+  --secondary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --accent-hover: #2563eb;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #1e293b;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --input-background: #ffffff;
+  --switch-background: #1e293b;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #DA7756;
-  --chart-1: #DA7756;
-  --chart-2: #4CC9F0;
-  --chart-3: #FFD166;
-  --chart-4: #9D4EDD;
-  --chart-5: #F28482;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
   --radius: 6px;
-  --sidebar: #F4F3EE;
-  --sidebar-foreground: #3D3929;
-  --sidebar-primary: #DA7756;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F4F3EE;
-  --sidebar-accent-foreground: #3D3929;
-  --sidebar-border: #3D3929;
-  --sidebar-ring: #DA7756;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1e293b;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #1e293b;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #2563eb;
 }
 
 .dark {
-  --background: #0D0D0D;
-  --foreground: #F0F6FC;
-  --card: #161B22;
-  --card-foreground: #F0F6FC;
-  --popover: #161B22;
-  --popover-foreground: #F0F6FC;
-  --primary: #C15F3C;
-  --primary-hover: #BD5D3A;
-  --primary-foreground: #FFFFFF;
-  --secondary: #8B949E;
-  --secondary-foreground: #FFFFFF;
-  --muted: #21262D;
-  --muted-foreground: #8B949E;
-  --accent: #C88765;
-  --accent-foreground: #FFFFFF;
-  --accent-hover: #B87555;
-  --destructive: #F85149;
-  --destructive-foreground: #FFFFFF;
-  --success: #FFD166;
-  --success-foreground: #3D3929;
-  --warning: #FFD166;
-  --warning-foreground: #3D3929;
-  --border: #30363D;
-  --input: #161B22;
-  --input-background: #161B22;
-  --switch-background: #30363D;
-  --ring: #C15F3C;
-  --chart-1: #C15F3C;
-  --chart-2: #4CC9F0;
-  --chart-3: #FFD166;
-  --chart-4: #9D4EDD;
-  --chart-5: #F28482;
-  --sidebar: #0D0D0D;
-  --sidebar-foreground: #F0F6FC;
-  --sidebar-primary: #C15F3C;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #21262D;
-  --sidebar-accent-foreground: #F0F6FC;
-  --sidebar-border: #30363D;
-  --sidebar-ring: #C15F3C;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #64748b;
+  --secondary-foreground: #ffffff;
+  --muted: #334155;
+  --muted-foreground: #cbd5e1;
+  --accent: #60a5fa;
+  --accent-foreground: #ffffff;
+  --accent-hover: #3b82f6;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --success: #10b981;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #0f172a;
+  --border: #334155;
+  --input: #1e293b;
+  --input-background: #1e293b;
+  --switch-background: #334155;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #ef4444;
+  --chart-5: #8b5cf6;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #3b82f6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #334155;
+  --sidebar-ring: #3b82f6;
 }
 
 @theme inline {
@@ -156,7 +158,9 @@
     font-family: var(--font-family);
   }
 
-  code, pre, .font-mono {
+  code,
+  pre,
+  .font-mono {
     font-family: var(--font-family-mono);
   }
 }
@@ -232,7 +236,8 @@
     line-height: 1.43;
   }
 
-  input, textarea {
+  input,
+  textarea {
     font-size: 0.875rem; /* 14px */
     font-weight: 400;
     line-height: 1.43;
@@ -255,16 +260,18 @@ html {
 
 /* Interaction styles */
 .hover-lift {
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .header-scrolled {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover {

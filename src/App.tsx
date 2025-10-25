@@ -1,3 +1,6 @@
+/* ORIGINAL_APP_START
+Everything below was commented out per request so only the HomePage is used.
+
 import { useState } from "react";
 import { AppProvider, useApp } from "./contexts/AppContext";
 import { Navigation } from "./components/Navigation";
@@ -8,26 +11,18 @@ import { PromptDetailPage } from "./components/PromptDetailPage";
 import { UserProfilePage } from "./components/UserProfilePage";
 import { SettingsPage } from "./components/SettingsPage";
 import AboutPage from "./components/AboutPage";
-import { TermsPage } from "./components/TermsPage";
-import { PrivacyPage } from "./components/PrivacyPage";
-import { AuthModal } from "./components/AuthModal";
-import { Footer } from "./components/Footer";
+
+import { AuthModal } from "./components/auth/AuthModal";import { Footer } from "./components/Footer";
 import { IndustryPacksPage } from "./components/IndustryPacksPage";
 import { PackViewPage } from "./components/PackViewPage";
 import { CreatePackPage } from "./components/CreatePackPage";
 import { PortfolioViewPage } from "./components/PortfolioViewPage";
 import { SubscriptionPage } from "./components/SubscriptionPage";
-import { BillingPage } from "./components/BillingPage";
 import { InviteSystemPage } from "./components/ui/InviteSystemPage";
 import { AffiliateProgramPage } from "./components/ui/AffiliateProgramPage";
-import { AffiliateDashboard } from "./components/AffiliateDashboard";
-import { AdminBulkImport } from "./components/AdminBulkImport";
-import { AdminDashboard } from "./components/AdminDashboard";
+import { AdminDashboard } from "./components/admin/AdminDashboard";
 import { UserManagement } from "./components/UserManagement";
-import { ContentModeration } from "./components/ContentModeration";
-import { AnalyticsReports } from "./components/AnalyticsReports";
 import { SubscriptionManagement } from "./components/SubscriptionManagement";
-import { InviteAffiliateManagement } from "./components/InviteAffiliateManagement";
 import { PlatformSettings } from "./components/PlatformSettings";
 import { SystemLogsHealth } from "./components/SystemLogsHealth";
 import { UIPlayground } from "./components/UIPlayground";
@@ -183,8 +178,7 @@ function AppContent() {
             skills: [],
             role: fullPromptData.profiles.role || 'general',
             subscriptionStatus: fullPromptData.profiles.subscription_status || 'active',
-            saveCount: 0,
-            invitesRemaining: fullPromptData.profiles.invites_remaining || 0
+            saveCount: 0
           } : {
             id: fullPromptData.user_id,
             username: 'user',
@@ -197,8 +191,7 @@ function AppContent() {
             skills: [],
             role: 'general',
             subscriptionStatus: 'active',
-            saveCount: 0,
-            invitesRemaining: 0
+            saveCount: 0
           },
           images: fullPromptData.prompt_images?.map((img: any) => ({
             id: img.id,
@@ -395,12 +388,7 @@ function AppContent() {
           />
         )}
 
-        {currentPage.type === 'billing' && (
-          <BillingPage
-            onBack={handleBack}
-            onNavigateToSubscription={() => setCurrentPage({ type: 'subscription' })}
-          />
-        )}
+  
 
         {currentPage.type === 'industry-packs' && (
           <IndustryPacksPage
@@ -418,7 +406,7 @@ function AppContent() {
           />
         )}
 
-        {/* Portfolio pages removed - now handled in UserProfilePage */}
+        {/* Portfolio pages removed - now handled in UserProfilePage *\/}
 
         {currentPage.type === 'pack-create' && (
           <CreatePackPage
@@ -441,17 +429,7 @@ function AppContent() {
           />
         )}
 
-        {currentPage.type === 'terms' && (
-          <TermsPage
-            onBack={handleBack}
-          />
-        )}
-
-        {currentPage.type === 'privacy' && (
-          <PrivacyPage
-            onBack={handleBack}
-          />
-        )}
+     
 
         {currentPage.type === 'invite' && (
           <InviteSystemPage onBack={handleBack} />
@@ -464,37 +442,23 @@ function AppContent() {
           />
         )}
 
-        {currentPage.type === 'affiliate-dashboard' && (
-          <AffiliateDashboard />
-        )}
+   
 
         {currentPage.type === 'admin-dashboard' && isAdmin(state.user) && (
           <AdminDashboard />
         )}
 
-        {currentPage.type === 'admin-bulk-import' && isAdmin(state.user) && (
-          <AdminBulkImport />
-        )}
-
-        {currentPage.type === 'admin-content-moderation' && isAdmin(state.user) && (
-          <ContentModeration />
-        )}
+   
 
         {currentPage.type === 'admin-user-management' && isAdmin(state.user) && (
           <UserManagement />
         )}
 
-        {currentPage.type === 'admin-analytics-reports' && isAdmin(state.user) && (
-          <AnalyticsReports />
-        )}
-
+     
         {currentPage.type === 'admin-subscription-management' && isAdmin(state.user) && (
           <SubscriptionManagement />
         )}
 
-        {currentPage.type === 'admin-invite-affiliate-management' && isAdmin(state.user) && (
-          <InviteAffiliateManagement />
-        )}
 
         {currentPage.type === 'admin-platform-settings' && isAdmin(state.user) && (
           <PlatformSettings />
@@ -532,4 +496,159 @@ export default function App() {
       <AppContent />
     </AppProvider>
   );
+}
+
+ORIGINAL_APP_END */
+
+// App with basic profile functionality
+import { useState } from 'react'
+import { AppProvider, useApp } from './contexts/AppContext'
+import { HomePage } from './components/HomePage'
+import { ExplorePage } from './components/ExplorePage'
+import { UserProfilePage } from './components/UserProfilePage'
+import { Navigation } from './components/Navigation'
+import { Footer } from './components/Footer'
+import { AuthModal } from './components/auth/AuthModal'
+
+type Page =
+  | { type: 'home' }
+  | { type: 'explore'; searchQuery?: string }
+  | { type: 'profile'; userId: string; tab?: string }
+
+function AppContent() {
+  const { state } = useApp()
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState<Page>({ type: 'home' })
+
+  const handleAuthClick = () => {
+    setIsAuthModalOpen(true)
+  }
+
+  const handleGetStarted = () => {
+    if (state.user) {
+      // Navigate to user profile when authenticated
+      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'created' })
+    } else {
+      setIsAuthModalOpen(true)
+    }
+  }
+
+  const handleExplore = (searchQuery?: string) => {
+    setCurrentPage({ type: 'explore', searchQuery })
+  }
+
+  const handleBack = () => {
+    setCurrentPage({ type: 'home' })
+  }
+
+  const handlePromptClick = (promptId: string) => {
+    console.log('Prompt clicked:', promptId)
+  }
+
+  const handleProfileClick = () => {
+    if (state.user) {
+      setCurrentPage({ type: 'profile', userId: state.user.id })
+    }
+  }
+
+  const handleSavedClick = () => {
+    if (state.user) {
+      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'saved' })
+    }
+  }
+
+  const handleSettingsClick = () => {
+    if (state.user) {
+      setCurrentPage({
+        type: 'profile',
+        userId: state.user.id,
+        tab: 'settings',
+      })
+    }
+  }
+
+  const handleAuthSuccess = () => {
+    // After successful authentication, navigate to profile
+    if (state.user) {
+      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'created' })
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation
+        user={state.user}
+        onAuthClick={handleAuthClick}
+        onProfileClick={handleProfileClick}
+        onCreateClick={() => console.log('Create clicked')}
+        onExploreClick={handleExplore}
+        onHomeClick={() => setCurrentPage({ type: 'home' })}
+        onSavedClick={handleSavedClick}
+        onSettingsClick={handleSettingsClick}
+        onPromptPacksClick={() => console.log('Prompt Packs clicked')}
+        onAdminClick={feature => console.log('Admin clicked:', feature)}
+      />
+
+      <main>
+        {currentPage.type === 'home' && (
+          <HomePage
+            onGetStarted={handleGetStarted}
+            onExplore={handleExplore}
+            onPromptClick={handlePromptClick}
+          />
+        )}
+
+        {currentPage.type === 'explore' && (
+          <ExplorePage
+            onBack={handleBack}
+            onPromptClick={handlePromptClick}
+            initialSearchQuery={currentPage.searchQuery}
+          />
+        )}
+
+        {currentPage.type === 'profile' && (
+          <UserProfilePage
+            userId={currentPage.userId}
+            initialTab={currentPage.tab}
+            onBack={handleBack}
+            onPromptClick={handlePromptClick}
+            onNavigateToPromptPacks={() =>
+              console.log('Navigate to prompt packs')
+            }
+            onNavigateToPackView={packId =>
+              console.log('Navigate to pack view:', packId)
+            }
+            onNavigateToPortfolioView={portfolioId =>
+              console.log('Navigate to portfolio view:', portfolioId)
+            }
+            onNavigateToBilling={() => console.log('Navigate to billing')}
+            onNavigateToSubscription={() =>
+              console.log('Navigate to subscription')
+            }
+          />
+        )}
+      </main>
+
+      <Footer
+        onGetStarted={handleGetStarted}
+        onNavigateToAbout={() => console.log('About clicked')}
+        onNavigateToTerms={() => console.log('Terms clicked')}
+        onNavigateToPrivacy={() => console.log('Privacy clicked')}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  )
 }

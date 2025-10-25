@@ -1,46 +1,71 @@
-import { useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { ArrowLeft, Plus, Eye, Lock, ExternalLink, Settings, Trash2, Copy } from 'lucide-react';
-import { Portfolio } from '../lib/types';
+import { useState } from 'react'
+import { useApp } from '../contexts/AppContext'
+import { Button } from './ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Badge } from './ui/badge'
+import {
+  ArrowLeft,
+  Plus,
+  Eye,
+  Lock,
+  ExternalLink,
+  Settings,
+  Trash2,
+  Copy,
+} from 'lucide-react'
+import { Portfolio } from '../lib/types'
 
 interface PortfoliosPageProps {
-  onBack: () => void;
-  onCreatePortfolio: () => void;
-  onViewPortfolio: (portfolioId: string) => void;
+  onBack: () => void
+  onCreatePortfolio: () => void
+  onViewPortfolio: (portfolioId: string) => void
 }
 
-export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: PortfoliosPageProps) {
-  const { state, dispatch } = useApp();
-  const [copiedPortfolio, setCopiedPortfolio] = useState<string | null>(null);
+export function PortfoliosPage({
+  onBack,
+  onCreatePortfolio,
+  onViewPortfolio,
+}: PortfoliosPageProps) {
+  const { state, dispatch } = useApp()
+  const [copiedPortfolio, setCopiedPortfolio] = useState<string | null>(null)
 
   // Get user's portfolios
-  const userPortfolios = state.portfolios.filter(p => p.userId === state.user?.id);
+  const userPortfolios = state.portfolios.filter(
+    p => p.userId === state.user?.id
+  )
 
   const handleCopyLink = (portfolio: Portfolio) => {
-    const url = `https://${portfolio.subdomain}.promptsgo.com`;
-    navigator.clipboard.writeText(url);
-    setCopiedPortfolio(portfolio.id);
-    setTimeout(() => setCopiedPortfolio(null), 2000);
-  };
+    const url = `https://${portfolio.subdomain}.promptsgo.com`
+    navigator.clipboard.writeText(url)
+    setCopiedPortfolio(portfolio.id)
+    setTimeout(() => setCopiedPortfolio(null), 2000)
+  }
 
   const handleDeletePortfolio = (portfolioId: string) => {
-    if (confirm('Are you sure you want to delete this portfolio? This action cannot be undone.')) {
-      dispatch({ type: 'DELETE_PORTFOLIO', payload: portfolioId });
+    if (
+      confirm(
+        'Are you sure you want to delete this portfolio? This action cannot be undone.'
+      )
+    ) {
+      dispatch({ type: 'DELETE_PORTFOLIO', payload: portfolioId })
     }
-  };
+  }
 
   const handleTogglePublish = (portfolio: Portfolio) => {
     dispatch({
       type: 'UPDATE_PORTFOLIO',
       payload: {
         id: portfolio.id,
-        updates: { isPublished: !portfolio.isPublished }
-      }
-    });
-  };
+        updates: { isPublished: !portfolio.isPublished },
+      },
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,20 +96,23 @@ export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: P
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm">
-                  <span className="font-medium">Current plan: {state.user.subscriptionPlan === 'pro' ? 'Pro' : 'Free'}</span>
+                  <span className="font-medium">
+                    Current plan:{' '}
+                    {state.user.subscriptionPlan === 'pro' ? 'Pro' : 'Free'}
+                  </span>
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {state.user.subscriptionPlan === 'pro' 
+                  {state.user.subscriptionPlan === 'pro'
                     ? 'Unlimited portfolios with custom domains'
-                    : `${userPortfolios.length}/3 portfolios used`
-                  }
+                    : `${userPortfolios.length}/3 portfolios used`}
                 </p>
               </div>
-              {state.user.subscriptionPlan === 'free' && userPortfolios.length >= 3 && (
-                <Button variant="outline" size="sm">
-                  Upgrade to Pro
-                </Button>
-              )}
+              {state.user.subscriptionPlan === 'free' &&
+                userPortfolios.length >= 3 && (
+                  <Button variant="outline" size="sm">
+                    Upgrade to Pro
+                  </Button>
+                )}
             </div>
           </div>
         )}
@@ -111,22 +139,19 @@ export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: P
                           </Badge>
                         )}
                       </CardTitle>
-                      <CardDescription>
-                        {portfolio.description}
-                      </CardDescription>
+                      <CardDescription>{portfolio.description}</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="space-y-4">
                     {/* Portfolio URL */}
                     <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
                       <code className="text-sm flex-1">
-                        {state.user?.subscriptionPlan === 'pro' 
+                        {state.user?.subscriptionPlan === 'pro'
                           ? `${portfolio.subdomain}.promptsgo.com`
-                          : `promptsgo.com/portfolio/${portfolio.subdomain}`
-                        }
+                          : `promptsgo.com/portfolio/${portfolio.subdomain}`}
                       </code>
                       <Button
                         variant="ghost"
@@ -134,7 +159,9 @@ export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: P
                         onClick={() => handleCopyLink(portfolio)}
                       >
                         {copiedPortfolio === portfolio.id ? (
-                          <span className="text-xs text-green-600">Copied!</span>
+                          <span className="text-xs text-green-600">
+                            Copied!
+                          </span>
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
@@ -147,12 +174,8 @@ export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: P
                         <Eye className="w-4 h-4" />
                         {portfolio.viewCount} views
                       </div>
-                      <div>
-                        {portfolio.promptIds.length} prompts
-                      </div>
-                      <div>
-                        {portfolio.clientAccessCount} client accesses
-                      </div>
+                      <div>{portfolio.promptIds.length} prompts</div>
+                      <div>{portfolio.clientAccessCount} client accesses</div>
                     </div>
 
                     {/* Actions */}
@@ -165,7 +188,7 @@ export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: P
                         <Eye className="w-4 h-4 mr-2" />
                         Preview
                       </Button>
-                      
+
                       {portfolio.isPublished && (
                         <Button
                           variant="outline"
@@ -185,10 +208,7 @@ export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: P
                         {portfolio.isPublished ? 'Unpublish' : 'Publish'}
                       </Button>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                      >
+                      <Button variant="ghost" size="sm">
                         <Settings className="w-4 h-4" />
                       </Button>
 
@@ -223,5 +243,5 @@ export function PortfoliosPage({ onBack, onCreatePortfolio, onViewPortfolio }: P
         )}
       </div>
     </div>
-  );
+  )
 }

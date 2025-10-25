@@ -1,27 +1,57 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import { ImageIcon } from 'lucide-react'
 
-const ERROR_IMG_SRC =
-  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODgiIGhlaWdodD0iODgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBvcGFjaXR5PSIuMyIgZmlsbD0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIzLjciPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjU2IiByeD0iNiIvPjxwYXRoIGQ9Im0xNiA1OCAxNi0xOCAzMiAzMiIvPjxjaXJjbGUgY3g9IjUzIiBjeT0iMzUiIHI9IjciLz48L3N2Zz4KCg=='
+interface ImageWithFallbackProps {
+  src: string
+  alt: string
+  className?: string
+  fallbackClassName?: string
+}
 
-export function ImageWithFallback(props: React.ImgHTMLAttributes<HTMLImageElement>) {
-  const [didError, setDidError] = useState(false)
+export function ImageWithFallback({
+  src,
+  alt,
+  className = '',
+  fallbackClassName = '',
+}: ImageWithFallbackProps) {
+  const [hasError, setHasError] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const handleError = () => {
-    setDidError(true)
+  const handleLoad = () => {
+    setIsLoading(false)
   }
 
-  const { src, alt, style, className, ...rest } = props
+  const handleError = () => {
+    setHasError(true)
+    setIsLoading(false)
+  }
 
-  return didError ? (
-    <div
-      className={`inline-block bg-gray-100 text-center align-middle ${className ?? ''}`}
-      style={style}
-    >
-      <div className="flex items-center justify-center w-full h-full">
-        <img src={ERROR_IMG_SRC} alt="Error loading image" {...rest} data-original-url={src} />
+  if (hasError) {
+    return (
+      <div
+        className={`flex items-center justify-center bg-muted ${fallbackClassName}`}
+      >
+        <ImageIcon className="h-8 w-8 text-muted-foreground" />
       </div>
-    </div>
-  ) : (
-    <img src={src} alt={alt} className={className} style={style} {...rest} onError={handleError} />
+    )
+  }
+
+  return (
+    <>
+      {isLoading && (
+        <div
+          className={`flex items-center justify-center bg-muted animate-pulse ${className}`}
+        >
+          <div className="w-full h-full bg-muted-foreground/10" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`${isLoading ? 'hidden' : ''} ${className}`}
+        onLoad={handleLoad}
+        onError={handleError}
+      />
+    </>
   )
 }

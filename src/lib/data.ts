@@ -1,29 +1,83 @@
-import { User, Prompt, Comment, Badge } from './types';
+import { User, Prompt, Comment, Badge } from './types'
 
 // Sample badges - removed mock data
-export const badges: Badge[] = [];
+export const badges: Badge[] = []
 
 // Sample users - removed mock data
-export const users: User[] = [];
+export const users: User[] = []
 
 // Real prompts loaded from database - mock data removed
-export const prompts: Prompt[] = [];
+export const prompts: Prompt[] = []
 
 // Sample comments - removed mock data
-export const comments: Comment[] = [];
+export const comments: Comment[] = []
 
 // Categories and tags - basic UI structure (not mock data)
 export const categories = [
-  { id: 'writing', name: 'Writing', label: 'Writing', icon: '✍️', color: '#DA7756' },
-  { id: 'development', name: 'Development', label: 'Development', icon: '💻', color: '#4CC9F0' },
-  { id: 'marketing', name: 'Marketing', label: 'Marketing', icon: '📈', color: '#FFD166' },
-  { id: 'business', name: 'Business', label: 'Business', icon: '💼', color: '#9D4EDD' },
-  { id: 'data', name: 'Data Analysis', label: 'Data Analysis', icon: '📊', color: '#F28482' },
-  { id: 'education', name: 'Education', label: 'Education', icon: '🎓', color: '#DA7756' },
-  { id: 'creative', name: 'Creative', label: 'Creative', icon: '🎨', color: '#BD5D3A' },
-  { id: 'analysis', name: 'Analysis', label: 'Analysis', icon: '🔍', color: '#C15F3C' },
-  { id: 'technical', name: 'Technical', label: 'Technical', icon: '⚙️', color: '#3D3929' }
-];
+  {
+    id: 'writing',
+    name: 'Writing',
+    label: 'Writing',
+    icon: '✍️',
+    color: '#DA7756',
+  },
+  {
+    id: 'development',
+    name: 'Development',
+    label: 'Development',
+    icon: '💻',
+    color: '#4CC9F0',
+  },
+  {
+    id: 'marketing',
+    name: 'Marketing',
+    label: 'Marketing',
+    icon: '📈',
+    color: '#FFD166',
+  },
+  {
+    id: 'business',
+    name: 'Business',
+    label: 'Business',
+    icon: '💼',
+    color: '#9D4EDD',
+  },
+  {
+    id: 'data',
+    name: 'Data Analysis',
+    label: 'Data Analysis',
+    icon: '📊',
+    color: '#F28482',
+  },
+  {
+    id: 'education',
+    name: 'Education',
+    label: 'Education',
+    icon: '🎓',
+    color: '#DA7756',
+  },
+  {
+    id: 'creative',
+    name: 'Creative',
+    label: 'Creative',
+    icon: '🎨',
+    color: '#BD5D3A',
+  },
+  {
+    id: 'analysis',
+    name: 'Analysis',
+    label: 'Analysis',
+    icon: '🔍',
+    color: '#C15F3C',
+  },
+  {
+    id: 'technical',
+    name: 'Technical',
+    label: 'Technical',
+    icon: '⚙️',
+    color: '#3D3929',
+  },
+]
 
 export const models = [
   { id: 'gpt-4', name: 'GPT-4' },
@@ -39,16 +93,16 @@ export const models = [
   { id: 'codex', name: 'Codex' },
   { id: 'llama-3', name: 'Llama-3' },
   { id: 'mistral-large', name: 'Mistral-Large' },
-  { id: 'anthropic-claude-2', name: 'Anthropic Claude-2' }
-];
+  { id: 'anthropic-claude-2', name: 'Anthropic Claude-2' },
+]
 
 export const promptTypes = [
   { id: 'text', name: 'Text' },
   { id: 'image', name: 'Image' },
   { id: 'code', name: 'Code' },
   { id: 'agent', name: 'Agent' },
-  { id: 'chain', name: 'Chain' }
-];
+  { id: 'chain', name: 'Chain' },
+]
 
 export const popularTags = [
   { id: 'business', name: 'business' },
@@ -60,8 +114,8 @@ export const popularTags = [
   { id: 'email', name: 'email' },
   { id: 'marketing', name: 'marketing' },
   { id: 'research', name: 'research' },
-  { id: 'automation', name: 'automation' }
-];
+  { id: 'automation', name: 'automation' },
+]
 
 // Pricing plans
 export const pricingPlans = {
@@ -71,28 +125,25 @@ export const pricingPlans = {
     features: [
       '✓ Create unlimited prompts',
       '✓ Heart & comment on prompts',
-      '✓ Browse all public prompts',
       '✓ Basic search & filters',
       '✓ Fork prompts (3 per month)',
       '✓ Save prompts (10 max)',
-      '✓ 5 invites per month',
       '✗ Advanced search filters',
       '✗ Unlimited saves & forks',
       '✗ Priority support',
-      '✗ Export collections'
+      '✗ Export collections',
     ],
     limits: {
       saves: 10,
       forksPerMonth: 3,
-      invitesPerMonth: 5,
-      exportCollections: false
-    }
+      exportCollections: false,
+    },
   },
   pro: {
     name: 'Pro',
     price: {
       monthly: 7.99,
-      yearly: 79.99
+      yearly: 79.99,
     },
     features: [
       '✓ Everything in Starter',
@@ -103,28 +154,23 @@ export const pricingPlans = {
       '✓ Priority support',
       '✓ Early access to features',
       '✓ Pro badge on profile',
-      '✓ 10 invites per month',
       '✓ API access (coming soon)',
-      '✓ Private team workspace (coming soon)'
+      '✓ Private team workspace (coming soon)',
     ],
     limits: {
       saves: 'unlimited',
       forksPerMonth: 'unlimited',
-      invitesPerMonth: 10,
       exportCollections: true,
-      apiAccess: true
-    }
-  }
-};
-
-// Sample invite codes - removed mock data
-export const inviteCodes = [];
+      apiAccess: true,
+    },
+  },
+}
 
 // Sample prompt packs for Prompt Packs feature - removed mock data
-export const promptPacks = [];
+export const promptPacks = []
 
 // Sample prompt templates - removed mock data
-export const promptTemplates = [];
+export const promptTemplates = []
 
 // Sample prompt feedback data - removed mock data
-export const promptFeedbacks = [];
+export const promptFeedbacks = []

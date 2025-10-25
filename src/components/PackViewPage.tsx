@@ -1,67 +1,83 @@
-import { useState, useEffect } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { PromptCard } from './PromptCard';
-import { PromptPack, Prompt } from '../lib/types';
-import { ArrowLeft, Lock, Users, Calendar, Package, Heart, Crown } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { useApp } from '../contexts/AppContext'
+import { Button } from './ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Badge } from './ui/badge'
+import { PromptCard } from './prompts/PromptCard'
+import { PromptPack, Prompt } from '../lib/types'
+import { ArrowLeft, Users, Calendar, Package, Heart, Crown } from 'lucide-react'
 
 interface PackViewPageProps {
-  packId: string;
-  onBack: () => void;
-  onPromptClick: (promptId: string) => void;
+  packId: string
+  onBack: () => void
+  onPromptClick: (promptId: string) => void
 }
 
-export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProps) {
-  const { state, dispatch } = useApp();
-  const [pack, setPack] = useState<PromptPack | null>(null);
-  const [packPrompts, setPackPrompts] = useState<Prompt[]>([]);
+export function PackViewPage({
+  packId,
+  onBack,
+  onPromptClick,
+}: PackViewPageProps) {
+  const { state, dispatch } = useApp()
+  const [pack, setPack] = useState<PromptPack | null>(null)
+  const [packPrompts, setPackPrompts] = useState<Prompt[]>([])
 
   useEffect(() => {
     // Find pack in state (which includes all packs)
-    const foundPack = state.promptPacks.find(p => p.id === packId);
-    
+    const foundPack = state.promptPacks.find(p => p.id === packId)
+
     if (foundPack) {
-      setPack(foundPack);
+      setPack(foundPack)
       // Get prompts that belong to this pack
-      const prompts = state.prompts.filter(p => foundPack.promptIds.includes(p.id));
-      setPackPrompts(prompts);
+      const prompts = state.prompts.filter(p =>
+        foundPack.promptIds.includes(p.id)
+      )
+      setPackPrompts(prompts)
     }
-  }, [packId, state.promptPacks, state.prompts]);
+  }, [packId, state.promptPacks, state.prompts])
 
   const handleAddPackToLibrary = () => {
-    if (!state.user || !pack) return;
+    if (!state.user || !pack) return
 
     // For free users, limit to 2 packs
     if (state.user.subscriptionStatus !== 'active') {
-      const userPackCount = state.userPackLibrary?.packs?.length || 0;
+      const userPackCount = state.userPackLibrary?.packs?.length || 0
       if (userPackCount >= 2) {
-        alert('Free users can add up to 2 packs. Upgrade to Pro for unlimited access!');
-        return;
+        alert(
+          'Free users can add up to 2 packs. Upgrade to Pro for unlimited access!'
+        )
+        return
       }
     }
 
     // Add pack to user's library
-    dispatch({ 
-      type: 'ADD_PACK_TO_LIBRARY', 
-      payload: { packId: pack.id, packName: pack.name } 
-    });
+    dispatch({
+      type: 'ADD_PACK_TO_LIBRARY',
+      payload: { packId: pack.id, packName: pack.name },
+    })
 
     // Also add pack prompts to user's saved prompts
     pack.promptIds.forEach(promptId => {
-      dispatch({ type: 'SAVE_PROMPT', payload: { promptId } });
-    });
+      dispatch({ type: 'SAVE_PROMPT', payload: { promptId } })
+    })
 
-    alert(`Added "${pack.name}" pack to your collection!`);
-  };
+    alert(`Added "${pack.name}" pack to your collection!`)
+  }
 
   // Removed: Pro users cannot add pack prompts to portfolios to protect content creators' IP
 
   const handlePurchasePack = () => {
-    if (!pack) return;
-    alert(`Purchase ${pack.name} for ${pack.price}. Payment integration coming soon!`);
-  };
+    if (!pack) return
+    alert(
+      `Purchase ${pack.name} for ${pack.price}. Payment integration coming soon!`
+    )
+  }
 
   if (!pack) {
     return (
@@ -73,7 +89,7 @@ export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProp
               Back to Prompt Packs
             </Button>
           </div>
-          
+
           <div className="text-center py-12">
             <Package className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
             <h2 className="mb-4">Pack not found</h2>
@@ -83,10 +99,10 @@ export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProp
           </div>
         </div>
       </div>
-    );
+    )
   }
 
-  const author = state.prompts.find(p => p.userId === pack.createdBy)?.author;
+  const author = state.prompts.find(p => p.userId === pack.createdBy)?.author
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,7 +137,7 @@ export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProp
                   <CardDescription className="text-base mb-4">
                     {pack.description}
                   </CardDescription>
-                  
+
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {pack.tags.map(tag => (
@@ -141,11 +157,7 @@ export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProp
                       <Calendar className="w-4 h-4" />
                       {new Date(pack.createdAt).toLocaleDateString()}
                     </div>
-                    {author && (
-                      <div>
-                        Created by {author.name}
-                      </div>
-                    )}
+                    {author && <div>Created by {author.name}</div>}
                   </div>
                 </div>
 
@@ -177,7 +189,7 @@ export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProp
 
           {packPrompts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {packPrompts.map((prompt) => (
+              {packPrompts.map(prompt => (
                 <PromptCard
                   key={prompt.id}
                   id={prompt.id}
@@ -190,43 +202,52 @@ export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProp
                   stats={{
                     hearts: prompt.hearts,
                     saves: prompt.saveCount,
-                    forks: prompt.forkCount
+                    forks: prompt.forkCount,
                   }}
                   isSaved={prompt.isSaved}
                   isHearted={prompt.isHearted}
                   createdAt={prompt.createdAt}
                   onClick={() => onPromptClick(prompt.id)}
                   onHeart={() => {
-                    if (!state.user) return;
+                    if (!state.user) return
                     if (prompt.isHearted) {
-                      dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'UNHEART_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     } else {
-                      dispatch({ type: 'HEART_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'HEART_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     }
                   }}
                   onSave={() => {
-                    if (!state.user) return;
+                    if (!state.user) return
                     if (prompt.isSaved) {
-                      dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id });
+                      dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id })
                     } else {
-                      dispatch({ type: 'SAVE_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'SAVE_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     }
                   }}
                   onShare={async () => {
-                    const url = `${window.location.origin}/prompts/${prompt.slug}`;
+                    const url = `${window.location.origin}/prompts/${prompt.slug}`
                     try {
                       if (navigator.share) {
                         await navigator.share({
                           title: prompt.title,
                           text: prompt.description,
-                          url: url
-                        });
+                          url: url,
+                        })
                       } else {
-                        await navigator.clipboard.writeText(url);
+                        await navigator.clipboard.writeText(url)
                         // Could show a toast notification here
                       }
                     } catch (err) {
-                      console.error('Failed to share:', err);
+                      console.error('Failed to share:', err)
                     }
                   }}
                 />
@@ -245,5 +266,5 @@ export function PackViewPage({ packId, onBack, onPromptClick }: PackViewPageProp
         </div>
       </div>
     </div>
-  );
+  )
 }

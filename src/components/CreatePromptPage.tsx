@@ -1,96 +1,192 @@
-import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { useApp } from '../contexts/AppContext';
-import { Prompt, PromptImage, Draft } from '../lib/types';
-import { ImageUpload } from './ImageUpload';
-import { categories, models } from '../lib/data';
-import { prompts, storage } from '../lib/api';
-import { supabase } from '../lib/supabase';
-import { ArrowLeft, Save, Eye, FileText, Image, Code, Bot, Link2, Plus, X, Settings, PenTool, Camera, Hash, Cog, Share2 } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Textarea } from './ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import { Badge } from './ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { useApp } from '../contexts/AppContext'
+import { Prompt, PromptImage, Draft } from '../lib/types'
+import { ImageUpload } from './ImageUpload'
+import { categories, models } from '../lib/data'
+import { prompts, storage } from '../lib/api'
+import { supabase } from '../lib/supabase'
+import {
+  ArrowLeft,
+  Save,
+  Eye,
+  FileText,
+  Image,
+  Code,
+  Bot,
+  Link2,
+  Plus,
+  X,
+  Settings,
+  PenTool,
+  Camera,
+  Hash,
+  Cog,
+  Share2,
+} from 'lucide-react'
 
 interface CreatePromptPageProps {
-  onBack: () => void;
-  editingPrompt?: Prompt;
-  onPublish?: (isNewPrompt: boolean) => void;
+  onBack: () => void
+  editingPrompt?: Prompt
+  onPublish?: (isNewPrompt: boolean) => void
 }
 
 const promptTypes = [
-  { value: 'text', label: 'Text Prompt', icon: FileText, description: 'General text generation and completion' },
-  { value: 'image', label: 'Image Prompt', icon: Image, description: 'Image generation and visual content' },
-  { value: 'code', label: 'Code Prompt', icon: Code, description: 'Code generation and programming assistance' },
-  { value: 'agent', label: 'AI Agent', icon: Bot, description: 'Complex multi-step AI agent workflows' },
-  { value: 'chain', label: 'Prompt Chain', icon: Link2, description: 'Sequential prompt workflows' }
-];
-
+  {
+    value: 'text',
+    label: 'Text Prompt',
+    icon: FileText,
+    description: 'General text generation and completion',
+  },
+  {
+    value: 'image',
+    label: 'Image Prompt',
+    icon: Image,
+    description: 'Image generation and visual content',
+  },
+  {
+    value: 'code',
+    label: 'Code Prompt',
+    icon: Code,
+    description: 'Code generation and programming assistance',
+  },
+  {
+    value: 'agent',
+    label: 'AI Agent',
+    icon: Bot,
+    description: 'Complex multi-step AI agent workflows',
+  },
+  {
+    value: 'chain',
+    label: 'Prompt Chain',
+    icon: Link2,
+    description: 'Sequential prompt workflows',
+  },
+]
 
 const visibilityOptions = [
-  { value: 'public', label: 'Public', description: 'Anyone can see and use this prompt' },
-  { value: 'unlisted', label: 'Unlisted', description: 'Only accessible via direct link' },
-  { value: 'private', label: 'Private', description: 'Only you can see this prompt' }
-];
+  {
+    value: 'public',
+    label: 'Public',
+    description: 'Anyone can see and use this prompt',
+  },
+  {
+    value: 'unlisted',
+    label: 'Unlisted',
+    description: 'Only accessible via direct link',
+  },
+  {
+    value: 'private',
+    label: 'Private',
+    description: 'Only you can see this prompt',
+  },
+]
 
-export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePromptPageProps) {
-  const { state, dispatch } = useApp();
-  const [activeTab, setActiveTab] = useState('editor');
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+export function CreatePromptPage({
+  onBack,
+  editingPrompt,
+  onPublish,
+}: CreatePromptPageProps) {
+  const { state, dispatch } = useApp()
+  const [activeTab, setActiveTab] = useState('editor')
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>(
+    'saved'
+  )
 
   // Form state
-  const [title, setTitle] = useState(editingPrompt?.title || '');
-  const [description, setDescription] = useState(editingPrompt?.description || '');
-  const [content, setContent] = useState(editingPrompt?.content || '');
-  const [type, setType] = useState<'text' | 'image' | 'code' | 'agent' | 'chain'>(editingPrompt?.type || 'text');
-  const [category, setCategory] = useState(editingPrompt?.category || '');
-  const [visibility, setVisibility] = useState<'public' | 'private' | 'unlisted'>(editingPrompt?.visibility || 'public');
-  const [selectedModels, setSelectedModels] = useState<string[]>(editingPrompt?.modelCompatibility || []);
-  const [tags, setTags] = useState<string[]>(editingPrompt?.tags || []);
-  const [newTag, setNewTag] = useState('');
-  const [images, setImages] = useState<PromptImage[]>(editingPrompt?.images || []);
+  const [title, setTitle] = useState(editingPrompt?.title || '')
+  const [description, setDescription] = useState(
+    editingPrompt?.description || ''
+  )
+  const [content, setContent] = useState(editingPrompt?.content || '')
+  const [type, setType] = useState<
+    'text' | 'image' | 'code' | 'agent' | 'chain'
+  >(editingPrompt?.type || 'text')
+  const [category, setCategory] = useState(editingPrompt?.category || '')
+  const [visibility, setVisibility] = useState<
+    'public' | 'private' | 'unlisted'
+  >(editingPrompt?.visibility || 'public')
+  const [selectedModels, setSelectedModels] = useState<string[]>(
+    editingPrompt?.modelCompatibility || []
+  )
+  const [tags, setTags] = useState<string[]>(editingPrompt?.tags || [])
+  const [newTag, setNewTag] = useState('')
+  const [images, setImages] = useState<PromptImage[]>(
+    editingPrompt?.images || []
+  )
 
   // Template state
-  const [template, setTemplate] = useState(editingPrompt?.template || '');
+  const [template, setTemplate] = useState(editingPrompt?.template || '')
 
   // Meta description state
-  const [metaDescription, setMetaDescription] = useState('');
+  const [metaDescription, setMetaDescription] = useState('')
 
   // Custom model state
-  const [customModel, setCustomModel] = useState('');
+  const [customModel, setCustomModel] = useState('')
 
   // Validation
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Track changes for auto-save status
   useEffect(() => {
     if (lastSaved) {
-      setSaveStatus('unsaved');
+      setSaveStatus('unsaved')
     }
-  }, [title, description, content, type, category, visibility, selectedModels, tags, images, template]);
+  }, [
+    title,
+    description,
+    content,
+    type,
+    category,
+    visibility,
+    selectedModels,
+    tags,
+    images,
+    template,
+  ])
 
   // Auto-save functionality
   useEffect(() => {
-    if (!state.user || (!title && !content) || saveStatus === 'saved') return;
+    if (!state.user || (!title && !content) || saveStatus === 'saved') return
 
     const saveTimer = setTimeout(() => {
-      saveDraft();
-    }, 30000); // Auto-save every 30 seconds
+      saveDraft()
+    }, 30000) // Auto-save every 30 seconds
 
-    return () => clearTimeout(saveTimer);
-  }, [title, description, content, type, category, visibility, selectedModels, tags, images, template, saveStatus]);
-
-
+    return () => clearTimeout(saveTimer)
+  }, [
+    title,
+    description,
+    content,
+    type,
+    category,
+    visibility,
+    selectedModels,
+    tags,
+    images,
+    template,
+    saveStatus,
+  ])
 
   const saveDraft = async () => {
-    if (!state.user) return;
+    if (!state.user) return
 
     try {
-      setSaveStatus('saving');
+      setSaveStatus('saving')
 
       const draft: Draft = {
         id: editingPrompt?.id || `draft-${Date.now()}`,
@@ -106,50 +202,59 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
           tags,
           images,
           template,
-          metaDescription
+          metaDescription,
         },
-        lastSaved: new Date().toISOString()
-      };
+        lastSaved: new Date().toISOString(),
+      }
 
-      dispatch({ type: 'SAVE_DRAFT', payload: draft });
-      setLastSaved(new Date());
-      setSaveStatus('saved');
+      dispatch({ type: 'SAVE_DRAFT', payload: draft })
+      setLastSaved(new Date())
+      setSaveStatus('saved')
     } catch (error) {
-      console.error('Error saving draft:', error);
-      setSaveStatus('unsaved');
+      console.error('Error saving draft:', error)
+      setSaveStatus('unsaved')
     }
-  };
+  }
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {}
 
-    if (!title.trim()) newErrors.title = 'Title is required';
-    else if (title.length < 5) newErrors.title = 'Title must be at least 5 characters';
-    else if (title.length > 100) newErrors.title = 'Title must be less than 100 characters';
+    if (!title.trim()) newErrors.title = 'Title is required'
+    else if (title.length < 5)
+      newErrors.title = 'Title must be at least 5 characters'
+    else if (title.length > 100)
+      newErrors.title = 'Title must be less than 100 characters'
 
-    if (!description.trim()) newErrors.description = 'Description is required';
-    else if (description.length < 10) newErrors.description = 'Description must be at least 10 characters';
-    else if (description.length > 500) newErrors.description = 'Description must be less than 500 characters';
+    if (!description.trim()) newErrors.description = 'Description is required'
+    else if (description.length < 10)
+      newErrors.description = 'Description must be at least 10 characters'
+    else if (description.length > 500)
+      newErrors.description = 'Description must be less than 500 characters'
 
-    if (!content.trim()) newErrors.content = 'Prompt content is required';
-    else if (content.length > 10000) newErrors.content = 'Content must be less than 10,000 characters';
+    if (!content.trim()) newErrors.content = 'Prompt content is required'
+    else if (content.length > 10000)
+      newErrors.content = 'Content must be less than 10,000 characters'
 
-    if (!category) newErrors.category = 'Category is required';
-    if (selectedModels.length === 0) newErrors.models = 'At least one model must be selected';
-    if (tags.length === 0) newErrors.tags = 'At least one tag is required';
+    if (!category) newErrors.category = 'Category is required'
+    if (selectedModels.length === 0)
+      newErrors.models = 'At least one model must be selected'
+    if (tags.length === 0) newErrors.tags = 'At least one tag is required'
 
     // Images are now optional
     // if (images.length === 0) newErrors.images = 'At least one image is required';
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handlePublish = async () => {
-    if (!validateForm() || !state.user) return;
+    if (!validateForm() || !state.user) return
 
     try {
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
 
       const promptData = {
         user_id: state.user.id,
@@ -171,44 +276,47 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
         comment_count: editingPrompt?.commentCount || 0,
         created_at: editingPrompt?.createdAt || new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        template: template || null
-      };
+        template: template || null,
+      }
 
-      const isNewPrompt = !editingPrompt;
+      const isNewPrompt = !editingPrompt
 
       // Try Supabase first, fallback to local state if it fails
-      let success = false;
-      let promptId = editingPrompt?.id;
+      let success = false
+      let promptId = editingPrompt?.id
 
       try {
         if (editingPrompt) {
           // Update existing prompt
-          const { data: updatedPrompt, error } = await prompts.update(editingPrompt.id, promptData);
+          const { data: updatedPrompt, error } = await prompts.update(
+            editingPrompt.id,
+            promptData
+          )
 
           if (!error && updatedPrompt) {
-            promptId = updatedPrompt.id;
-            success = true;
+            promptId = updatedPrompt.id
+            success = true
           } else {
-            console.error('❌ Prompt update failed:', error);
+            console.error('❌ Prompt update failed:', error)
           }
         } else {
           // Create new prompt
-          const { data: newPrompt, error } = await prompts.create(promptData);
+          const { data: newPrompt, error } = await prompts.create(promptData)
 
           if (!error && newPrompt) {
-            promptId = newPrompt.id;
-            success = true;
+            promptId = newPrompt.id
+            success = true
           } else {
-            console.error('❌ Prompt creation failed:', error);
+            console.error('❌ Prompt creation failed:', error)
           }
         }
 
         // Handle images if we have a prompt ID and Supabase worked
         if (success && promptId) {
-          await handleImageUpdates(promptId);
+          await handleImageUpdates(promptId)
         }
       } catch (apiError) {
-        console.warn('Supabase API not available, using local state:', apiError);
+        console.warn('Supabase API not available, using local state:', apiError)
       }
 
       // Fallback to local state management if Supabase fails
@@ -240,30 +348,33 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
           isHearted: false,
           isSaved: false,
           isForked: false,
-          template: template || undefined
-        };
+          template: template || undefined,
+        }
 
         if (editingPrompt) {
-          dispatch({ type: 'UPDATE_PROMPT', payload: { id: editingPrompt.id, updates: newPrompt } });
+          dispatch({
+            type: 'UPDATE_PROMPT',
+            payload: { id: editingPrompt.id, updates: newPrompt },
+          })
         } else {
-          dispatch({ type: 'ADD_PROMPT', payload: newPrompt });
+          dispatch({ type: 'ADD_PROMPT', payload: newPrompt })
         }
       }
 
       // Delete draft if it exists
-      const draftId = editingPrompt?.id || `draft-${Date.now()}`;
-      dispatch({ type: 'DELETE_DRAFT', payload: draftId });
+      const draftId = editingPrompt?.id || `draft-${Date.now()}`
+      dispatch({ type: 'DELETE_DRAFT', payload: draftId })
 
       if (onPublish) {
-        onPublish(isNewPrompt);
+        onPublish(isNewPrompt)
       } else {
-        onBack();
+        onBack()
       }
     } catch (err) {
-      console.error('Error publishing prompt:', err);
-      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
+      console.error('Error publishing prompt:', err)
+      setErrors({ submit: 'An unexpected error occurred. Please try again.' })
     }
-  };
+  }
 
   // Handle image updates for Supabase
   const handleImageUpdates = async (promptId: string) => {
@@ -272,23 +383,30 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
       const { data: existingImages, error: fetchError } = await supabase
         .from('prompt_images')
         .select('*')
-        .eq('prompt_id', promptId);
+        .eq('prompt_id', promptId)
 
       if (fetchError) {
-        console.error('❌ Error fetching existing images:', fetchError);
-        return;
+        console.error('❌ Error fetching existing images:', fetchError)
+        return
       }
 
-      const existingImageUrls = new Set(existingImages?.map((img: any) => img.url) || []);
+      const existingImageUrls = new Set(
+        existingImages?.map((img: any) => img.url) || []
+      )
 
       // Images to add (new images not in existing)
-      const imagesToAdd = images.filter(img => !existingImageUrls.has(img.url));
+      const imagesToAdd = images.filter(img => !existingImageUrls.has(img.url))
 
       // Images to update (existing images with changes) - match by URL
-      const imagesToUpdate = images.filter(img => existingImageUrls.has(img.url));
+      const imagesToUpdate = images.filter(img =>
+        existingImageUrls.has(img.url)
+      )
 
       // Images to remove (existing images not in current images)
-      const imagesToRemove = existingImages?.filter((img: any) => !images.some(currImg => currImg.url === img.url)) || [];
+      const imagesToRemove =
+        existingImages?.filter(
+          (img: any) => !images.some(currImg => currImg.url === img.url)
+        ) || []
 
       // Add new images
       for (const image of imagesToAdd) {
@@ -303,12 +421,12 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
             mime_type: image.mimeType,
             width: image.width,
             height: image.height,
-            caption: image.caption
+            caption: image.caption,
           })
-          .select();
+          .select()
 
         if (error) {
-          console.error('❌ Error adding image:', error);
+          console.error('❌ Error adding image:', error)
         }
       }
 
@@ -319,13 +437,13 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
           .update({
             alt_text: image.altText,
             is_primary: image.isPrimary,
-            caption: image.caption
+            caption: image.caption,
           })
           .eq('url', image.url)
-          .eq('prompt_id', promptId); // Ensure we only update images for this prompt
+          .eq('prompt_id', promptId) // Ensure we only update images for this prompt
 
         if (error) {
-          console.error('❌ Error updating image:', error);
+          console.error('❌ Error updating image:', error)
         }
       }
 
@@ -335,97 +453,98 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
         const { error: dbError } = await supabase
           .from('prompt_images')
           .delete()
-          .eq('id', image.id);
+          .eq('id', image.id)
 
         if (dbError) {
-          console.error('Error removing image from database:', dbError);
+          console.error('Error removing image from database:', dbError)
         }
 
         // Try to delete from storage (optional, as storage cleanup can be done separately)
         try {
-          const path = image.url.split('/').pop();
+          const path = image.url.split('/').pop()
           if (path) {
-            await storage.deleteImage('prompt-images', [path]);
+            await storage.deleteImage('prompt-images', [path])
           }
         } catch (storageError) {
-          console.warn('Could not delete image from storage:', storageError);
+          console.warn('Could not delete image from storage:', storageError)
         }
       }
     } catch (error) {
-      console.error('❌ Error handling image updates:', error);
+      console.error('❌ Error handling image updates:', error)
     }
-  };
+  }
 
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 10) {
-      setTags([...tags, newTag.trim()]);
-      setNewTag('');
+      setTags([...tags, newTag.trim()])
+      setNewTag('')
     }
-  };
+  }
 
   const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
+    setTags(tags.filter(tag => tag !== tagToRemove))
+  }
 
   const addModel = () => {
-    if (customModel.trim() && !selectedModels.includes(customModel.trim()) && selectedModels.length < 10) {
-      setSelectedModels([...selectedModels, customModel.trim()]);
-      setCustomModel('');
+    if (
+      customModel.trim() &&
+      !selectedModels.includes(customModel.trim()) &&
+      selectedModels.length < 10
+    ) {
+      setSelectedModels([...selectedModels, customModel.trim()])
+      setCustomModel('')
     }
-  };
+  }
 
   const removeModel = (modelToRemove: string) => {
-    setSelectedModels(selectedModels.filter(model => model !== modelToRemove));
-  };
+    setSelectedModels(selectedModels.filter(model => model !== modelToRemove))
+  }
 
-
-
-
-  const wordCount = content.trim().split(/\s+/).length;
-  const charCount = content.length;
+  const wordCount = content.trim().split(/\s+/).length
+  const charCount = content.length
 
   const getSaveStatusText = () => {
-    if (saveStatus === 'saving') return 'Saving...';
-    if (saveStatus === 'unsaved') return 'Unsaved changes';
+    if (saveStatus === 'saving') return 'Saving...'
+    if (saveStatus === 'unsaved') return 'Unsaved changes'
     if (lastSaved) {
-      const secondsAgo = Math.floor((Date.now() - lastSaved.getTime()) / 1000);
-      if (secondsAgo < 60) return `Saved ${secondsAgo}s ago`;
-      const minutesAgo = Math.floor(secondsAgo / 60);
-      if (minutesAgo < 60) return `Saved ${minutesAgo}m ago`;
-      const hoursAgo = Math.floor(minutesAgo / 60);
-      return `Saved ${hoursAgo}h ago`;
+      const secondsAgo = Math.floor((Date.now() - lastSaved.getTime()) / 1000)
+      if (secondsAgo < 60) return `Saved ${secondsAgo}s ago`
+      const minutesAgo = Math.floor(secondsAgo / 60)
+      if (minutesAgo < 60) return `Saved ${minutesAgo}m ago`
+      const hoursAgo = Math.floor(minutesAgo / 60)
+      return `Saved ${hoursAgo}h ago`
     }
-    return '';
-  };
+    return ''
+  }
 
   const handleShare = async () => {
-    const draftId = editingPrompt?.id || `draft-${Date.now()}`;
-    const shareUrl = `${window.location.origin}/drafts/${draftId}`;
+    const draftId = editingPrompt?.id || `draft-${Date.now()}`
+    const shareUrl = `${window.location.origin}/drafts/${draftId}`
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: title || 'Draft Prompt',
           text: description || 'Check out this prompt draft',
-          url: shareUrl
-        });
+          url: shareUrl,
+        })
       } catch (err) {
         // User cancelled sharing, fallback to clipboard
-        copyToClipboard(shareUrl);
+        copyToClipboard(shareUrl)
       }
     } else {
-      copyToClipboard(shareUrl);
+      copyToClipboard(shareUrl)
     }
-  };
+  }
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text)
       // Could show a toast notification here
     } catch (err) {
-      console.error('Failed to copy to clipboard:', err);
+      console.error('Failed to copy to clipboard:', err)
     }
-  };
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -441,16 +560,24 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
               {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
             </h1>
             <p className="text-muted-foreground">
-              {editingPrompt ? 'Update your existing prompt' : 'Share your expertise with the community'}
+              {editingPrompt
+                ? 'Update your existing prompt'
+                : 'Share your expertise with the community'}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className={`text-sm ${saveStatus === 'unsaved' ? 'text-orange-600' : saveStatus === 'saving' ? 'text-blue-600' : 'text-muted-foreground'}`}>
+          <span
+            className={`text-sm ${saveStatus === 'unsaved' ? 'text-orange-600' : saveStatus === 'saving' ? 'text-blue-600' : 'text-muted-foreground'}`}
+          >
             {getSaveStatusText()}
           </span>
-          <Button variant="outline" onClick={saveDraft} disabled={saveStatus === 'saving'}>
+          <Button
+            variant="outline"
+            onClick={saveDraft}
+            disabled={saveStatus === 'saving'}
+          >
             <Save className="h-4 w-4 mr-2" />
             Save Draft
           </Button>
@@ -491,7 +618,7 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                     <Input
                       id="title"
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      onChange={e => setTitle(e.target.value)}
                       placeholder="Enter a descriptive title..."
                       className={errors.title ? 'border-destructive' : ''}
                     />
@@ -505,16 +632,22 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                     <Textarea
                       id="description"
                       value={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                      onChange={e => setDescription(e.target.value)}
                       placeholder="Describe what this prompt does and how to use it..."
                       rows={3}
                       className={errors.description ? 'border-destructive' : ''}
                     />
                     <div className="flex justify-between text-sm text-muted-foreground">
                       {errors.description && (
-                        <span className="text-destructive">{errors.description}</span>
+                        <span className="text-destructive">
+                          {errors.description}
+                        </span>
                       )}
-                      <span className={description.length > 450 ? 'text-warning' : ''}>
+                      <span
+                        className={
+                          description.length > 450 ? 'text-warning' : ''
+                        }
+                      >
                         {description.length}/500
                       </span>
                     </div>
@@ -536,7 +669,7 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                     <Textarea
                       id="content"
                       value={content}
-                      onChange={(e) => setContent(e.target.value)}
+                      onChange={e => setContent(e.target.value)}
                       placeholder="Write your prompt here. Use {{variable}} syntax for dynamic content..."
                       rows={12}
                       className={`font-mono ${errors.content ? 'border-destructive' : ''}`}
@@ -547,12 +680,12 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                         <span>{charCount}/10,000 characters</span>
                       </div>
                       {errors.content && (
-                        <span className="text-destructive">{errors.content}</span>
+                        <span className="text-destructive">
+                          {errors.content}
+                        </span>
                       )}
                     </div>
                   </div>
-
-
                 </CardContent>
               </Card>
 
@@ -564,7 +697,8 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                     Images
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Add images to showcase your prompt. Recommended size: 1200x630px (for social sharing).
+                    Add images to showcase your prompt. Recommended size:
+                    1200x630px (for social sharing).
                   </p>
                 </CardHeader>
                 <CardContent>
@@ -585,7 +719,8 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                     Template Placeholder (Optional)
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Add a template or pattern for this prompt to help yourself or others generate new versions quickly.
+                    Add a template or pattern for this prompt to help yourself
+                    or others generate new versions quickly.
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -594,12 +729,11 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                     <Textarea
                       id="template"
                       value={template}
-                      onChange={(e) => setTemplate(e.target.value)}
+                      onChange={e => setTemplate(e.target.value)}
                       placeholder="e.g., A photorealistic [shot type] of [subject], [action or expression], set in [environment]. The scene is illuminated by [lighting description], creating a [mood] atmosphere. Captured with a [camera/lens details], emphasizing [key textures and details]. The image should be in a [aspect ratio] format."
                       rows={6}
                     />
                   </div>
-
                 </CardContent>
               </Card>
             </TabsContent>
@@ -612,15 +746,18 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-xl mb-2">{title || 'Untitled Prompt'}</h3>
-                      <p className="text-muted-foreground">{description || 'No description provided'}</p>
+                      <h3 className="text-xl mb-2">
+                        {title || 'Untitled Prompt'}
+                      </h3>
+                      <p className="text-muted-foreground">
+                        {description || 'No description provided'}
+                      </p>
                     </div>
                     <div className="p-4 bg-muted rounded-lg">
                       <pre className="whitespace-pre-wrap font-mono text-sm">
                         {content || 'No content provided'}
                       </pre>
                     </div>
-
                   </div>
                 </CardContent>
               </Card>
@@ -642,14 +779,14 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
               <div className="space-y-2">
                 <Label>Prompt Type *</Label>
                 <div className="grid grid-cols-1 gap-2">
-                  {promptTypes.map((promptType) => {
-                    const Icon = promptType.icon;
+                  {promptTypes.map(promptType => {
+                    const Icon = promptType.icon
                     return (
                       <div
                         key={promptType.value}
                         className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          type === promptType.value 
-                            ? 'border-primary bg-primary/5' 
+                          type === promptType.value
+                            ? 'border-primary bg-primary/5'
                             : 'hover:border-muted-foreground'
                         }`}
                         onClick={() => setType(promptType.value as any)}
@@ -657,12 +794,16 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4" />
                           <div>
-                            <div className="font-medium text-sm">{promptType.label}</div>
-                            <div className="text-xs text-muted-foreground">{promptType.description}</div>
+                            <div className="font-medium text-sm">
+                              {promptType.label}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {promptType.description}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    );
+                    )
                   })}
                 </div>
               </div>
@@ -670,11 +811,13 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
               <div className="space-y-2">
                 <Label htmlFor="category">Category *</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className={errors.category ? 'border-destructive' : ''}>
+                  <SelectTrigger
+                    className={errors.category ? 'border-destructive' : ''}
+                  >
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
+                    {categories.map(cat => (
                       <SelectItem key={cat.id} value={cat.name}>
                         <div className="flex items-center gap-2">
                           <span>{cat.icon}</span>
@@ -699,19 +842,24 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                 Model Compatibility
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Select AI models that work well with this prompt. Start typing to see suggestions.
+                Select AI models that work well with this prompt. Start typing
+                to see suggestions.
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
                   value={customModel}
-                  onChange={(e) => setCustomModel(e.target.value)}
+                  onChange={e => setCustomModel(e.target.value)}
                   placeholder="Type model name (e.g., GPT-4o, Claude-3.5-Sonnet)..."
-                  onKeyPress={(e) => e.key === 'Enter' && addModel()}
+                  onKeyPress={e => e.key === 'Enter' && addModel()}
                   className="text-sm"
                 />
-                <Button type="button" onClick={addModel} disabled={selectedModels.length >= 10}>
+                <Button
+                  type="button"
+                  onClick={addModel}
+                  disabled={selectedModels.length >= 10}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -719,28 +867,36 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
               {/* Model Suggestions */}
               {customModel.trim() && (
                 <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
-                  <div className="text-xs text-muted-foreground mb-1">Suggestions:</div>
+                  <div className="text-xs text-muted-foreground mb-1">
+                    Suggestions:
+                  </div>
                   {models
-                    .filter(model =>
-                      model.name.toLowerCase().includes(customModel.toLowerCase()) &&
-                      !selectedModels.includes(model.name)
+                    .filter(
+                      model =>
+                        model.name
+                          .toLowerCase()
+                          .includes(customModel.toLowerCase()) &&
+                        !selectedModels.includes(model.name)
                     )
                     .slice(0, 5)
-                    .map((model) => (
+                    .map(model => (
                       <div
                         key={model.id}
                         className="px-2 py-1 text-sm hover:bg-muted cursor-pointer rounded"
                         onClick={() => {
-                          setSelectedModels([...selectedModels, model.name]);
-                          setCustomModel('');
+                          setSelectedModels([...selectedModels, model.name])
+                          setCustomModel('')
                         }}
                       >
                         {model.name}
                       </div>
                     ))}
-                  {models.filter(model =>
-                    model.name.toLowerCase().includes(customModel.toLowerCase()) &&
-                    !selectedModels.includes(model.name)
+                  {models.filter(
+                    model =>
+                      model.name
+                        .toLowerCase()
+                        .includes(customModel.toLowerCase()) &&
+                      !selectedModels.includes(model.name)
                   ).length === 0 && (
                     <div className="px-2 py-1 text-sm text-muted-foreground">
                       No suggestions found. Press Enter to add custom model.
@@ -750,8 +906,12 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
               )}
 
               <div className="flex flex-wrap gap-1">
-                {selectedModels.map((model) => (
-                  <Badge key={model} variant="secondary" className="flex items-center gap-1">
+                {selectedModels.map(model => (
+                  <Badge
+                    key={model}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {model}
                     <X
                       className="h-3 w-3 cursor-pointer"
@@ -762,7 +922,9 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
               </div>
 
               {selectedModels.length >= 10 && (
-                <p className="text-sm text-muted-foreground">Maximum 10 models</p>
+                <p className="text-sm text-muted-foreground">
+                  Maximum 10 models
+                </p>
               )}
 
               {errors.models && (
@@ -783,20 +945,28 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
               <div className="flex gap-2">
                 <Input
                   value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
+                  onChange={e => setNewTag(e.target.value)}
                   placeholder="Add a tag..."
-                  onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                  onKeyPress={e => e.key === 'Enter' && addTag()}
                 />
-                <Button type="button" onClick={addTag} disabled={tags.length >= 10}>
+                <Button
+                  type="button"
+                  onClick={addTag}
+                  disabled={tags.length >= 10}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex flex-wrap gap-1">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                {tags.map(tag => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     {tag}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
+                    <X
+                      className="h-3 w-3 cursor-pointer"
                       onClick={() => removeTag(tag)}
                     />
                   </Badge>
@@ -821,18 +991,24 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="metaDescription">Meta Description (Optional)</Label>
+                <Label htmlFor="metaDescription">
+                  Meta Description (Optional)
+                </Label>
                 <Textarea
                   id="metaDescription"
                   value={metaDescription}
-                  onChange={(e) => setMetaDescription(e.target.value)}
+                  onChange={e => setMetaDescription(e.target.value)}
                   placeholder="Write a short description to help this prompt appear in search engines and within PromptsGo search."
                   rows={2}
                   className="text-sm"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Helps with discoverability</span>
-                  <span className={metaDescription.length > 160 ? 'text-orange-600' : ''}>
+                  <span
+                    className={
+                      metaDescription.length > 160 ? 'text-orange-600' : ''
+                    }
+                  >
                     {metaDescription.length}/160
                   </span>
                 </div>
@@ -840,7 +1016,7 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
 
               <div className="space-y-3">
                 <Label>Visibility</Label>
-                {visibilityOptions.map((option) => (
+                {visibilityOptions.map(option => (
                   <div
                     key={option.value}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -851,7 +1027,9 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
                     onClick={() => setVisibility(option.value as any)}
                   >
                     <div className="font-medium text-sm">{option.label}</div>
-                    <div className="text-xs text-muted-foreground">{option.description}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {option.description}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -860,5 +1038,5 @@ export function CreatePromptPage({ onBack, editingPrompt, onPublish }: CreatePro
         </div>
       </div>
     </div>
-  );
+  )
 }

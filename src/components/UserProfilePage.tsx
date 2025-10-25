@@ -1,57 +1,77 @@
-import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Switch } from './ui/switch';
-import { Separator } from './ui/separator';
-import { PromptCard } from './PromptCard';
-import { useApp } from '../contexts/AppContext';
-import { User, Prompt } from '../lib/types';
-import { CreatePortfolioPage } from './CreatePortfolioPage';
+import { useState, useEffect } from 'react'
+import { Button } from './ui/button'
+import { Badge } from './ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Textarea } from './ui/textarea'
+import { Switch } from './ui/switch'
+import { Separator } from './ui/separator'
+import { PromptCard } from './prompts/PromptCard'
+import { useApp } from '../contexts/AppContext'
+import { User, Prompt } from '../lib/types'
+import { CreatePortfolioPage } from './CreatePortfolioPage'
 import {
-  ArrowLeft, User as UserIcon, Calendar, ExternalLink, Github,
-  Twitter, Award, Star, GitFork, BookmarkPlus,
-  TrendingUp, Crown, Zap, Target,
-  Shield, Globe, Trash2, Package,
-  Briefcase, Plus, Eye, Lock, Copy, Trash, CreditCard
-} from 'lucide-react';
+  ArrowLeft,
+  User as UserIcon,
+  Calendar,
+  ExternalLink,
+  Github,
+  Twitter,
+  Award,
+  Star,
+  GitFork,
+  BookmarkPlus,
+  TrendingUp,
+  Crown,
+  Zap,
+  Target,
+  Shield,
+  Globe,
+  Trash2,
+  Package,
+  Briefcase,
+  Plus,
+  Eye,
+  Lock,
+  Copy,
+  Trash,
+  CreditCard,
+} from 'lucide-react'
 
 interface UserProfilePageProps {
-   userId: string;
-   initialTab?: string;
-   onBack: () => void;
-   onPromptClick: (promptId: string) => void;
-   onNavigateToPromptPacks?: () => void;
-   onNavigateToPackView?: (packId: string) => void;
-   onNavigateToPortfolioView?: (portfolioId: string) => void;
-   onNavigateToBilling?: () => void;
-   onNavigateToSubscription?: () => void;
- }
+  userId: string
+  initialTab?: string
+  onBack: () => void
+  onPromptClick: (promptId: string) => void
+  onNavigateToPromptPacks?: () => void
+  onNavigateToPackView?: (packId: string) => void
+  onNavigateToPortfolioView?: (portfolioId: string) => void
+  onNavigateToBilling?: () => void
+  onNavigateToSubscription?: () => void
+}
 
 export function UserProfilePage({
-   userId,
-   initialTab,
-   onBack,
-   onPromptClick,
-   onNavigateToPromptPacks,
-   onNavigateToPackView,
-   onNavigateToPortfolioView,
-   onNavigateToBilling,
-   onNavigateToSubscription
- }: UserProfilePageProps) {
-  const { state, dispatch } = useApp();
-  const [user, setUser] = useState<User | null>(null);
-  const [userPrompts, setUserPrompts] = useState<Prompt[]>([]);
-  const [savedPrompts, setSavedPrompts] = useState<Prompt[]>([]);
-  const [forkedPrompts, setForkedPrompts] = useState<Prompt[]>([]);
-  const [activeTab, setActiveTab] = useState(initialTab || 'created');
-  const [copiedPortfolio, setCopiedPortfolio] = useState<string | null>(null);
-  const [isCreatingPortfolio, setIsCreatingPortfolio] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  userId,
+  initialTab,
+  onBack,
+  onPromptClick,
+  onNavigateToPromptPacks,
+  onNavigateToPackView,
+  onNavigateToPortfolioView,
+  onNavigateToBilling,
+  onNavigateToSubscription,
+}: UserProfilePageProps) {
+  const { state, dispatch } = useApp()
+  const [user, setUser] = useState<User | null>(null)
+  const [userPrompts, setUserPrompts] = useState<Prompt[]>([])
+  const [savedPrompts, setSavedPrompts] = useState<Prompt[]>([])
+  const [forkedPrompts, setForkedPrompts] = useState<Prompt[]>([])
+  const [activeTab, setActiveTab] = useState(initialTab || 'created')
+  const [copiedPortfolio, setCopiedPortfolio] = useState<string | null>(null)
+  const [isCreatingPortfolio, setIsCreatingPortfolio] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     name: state.user?.name || '',
     username: state.user?.username || '',
@@ -60,36 +80,37 @@ export function UserProfilePage({
     website: state.user?.website || '',
     github: state.user?.github || '',
     twitter: state.user?.twitter || '',
-    skills: state.user?.skills?.join(', ') || ''
-  });
+    skills: state.user?.skills?.join(', ') || '',
+  })
 
   useEffect(() => {
-    const foundUser = state.prompts.find(p => p.userId === userId)?.author || 
-                     (state.user?.id === userId ? state.user : null);
-    
+    const foundUser =
+      state.prompts.find(p => p.userId === userId)?.author ||
+      (state.user?.id === userId ? state.user : null)
+
     if (foundUser) {
-      setUser(foundUser);
+      setUser(foundUser)
     }
 
     // Get user's created prompts
-    const created = state.prompts.filter(p => p.userId === userId);
-    setUserPrompts(created);
+    const created = state.prompts.filter(p => p.userId === userId)
+    setUserPrompts(created)
 
     // Get user's saved prompts
     if (state.user?.id === userId) {
-      const userSaves = state.saves.filter(s => s.userId === userId);
-      const saved = state.prompts.filter(p => 
+      const userSaves = state.saves.filter(s => s.userId === userId)
+      const saved = state.prompts.filter(p =>
         userSaves.some(s => s.promptId === p.id)
-      );
-      setSavedPrompts(saved);
+      )
+      setSavedPrompts(saved)
 
       // Get user's forked prompts
-      const forked = state.prompts.filter(p => 
-        p.userId === userId && p.parentId
-      );
-      setForkedPrompts(forked);
+      const forked = state.prompts.filter(
+        p => p.userId === userId && p.parentId
+      )
+      setForkedPrompts(forked)
     }
-  }, [userId, state.prompts, state.saves, state.user]);
+  }, [userId, state.prompts, state.saves, state.user])
 
   if (!user) {
     return (
@@ -99,34 +120,33 @@ export function UserProfilePage({
           <Button onClick={onBack}>← Back</Button>
         </div>
       </div>
-    );
+    )
   }
 
-  const isOwnProfile = state.user?.id === userId;
-  const isFollowing = state.follows.some(f => 
-    f.followerId === state.user?.id && f.followingId === userId
-  );
+  const isOwnProfile = state.user?.id === userId
+  const isFollowing = state.follows.some(
+    f => f.followerId === state.user?.id && f.followingId === userId
+  )
 
   const handleFollow = () => {
-    if (!state.user || state.user.id === userId) return;
+    if (!state.user || state.user.id === userId) return
 
     if (isFollowing) {
-      dispatch({ type: 'UNFOLLOW_USER', payload: userId });
+      dispatch({ type: 'UNFOLLOW_USER', payload: userId })
     } else {
-      dispatch({ type: 'FOLLOW_USER', payload: userId });
+      dispatch({ type: 'FOLLOW_USER', payload: userId })
     }
-  };
+  }
 
   // Calculate stats
-  const totalHearts = userPrompts.reduce((sum, p) => sum + p.hearts, 0);
-  const totalSaves = userPrompts.reduce((sum, p) => sum + p.saveCount, 0);
-  const totalForks = userPrompts.reduce((sum, p) => sum + p.forkCount, 0);
-  const totalViews = userPrompts.reduce((sum, p) => sum + p.viewCount, 0);
-
+  const totalHearts = userPrompts.reduce((sum, p) => sum + p.hearts, 0)
+  const totalSaves = userPrompts.reduce((sum, p) => sum + p.saveCount, 0)
+  const totalForks = userPrompts.reduce((sum, p) => sum + p.forkCount, 0)
+  const totalViews = userPrompts.reduce((sum, p) => sum + p.viewCount, 0)
 
   const handleSave = () => {
-    if (!state.user) return;
-    
+    if (!state.user) return
+
     const updatedUser = {
       ...state.user,
       name: formData.name,
@@ -136,16 +156,19 @@ export function UserProfilePage({
       website: formData.website,
       github: formData.github,
       twitter: formData.twitter,
-      skills: formData.skills.split(',').map(s => s.trim()).filter(s => s)
-    };
+      skills: formData.skills
+        .split(',')
+        .map(s => s.trim())
+        .filter(s => s),
+    }
 
-    dispatch({ type: 'SET_USER', payload: updatedUser });
-    setIsEditing(false);
-  };
+    dispatch({ type: 'SET_USER', payload: updatedUser })
+    setIsEditing(false)
+  }
 
   const handleCancel = () => {
-    if (!state.user) return;
-    
+    if (!state.user) return
+
     setFormData({
       name: state.user.name || '',
       username: state.user.username || '',
@@ -154,28 +177,32 @@ export function UserProfilePage({
       website: state.user.website || '',
       github: state.user.github || '',
       twitter: state.user.twitter || '',
-      skills: state.user.skills?.join(', ') || ''
-    });
-    setIsEditing(false);
-  };
+      skills: state.user.skills?.join(', ') || '',
+    })
+    setIsEditing(false)
+  }
 
   const handlePortfolioCreated = () => {
-    setIsCreatingPortfolio(false);
+    setIsCreatingPortfolio(false)
     // Switch to portfolios tab to show the newly created portfolio
-    setActiveTab('portfolios');
-  };
+    setActiveTab('portfolios')
+  }
 
   // Reputation level calculation
   const getReputationLevel = (reputation: number) => {
-    if (reputation >= 5000) return { level: 'Expert', icon: Crown, color: 'text-yellow-600' };
-    if (reputation >= 2000) return { level: 'Advanced', icon: Star, color: 'text-purple-600' };
-    if (reputation >= 500) return { level: 'Intermediate', icon: Zap, color: 'text-blue-600' };
-    if (reputation >= 100) return { level: 'Beginner', icon: Target, color: 'text-green-600' };
-    return { level: 'Novice', icon: UserIcon, color: 'text-gray-600' };
-  };
+    if (reputation >= 5000)
+      return { level: 'Expert', icon: Crown, color: 'text-yellow-600' }
+    if (reputation >= 2000)
+      return { level: 'Advanced', icon: Star, color: 'text-purple-600' }
+    if (reputation >= 500)
+      return { level: 'Intermediate', icon: Zap, color: 'text-blue-600' }
+    if (reputation >= 100)
+      return { level: 'Beginner', icon: Target, color: 'text-green-600' }
+    return { level: 'Novice', icon: UserIcon, color: 'text-gray-600' }
+  }
 
-  const reputationLevel = getReputationLevel(user.reputation);
-  const ReputationIcon = reputationLevel.icon;
+  const reputationLevel = getReputationLevel(user.reputation)
+  const ReputationIcon = reputationLevel.icon
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -194,23 +221,30 @@ export function UserProfilePage({
             <CardContent className="pt-6">
               <div className="flex items-start gap-6">
                 <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-medium">
-                  {user.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'U'}
+                  {user.name
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)}
                 </div>
 
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-3xl">{user.name}</h1>
-                    <div className={`flex items-center gap-1 ${reputationLevel.color}`}>
+                    <div
+                      className={`flex items-center gap-1 ${reputationLevel.color}`}
+                    >
                       <ReputationIcon className="h-5 w-5" />
-                      <span className="font-medium">{reputationLevel.level}</span>
+                      <span className="font-medium">
+                        {reputationLevel.level}
+                      </span>
                     </div>
                   </div>
 
                   <p className="text-muted-foreground mb-1">@{user.username}</p>
 
-                  {user.bio && (
-                    <p className="text-sm mb-4">{user.bio}</p>
-                  )}
+                  {user.bio && <p className="text-sm mb-4">{user.bio}</p>}
 
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                     <div className="flex items-center gap-1">
@@ -259,8 +293,12 @@ export function UserProfilePage({
                   {/* Skills */}
                   {user.skills && user.skills.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {user.skills.map((skill) => (
-                        <Badge key={skill} variant="secondary" className="text-xs">
+                      {user.skills.map(skill => (
+                        <Badge
+                          key={skill}
+                          variant="secondary"
+                          className="text-xs"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -273,15 +311,13 @@ export function UserProfilePage({
                   {!isOwnProfile && (
                     <>
                       <Button
-                        variant={isFollowing ? "outline" : "default"}
+                        variant={isFollowing ? 'outline' : 'default'}
                         onClick={handleFollow}
                         disabled={!state.user}
                       >
                         {isFollowing ? 'Following' : 'Follow'}
                       </Button>
-                      <Button variant="outline">
-                        Message
-                      </Button>
+                      <Button variant="outline">Message</Button>
                     </>
                   )}
                 </div>
@@ -302,8 +338,12 @@ export function UserProfilePage({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{user.reputation}</div>
-                  <div className="text-xs text-muted-foreground">Reputation</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {user.reputation}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Reputation
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold">{userPrompts.length}</div>
@@ -311,11 +351,15 @@ export function UserProfilePage({
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold">{totalHearts}</div>
-                  <div className="text-xs text-muted-foreground">Total Hearts</div>
+                  <div className="text-xs text-muted-foreground">
+                    Total Hearts
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold">{totalViews}</div>
-                  <div className="text-xs text-muted-foreground">Total Views</div>
+                  <div className="text-xs text-muted-foreground">
+                    Total Views
+                  </div>
                 </div>
               </div>
 
@@ -345,8 +389,11 @@ export function UserProfilePage({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-3">
-                  {user.badges.map((badge) => (
-                    <div key={badge.id} className="text-center p-2 border rounded-lg">
+                  {user.badges.map(badge => (
+                    <div
+                      key={badge.id}
+                      className="text-center p-2 border rounded-lg"
+                    >
                       <div className="text-2xl mb-1">{badge.icon}</div>
                       <div className="text-xs font-medium">{badge.name}</div>
                       <div className="text-xs text-muted-foreground">
@@ -379,11 +426,10 @@ export function UserProfilePage({
                 My Packs ({state.userPackLibrary?.packs?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="portfolios">
-                Portfolios ({state.portfolios.filter(p => p.userId === userId).length})
+                Portfolios (
+                {state.portfolios.filter(p => p.userId === userId).length})
               </TabsTrigger>
-              <TabsTrigger value="settings">
-                Settings
-              </TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </>
           )}
         </TabsList>
@@ -391,7 +437,7 @@ export function UserProfilePage({
         <TabsContent value="created" className="space-y-6">
           {userPrompts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {userPrompts.map((prompt) => (
+              {userPrompts.map(prompt => (
                 <PromptCard
                   key={prompt.id}
                   id={prompt.id}
@@ -401,7 +447,7 @@ export function UserProfilePage({
                     name: prompt.author.name,
                     username: prompt.author.username,
                     role: prompt.author.role,
-                    subscriptionStatus: prompt.author.subscriptionStatus
+                    subscriptionStatus: prompt.author.subscriptionStatus,
                   }}
                   category={prompt.category}
                   tags={prompt.tags}
@@ -409,26 +455,35 @@ export function UserProfilePage({
                   stats={{
                     hearts: prompt.hearts,
                     saves: prompt.saveCount,
-                    forks: prompt.forkCount
+                    forks: prompt.forkCount,
                   }}
                   isSaved={prompt.isSaved}
                   isHearted={prompt.isHearted}
                   createdAt={prompt.createdAt}
                   onClick={() => onPromptClick(prompt.id)}
                   onHeart={() => {
-                    if (!state.user) return;
+                    if (!state.user) return
                     if (prompt.isHearted) {
-                      dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'UNHEART_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     } else {
-                      dispatch({ type: 'HEART_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'HEART_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     }
                   }}
                   onSave={() => {
-                    if (!state.user) return;
+                    if (!state.user) return
                     if (prompt.isSaved) {
-                      dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id });
+                      dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id })
                     } else {
-                      dispatch({ type: 'SAVE_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'SAVE_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     }
                   }}
                 />
@@ -452,7 +507,7 @@ export function UserProfilePage({
             <TabsContent value="saved" className="space-y-6">
               {savedPrompts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {savedPrompts.map((prompt) => (
+                  {savedPrompts.map(prompt => (
                     <PromptCard
                       key={prompt.id}
                       id={prompt.id}
@@ -462,7 +517,7 @@ export function UserProfilePage({
                         name: prompt.author.name,
                         username: prompt.author.username,
                         role: prompt.author.role,
-                        subscriptionStatus: prompt.author.subscriptionStatus
+                        subscriptionStatus: prompt.author.subscriptionStatus,
                       }}
                       category={prompt.category}
                       tags={prompt.tags}
@@ -470,26 +525,38 @@ export function UserProfilePage({
                       stats={{
                         hearts: prompt.hearts,
                         saves: prompt.saveCount,
-                        forks: prompt.forkCount
+                        forks: prompt.forkCount,
                       }}
                       isSaved={prompt.isSaved}
                       isHearted={prompt.isHearted}
                       createdAt={prompt.createdAt}
                       onClick={() => onPromptClick(prompt.id)}
                       onHeart={() => {
-                        if (!state.user) return;
+                        if (!state.user) return
                         if (prompt.isHearted) {
-                          dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: prompt.id } });
+                          dispatch({
+                            type: 'UNHEART_PROMPT',
+                            payload: { promptId: prompt.id },
+                          })
                         } else {
-                          dispatch({ type: 'HEART_PROMPT', payload: { promptId: prompt.id } });
+                          dispatch({
+                            type: 'HEART_PROMPT',
+                            payload: { promptId: prompt.id },
+                          })
                         }
                       }}
                       onSave={() => {
-                        if (!state.user) return;
+                        if (!state.user) return
                         if (prompt.isSaved) {
-                          dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id });
+                          dispatch({
+                            type: 'UNSAVE_PROMPT',
+                            payload: prompt.id,
+                          })
                         } else {
-                          dispatch({ type: 'SAVE_PROMPT', payload: { promptId: prompt.id } });
+                          dispatch({
+                            type: 'SAVE_PROMPT',
+                            payload: { promptId: prompt.id },
+                          })
                         }
                       }}
                     />
@@ -500,7 +567,9 @@ export function UserProfilePage({
                   <CardContent className="flex items-center justify-center py-12">
                     <div className="text-center text-muted-foreground">
                       <BookmarkPlus className="h-12 w-12 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No saved prompts</h3>
+                      <h3 className="text-lg font-medium mb-2">
+                        No saved prompts
+                      </h3>
                       <p>You haven't saved any prompts yet.</p>
                     </div>
                   </CardContent>
@@ -511,7 +580,7 @@ export function UserProfilePage({
             <TabsContent value="forked" className="space-y-6">
               {forkedPrompts.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {forkedPrompts.map((prompt) => (
+                  {forkedPrompts.map(prompt => (
                     <PromptCard
                       key={prompt.id}
                       id={prompt.id}
@@ -521,7 +590,7 @@ export function UserProfilePage({
                         name: prompt.author.name,
                         username: prompt.author.username,
                         role: prompt.author.role,
-                        subscriptionStatus: prompt.author.subscriptionStatus
+                        subscriptionStatus: prompt.author.subscriptionStatus,
                       }}
                       category={prompt.category}
                       tags={prompt.tags}
@@ -529,29 +598,44 @@ export function UserProfilePage({
                       stats={{
                         hearts: prompt.hearts,
                         saves: prompt.saveCount,
-                        forks: prompt.forkCount
+                        forks: prompt.forkCount,
                       }}
                       isSaved={prompt.isSaved}
                       isHearted={prompt.isHearted}
                       createdAt={prompt.createdAt}
-                      parentAuthor={prompt.parentId ? 
-                        state.prompts.find(p => p.id === prompt.parentId)?.author : undefined
+                      parentAuthor={
+                        prompt.parentId
+                          ? state.prompts.find(p => p.id === prompt.parentId)
+                              ?.author
+                          : undefined
                       }
                       onClick={() => onPromptClick(prompt.id)}
                       onHeart={() => {
-                        if (!state.user) return;
+                        if (!state.user) return
                         if (prompt.isHearted) {
-                          dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: prompt.id } });
+                          dispatch({
+                            type: 'UNHEART_PROMPT',
+                            payload: { promptId: prompt.id },
+                          })
                         } else {
-                          dispatch({ type: 'HEART_PROMPT', payload: { promptId: prompt.id } });
+                          dispatch({
+                            type: 'HEART_PROMPT',
+                            payload: { promptId: prompt.id },
+                          })
                         }
                       }}
                       onSave={() => {
-                        if (!state.user) return;
+                        if (!state.user) return
                         if (prompt.isSaved) {
-                          dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id });
+                          dispatch({
+                            type: 'UNSAVE_PROMPT',
+                            payload: prompt.id,
+                          })
                         } else {
-                          dispatch({ type: 'SAVE_PROMPT', payload: { promptId: prompt.id } });
+                          dispatch({
+                            type: 'SAVE_PROMPT',
+                            payload: { promptId: prompt.id },
+                          })
                         }
                       }}
                     />
@@ -581,11 +665,14 @@ export function UserProfilePage({
                 </div>
               </div>
 
-              {state.userPackLibrary?.packs && state.userPackLibrary.packs.length > 0 ? (
+              {state.userPackLibrary?.packs &&
+              state.userPackLibrary.packs.length > 0 ? (
                 <div className="space-y-4">
                   {state.userPackLibrary.packs.map(userPack => {
-                    const pack = state.promptPacks.find(p => p.id === userPack.packId);
-                    if (!pack) return null;
+                    const pack = state.promptPacks.find(
+                      p => p.id === userPack.packId
+                    )
+                    if (!pack) return null
 
                     return (
                       <Card key={userPack.packId}>
@@ -604,7 +691,7 @@ export function UserProfilePage({
                               <p className="text-muted-foreground text-sm mb-3">
                                 {pack.description}
                               </p>
-                              
+
                               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <Package className="w-4 h-4" />
@@ -612,11 +699,14 @@ export function UserProfilePage({
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Calendar className="w-4 h-4" />
-                                  Added {new Date(userPack.addedAt).toLocaleDateString()}
+                                  Added{' '}
+                                  {new Date(
+                                    userPack.addedAt
+                                  ).toLocaleDateString()}
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="outline"
@@ -631,7 +721,10 @@ export function UserProfilePage({
                                 size="sm"
                                 onClick={() => {
                                   if (state.user) {
-                                    dispatch({ type: 'REMOVE_PACK_FROM_LIBRARY', payload: pack.id });
+                                    dispatch({
+                                      type: 'REMOVE_PACK_FROM_LIBRARY',
+                                      payload: pack.id,
+                                    })
                                   }
                                 }}
                                 className="text-destructive hover:text-destructive"
@@ -642,7 +735,7 @@ export function UserProfilePage({
                           </div>
                         </CardContent>
                       </Card>
-                    );
+                    )
                   })}
                 </div>
               ) : (
@@ -652,7 +745,8 @@ export function UserProfilePage({
                       <Package className="h-12 w-12 mx-auto mb-4" />
                       <h3 className="mb-2">No packs yet</h3>
                       <p className="mb-6">
-                        Browse Prompt Packs to build your professional prompt library
+                        Browse Prompt Packs to build your professional prompt
+                        library
                       </p>
                       <Button onClick={() => onNavigateToPromptPacks?.()}>
                         <Package className="w-4 h-4 mr-2" />
@@ -679,145 +773,171 @@ export function UserProfilePage({
                 </Button>
               </div>
 
-
               {state.portfolios.filter(p => p.userId === userId).length > 0 ? (
                 <div className="space-y-4">
-                  {state.portfolios.filter(p => p.userId === userId).map(portfolio => (
-                    <Card key={portfolio.id}>
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4>{portfolio.name}</h4>
-                              {portfolio.isPasswordProtected && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Lock className="w-3 h-3 mr-1" />
-                                  Protected
-                                </Badge>
-                              )}
-                              {!portfolio.isPublished && (
-                                <Badge variant="secondary" className="text-xs">
-                                  Draft
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-muted-foreground text-sm mb-3">
-                              {portfolio.description}
-                            </p>
-
-                            {/* Portfolio URL */}
-                            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg mb-3">
-                              <code className="text-sm flex-1">
-                                {state.user?.role === 'pro'
-                                  ? `${portfolio.subdomain}.promptsgo.com`
-                                  : `promptsgo.com/portfolio/${portfolio.subdomain}`
-                                }
-                              </code>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={async () => {
-                                  const url = state.user?.role === 'pro'
-                                    ? `${portfolio.subdomain}.promptsgo.com`
-                                    : `promptsgo.com/portfolio/${portfolio.subdomain}`;
-                                  try {
-                                    await navigator.clipboard.writeText(`https://${url}`);
-                                    setCopiedPortfolio(portfolio.id);
-                                    setTimeout(() => setCopiedPortfolio(null), 2000);
-                                  } catch (err) {
-                                    console.error('Failed to copy link:', err);
-                                  }
-                                }}
-                              >
-                                {copiedPortfolio === portfolio.id ? (
-                                  <span className="text-xs text-green-600">Copied!</span>
-                                ) : (
-                                  <Copy className="w-4 h-4" />
+                  {state.portfolios
+                    .filter(p => p.userId === userId)
+                    .map(portfolio => (
+                      <Card key={portfolio.id}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h4>{portfolio.name}</h4>
+                                {portfolio.isPasswordProtected && (
+                                  <Badge variant="outline" className="text-xs">
+                                    <Lock className="w-3 h-3 mr-1" />
+                                    Protected
+                                  </Badge>
                                 )}
-                              </Button>
-                            </div>
+                                {!portfolio.isPublished && (
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    Draft
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-muted-foreground text-sm mb-3">
+                                {portfolio.description}
+                              </p>
 
-                            {/* Stats */}
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <Eye className="w-4 h-4" />
-                                {portfolio.viewCount} views
+                              {/* Portfolio URL */}
+                              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg mb-3">
+                                <code className="text-sm flex-1">
+                                  {state.user?.role === 'pro'
+                                    ? `${portfolio.subdomain}.promptsgo.com`
+                                    : `promptsgo.com/portfolio/${portfolio.subdomain}`}
+                                </code>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={async () => {
+                                    const url =
+                                      state.user?.role === 'pro'
+                                        ? `${portfolio.subdomain}.promptsgo.com`
+                                        : `promptsgo.com/portfolio/${portfolio.subdomain}`
+                                    try {
+                                      await navigator.clipboard.writeText(
+                                        `https://${url}`
+                                      )
+                                      setCopiedPortfolio(portfolio.id)
+                                      setTimeout(
+                                        () => setCopiedPortfolio(null),
+                                        2000
+                                      )
+                                    } catch (err) {
+                                      console.error('Failed to copy link:', err)
+                                    }
+                                  }}
+                                >
+                                  {copiedPortfolio === portfolio.id ? (
+                                    <span className="text-xs text-green-600">
+                                      Copied!
+                                    </span>
+                                  ) : (
+                                    <Copy className="w-4 h-4" />
+                                  )}
+                                </Button>
                               </div>
-                              <div>
-                                {portfolio.promptIds.length} prompts
-                              </div>
-                              <div>
-                                {portfolio.clientAccessCount} client accesses
+
+                              {/* Stats */}
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Eye className="w-4 h-4" />
+                                  {portfolio.viewCount} views
+                                </div>
+                                <div>{portfolio.promptIds.length} prompts</div>
+                                <div>
+                                  {portfolio.clientAccessCount} client accesses
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onNavigateToPortfolioView?.(portfolio.id)}
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            Preview
-                          </Button>
-                          
-                          {portfolio.isPublished && (
+                          {/* Actions */}
+                          <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={async () => {
-                                const url = (state.user?.role || 'general') === 'pro'
-                                  ? `${portfolio.subdomain}.promptsgo.com`
-                                  : `promptsgo.com/portfolio/${portfolio.subdomain}`;
-                                try {
-                                  await navigator.clipboard.writeText(`https://${url}`);
-                                  setCopiedPortfolio(portfolio.id);
-                                  setTimeout(() => setCopiedPortfolio(null), 2000);
-                                } catch (err) {
-                                  console.error('Failed to copy link:', err);
-                                }
+                              onClick={() =>
+                                onNavigateToPortfolioView?.(portfolio.id)
+                              }
+                            >
+                              <Eye className="w-4 h-4 mr-2" />
+                              Preview
+                            </Button>
+
+                            {portfolio.isPublished && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={async () => {
+                                  const url =
+                                    (state.user?.role || 'general') === 'pro'
+                                      ? `${portfolio.subdomain}.promptsgo.com`
+                                      : `promptsgo.com/portfolio/${portfolio.subdomain}`
+                                  try {
+                                    await navigator.clipboard.writeText(
+                                      `https://${url}`
+                                    )
+                                    setCopiedPortfolio(portfolio.id)
+                                    setTimeout(
+                                      () => setCopiedPortfolio(null),
+                                      2000
+                                    )
+                                  } catch (err) {
+                                    console.error('Failed to copy link:', err)
+                                  }
+                                }}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Share
+                              </Button>
+                            )}
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                dispatch({
+                                  type: 'UPDATE_PORTFOLIO',
+                                  payload: {
+                                    id: portfolio.id,
+                                    updates: {
+                                      isPublished: !portfolio.isPublished,
+                                    },
+                                  },
+                                })
                               }}
                             >
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Share
+                              {portfolio.isPublished ? 'Unpublish' : 'Publish'}
                             </Button>
-                          )}
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              dispatch({
-                                type: 'UPDATE_PORTFOLIO',
-                                payload: {
-                                  id: portfolio.id,
-                                  updates: { isPublished: !portfolio.isPublished }
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    'Are you sure you want to delete this portfolio?'
+                                  )
+                                ) {
+                                  dispatch({
+                                    type: 'DELETE_PORTFOLIO',
+                                    payload: portfolio.id,
+                                  })
                                 }
-                              });
-                            }}
-                          >
-                            {portfolio.isPublished ? 'Unpublish' : 'Publish'}
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (confirm('Are you sure you want to delete this portfolio?')) {
-                                dispatch({ type: 'DELETE_PORTFOLIO', payload: portfolio.id });
-                              }
-                            }}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                              }}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                 </div>
               ) : (
                 <Card>
@@ -826,7 +946,8 @@ export function UserProfilePage({
                       <Briefcase className="h-12 w-12 mx-auto mb-4" />
                       <h3 className="mb-2">No portfolios yet</h3>
                       <p className="mb-6">
-                        Create professional portfolios to showcase your prompts to clients
+                        Create professional portfolios to showcase your prompts
+                        to clients
                       </p>
                       <Button onClick={() => setIsCreatingPortfolio(true)}>
                         <Plus className="w-4 h-4 mr-2" />
@@ -841,15 +962,24 @@ export function UserProfilePage({
             <TabsContent value="settings" className="space-y-6">
               <Tabs defaultValue="profile">
                 <TabsList className="grid w-full grid-cols-3 mb-6">
-                  <TabsTrigger value="profile" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="profile"
+                    className="flex items-center gap-2"
+                  >
                     <UserIcon className="h-4 w-4" />
                     Profile
                   </TabsTrigger>
-                  <TabsTrigger value="subscription" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="subscription"
+                    className="flex items-center gap-2"
+                  >
                     <CreditCard className="h-4 w-4" />
                     Subscription
                   </TabsTrigger>
-                  <TabsTrigger value="privacy" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="privacy"
+                    className="flex items-center gap-2"
+                  >
                     <Shield className="h-4 w-4" />
                     Privacy
                   </TabsTrigger>
@@ -864,11 +994,15 @@ export function UserProfilePage({
                         <div className="flex gap-2">
                           {isEditing ? (
                             <>
-                              <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+                              <Button variant="outline" onClick={handleCancel}>
+                                Cancel
+                              </Button>
                               <Button onClick={handleSave}>Save Changes</Button>
                             </>
                           ) : (
-                            <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+                            <Button onClick={() => setIsEditing(true)}>
+                              Edit Profile
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -880,7 +1014,9 @@ export function UserProfilePage({
                           <Input
                             id="name"
                             value={formData.name}
-                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            onChange={e =>
+                              setFormData({ ...formData, name: e.target.value })
+                            }
                             disabled={!isEditing}
                           />
                         </div>
@@ -889,7 +1025,12 @@ export function UserProfilePage({
                           <Input
                             id="username"
                             value={formData.username}
-                            onChange={(e) => setFormData({...formData, username: e.target.value})}
+                            onChange={e =>
+                              setFormData({
+                                ...formData,
+                                username: e.target.value,
+                              })
+                            }
                             disabled={!isEditing}
                           />
                         </div>
@@ -901,7 +1042,9 @@ export function UserProfilePage({
                           id="email"
                           type="email"
                           value={formData.email}
-                          onChange={(e) => setFormData({...formData, email: e.target.value})}
+                          onChange={e =>
+                            setFormData({ ...formData, email: e.target.value })
+                          }
                           disabled={!isEditing}
                         />
                       </div>
@@ -911,7 +1054,9 @@ export function UserProfilePage({
                         <Textarea
                           id="bio"
                           value={formData.bio}
-                          onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                          onChange={e =>
+                            setFormData({ ...formData, bio: e.target.value })
+                          }
                           placeholder="Tell us about yourself..."
                           disabled={!isEditing}
                           rows={3}
@@ -928,7 +1073,12 @@ export function UserProfilePage({
                             <Input
                               placeholder="https://your-website.com"
                               value={formData.website}
-                              onChange={(e) => setFormData({...formData, website: e.target.value})}
+                              onChange={e =>
+                                setFormData({
+                                  ...formData,
+                                  website: e.target.value,
+                                })
+                              }
                               disabled={!isEditing}
                             />
                           </div>
@@ -937,7 +1087,12 @@ export function UserProfilePage({
                             <Input
                               placeholder="github-username"
                               value={formData.github}
-                              onChange={(e) => setFormData({...formData, github: e.target.value})}
+                              onChange={e =>
+                                setFormData({
+                                  ...formData,
+                                  github: e.target.value,
+                                })
+                              }
                               disabled={!isEditing}
                             />
                           </div>
@@ -946,7 +1101,12 @@ export function UserProfilePage({
                             <Input
                               placeholder="twitter-handle"
                               value={formData.twitter}
-                              onChange={(e) => setFormData({...formData, twitter: e.target.value})}
+                              onChange={e =>
+                                setFormData({
+                                  ...formData,
+                                  twitter: e.target.value,
+                                })
+                              }
                               disabled={!isEditing}
                             />
                           </div>
@@ -958,7 +1118,9 @@ export function UserProfilePage({
                         <Input
                           id="skills"
                           value={formData.skills}
-                          onChange={(e) => setFormData({...formData, skills: e.target.value})}
+                          onChange={e =>
+                            setFormData({ ...formData, skills: e.target.value })
+                          }
                           placeholder="AI, Machine Learning, Writing..."
                           disabled={!isEditing}
                         />
@@ -974,7 +1136,10 @@ export function UserProfilePage({
                       <CardTitle className="flex items-center gap-2">
                         Current Plan
                         {state.user?.role === 'pro' && (
-                          <Badge variant="secondary" className="flex items-center gap-1">
+                          <Badge
+                            variant="secondary"
+                            className="flex items-center gap-1"
+                          >
                             <Crown className="h-3 w-3" />
                             Pro
                           </Badge>
@@ -986,13 +1151,14 @@ export function UserProfilePage({
                         <div className="flex items-center justify-between mb-4">
                           <div>
                             <h3 className="font-medium">
-                              {state.user?.role === 'pro' ? 'Pro Plan' : 'Free Plan'}
+                              {state.user?.role === 'pro'
+                                ? 'Pro Plan'
+                                : 'Free Plan'}
                             </h3>
                             <p className="text-sm text-muted-foreground">
                               {state.user?.role === 'pro'
                                 ? '$7.99/month - Advanced features included'
-                                : 'Basic features only'
-                              }
+                                : 'Basic features only'}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1008,25 +1174,38 @@ export function UserProfilePage({
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span>Saves per month</span>
-                            <span>{state.user?.role === 'pro' ? 'Unlimited' : '10'}</span>
+                            <span>
+                              {state.user?.role === 'pro' ? 'Unlimited' : '10'}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span>Forks per month</span>
-                            <span>{state.user?.role === 'pro' ? 'Unlimited' : '5'}</span>
+                            <span>
+                              {state.user?.role === 'pro' ? 'Unlimited' : '5'}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span>Export collections</span>
-                            <span>{state.user?.role === 'pro' ? 'Yes' : 'No'}</span>
+                            <span>
+                              {state.user?.role === 'pro' ? 'Yes' : 'No'}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
                             <span>API Access</span>
-                            <span>{state.user?.role === 'pro' ? 'Yes' : 'No'}</span>
+                            <span>
+                              {state.user?.role === 'pro' ? 'Yes' : 'No'}
+                            </span>
                           </div>
                         </div>
 
                         <div className="mt-4 space-y-2">
                           {state.user?.role === 'general' ? (
-                            <Button className="w-full" onClick={() => {/* TODO: Navigate to subscription page */}}>
+                            <Button
+                              className="w-full"
+                              onClick={() => {
+                                /* TODO: Navigate to subscription page */
+                              }}
+                            >
                               Upgrade to Pro
                             </Button>
                           ) : (
@@ -1042,7 +1221,9 @@ export function UserProfilePage({
                               {state.user?.isAdmin && (
                                 <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                                   <p className="text-xs text-blue-800 dark:text-blue-200">
-                                    👑 <strong>Admin Note:</strong> You have Pro features automatically. Billing page shows UI demo.
+                                    👑 <strong>Admin Note:</strong> You have Pro
+                                    features automatically. Billing page shows
+                                    UI demo.
                                   </p>
                                 </div>
                               )}
@@ -1075,7 +1256,9 @@ export function UserProfilePage({
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-medium">Profile Visibility</div>
+                              <div className="font-medium">
+                                Profile Visibility
+                              </div>
                               <div className="text-sm text-muted-foreground">
                                 Make your profile visible to other users
                               </div>
@@ -1084,7 +1267,9 @@ export function UserProfilePage({
                           </div>
                           <div className="flex items-center justify-between">
                             <div>
-                              <div className="font-medium">Activity Tracking</div>
+                              <div className="font-medium">
+                                Activity Tracking
+                              </div>
                               <div className="text-sm text-muted-foreground">
                                 Help improve the platform with usage analytics
                               </div>
@@ -1097,13 +1282,18 @@ export function UserProfilePage({
                       <Separator />
 
                       <div className="space-y-4">
-                        <h4 className="font-medium text-destructive">Danger Zone</h4>
+                        <h4 className="font-medium text-destructive">
+                          Danger Zone
+                        </h4>
                         <div className="p-4 border border-destructive/20 rounded-lg bg-destructive/5">
                           <div className="space-y-3">
                             <div>
-                              <h5 className="font-medium text-destructive">Delete Account</h5>
+                              <h5 className="font-medium text-destructive">
+                                Delete Account
+                              </h5>
                               <p className="text-sm text-muted-foreground mb-2">
-                                Permanently delete your account and all associated data
+                                Permanently delete your account and all
+                                associated data
                               </p>
                               <Button variant="destructive" size="sm">
                                 <Trash2 className="h-4 w-4 mr-2" />
@@ -1134,5 +1324,5 @@ export function UserProfilePage({
         </div>
       )}
     </div>
-  );
+  )
 }

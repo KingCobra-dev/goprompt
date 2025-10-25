@@ -1,72 +1,79 @@
-import { useState } from "react";
-import { Card, CardContent } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { SuccessBadge } from "./ui/SuccessBadge";
-import { SubscriptionBadge } from "./ui/SubscriptionBadge";
-import { Button } from "./ui/button";
-import { Heart, Share, BookmarkPlus, GitFork } from "lucide-react";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { categories } from "../lib/data";
-import { PromptImage } from "../lib/types";
-import { useApp } from '../contexts/AppContext';
-import { hearts, saves, prompts as promptsAPI } from '../lib/api';
+import { useState } from 'react'
+import { Card, CardContent } from './ui/card'
+import { Badge } from './ui/badge'
+import { SuccessBadge } from './ui/SuccessBadge'
+import { SubscriptionBadge } from './ui/SubscriptionBadge'
+import { Button } from './ui/button'
+import { Heart, Share, BookmarkPlus, GitFork } from 'lucide-react'
+import { categories } from '../lib/data'
+import { SubscriptionPlan, PromptImage } from '../lib/types'
+import { useApp } from '../contexts/AppContext'
+import { hearts, saves } from '../lib/api'
 
 interface PromptCardProps {
-   id: string;
-   title: string;
-   description: string;
-   author: {
-     name: string;
-     username: string;
-     role?: 'general' | 'pro' | 'admin';
-     subscriptionStatus?: 'active' | 'cancelled' | 'past_due';
-   };
-  category: string;
-  tags: string[];
-  images?: PromptImage[];
+  id: string
+  title: string
+  description: string
+  author: {
+    name: string
+    username: string
+    role?: 'general' | 'pro' | 'admin'
+    subscriptionStatus?: 'active' | 'cancelled' | 'past_due'
+    subscriptionPlan?: SubscriptionPlan
+  }
+  category: string
+  tags: string[]
+  images?: PromptImage[]
   stats?: {
-    hearts: number;
-    saves: number;
-    forks: number;
-  };
-  successRate?: number;
-  successVotesCount?: number;
-  isSaved?: boolean; // Keep for backwards compatibility, but internally use context state
-  createdAt: string;
+    hearts: number
+    saves: number
+    forks: number
+  }
+  successRate?: number
+  successVotesCount?: number
+  isHearted?: boolean // optional external prop
+  isSaved?: boolean // Keep for backwards compatibility, but internally use context state
+  createdAt: string
   parentAuthor?: {
-    name: string;
-    username: string;
-    role?: 'general' | 'pro' | 'admin';
-  };
-  onClick?: () => void;
-  onHeart?: () => void; // Keep for backwards compatibility
-  onSave?: () => void; // Keep for backwards compatibility
-  onShare?: () => void;
+    name: string
+    username: string
+    role?: 'general' | 'pro' | 'admin'
+  }
+  onClick?: () => void
+  onHeart?: () => void // Keep for backwards compatibility
+  onSave?: () => void // Keep for backwards compatibility
+  onShare?: () => void
 }
 
 // Get initials from name
 function getInitials(name: string): string {
-  if (!name || typeof name !== 'string') return 'U';
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 }
 
 // Get relative time
 function getRelativeTime(date: string): string {
-  const now = new Date();
-  const created = new Date(date);
-  const diffInHours = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60));
-  
-  if (diffInHours < 1) return 'Just now';
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays}d ago`;
-  
-  const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks < 4) return `${diffInWeeks}w ago`;
-  
-  const diffInMonths = Math.floor(diffInDays / 30);
-  return `${diffInMonths}mo ago`;
+  const now = new Date()
+  const created = new Date(date)
+  const diffInHours = Math.floor(
+    (now.getTime() - created.getTime()) / (1000 * 60 * 60)
+  )
+
+  if (diffInHours < 1) return 'Just now'
+  if (diffInHours < 24) return `${diffInHours}h ago`
+
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays < 7) return `${diffInDays}d ago`
+
+  const diffInWeeks = Math.floor(diffInDays / 7)
+  if (diffInWeeks < 4) return `${diffInWeeks}w ago`
+
+  const diffInMonths = Math.floor(diffInDays / 30)
+  return `${diffInMonths}mo ago`
 }
 
 export function PromptCard({
@@ -76,7 +83,6 @@ export function PromptCard({
   author,
   category,
   tags: _tags,
-  images,
   stats,
   successRate,
   successVotesCount,
@@ -86,155 +92,113 @@ export function PromptCard({
   onClick,
   onHeart: _onHeart, // Renamed to indicate it's not used internally
   onSave: _onSave, // Renamed to indicate it's not used internally
-  onShare
+  onShare,
 }: PromptCardProps) {
-  const { state, dispatch } = useApp();
-  const [heartAnimating, setHeartAnimating] = useState(false);
-  const [saveAnimating, setSaveAnimating] = useState(false);
+  const { state, dispatch } = useApp()
+  const [heartAnimating, setHeartAnimating] = useState(false)
+  const [saveAnimating, setSaveAnimating] = useState(false)
 
-  // Calculate the actual heart state from context (only if hearts/saves are loaded)
-  const isHearted = (state.user && state.heartsAndSavesLoaded) ? state.hearts.some(h =>
-    h.userId === state.user.id && h.promptId === _id
-  ) : false;
+  // Calculate the actual heart state from context
+  const isHearted =
+    typeof state.hearts !== 'undefined' &&
+    state.hearts.some(
+      (h: any) => h.userId === state.user?.id && h.promptId === _id
+    )
 
-  // Calculate the actual save state from context (only if hearts/saves are loaded)
-  const isActuallySaved = (state.user && state.heartsAndSavesLoaded) ? state.saves.some(s =>
-    s.userId === state.user.id && s.promptId === _id
-  ) : false;
-
-  // Calculate actual counts from the current prompt in context state
-  const currentPrompt = state.prompts.find(p => p.id === _id);
-  const currentHeartCount = currentPrompt?.hearts || stats?.hearts || 0;
-  const currentSaveCount = currentPrompt?.saveCount || stats?.saves || 0;
+  // Calculate the actual save state from context
+  const isActuallySaved = state.saves.some(
+    s => s.userId === state.user?.id && s.promptId === _id
+  )
 
   const handleHeart = async () => {
-     if (!state.user) {
-       console.log('User not authenticated');
-       return;
-     }
-
-     // Trigger animation
-     setHeartAnimating(true);
-     setTimeout(() => setHeartAnimating(false), 400);
-
-     console.log('Toggling heart for prompt:', _id, 'Current isHearted:', isHearted);
-     try {
-       const result = await hearts.toggle(_id);
-       console.log('Heart result:', result);
-
-       if (!result.error && result.data) {
-         // Update global state immediately for instant visual feedback
-         if (result.data.action === 'added') {
-           console.log('Adding heart - updating UI');
-           dispatch({ type: 'HEART_PROMPT', payload: { promptId: _id } });
-         } else {
-           console.log('Removing heart - updating UI');
-           dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: _id } });
-         }
-
-         // Fetch updated prompt data to ensure counts are accurate
-         try {
-           const { data: updatedPrompt } = await promptsAPI.getById(_id);
-           if (updatedPrompt) {
-             dispatch({ 
-               type: 'UPDATE_PROMPT', 
-               payload: { 
-                 id: _id, 
-                 updates: { 
-                   hearts: updatedPrompt.hearts,
-                   saveCount: updatedPrompt.save_count 
-                 } 
-               } 
-             });
-           }
-         } catch (error) {
-           console.warn('Failed to refresh prompt counts after heart toggle:', error);
-         }
-       } else {
-         console.error('Heart error:', result.error);
-       }
-     } catch (error) {
-       console.error('Heart exception:', error);
-     }
-   };
-
-  const handleSave = async () => {
     if (!state.user) {
-      console.log('User not authenticated');
-      return;
+      console.log('User not authenticated')
+      return
     }
 
     // Trigger animation
-    setSaveAnimating(true);
-    setTimeout(() => setSaveAnimating(false), 400);
+    setHeartAnimating(true)
+    setTimeout(() => setHeartAnimating(false), 400)
 
-    console.log('Toggling save for prompt:', _id, 'Current isSaved:', isActuallySaved);
+    console.log(
+      'Toggling heart for prompt:',
+      _id,
+      'Current isHearted:',
+      isHearted
+    )
     try {
-      const result = await saves.toggle(_id);
-      console.log('Save result:', result);
+      const result = await hearts.toggle(_id)
+      console.log('Heart result:', result)
 
       if (!result.error && result.data) {
         // Update global state immediately for instant visual feedback
         if (result.data.action === 'added') {
-          console.log('Adding save - updating UI');
-          dispatch({ type: 'SAVE_PROMPT', payload: { promptId: _id } });
+          console.log('Adding heart - updating UI')
+          dispatch({ type: 'HEART_PROMPT', payload: { promptId: _id } })
         } else {
-          console.log('Removing save - updating UI');
-          dispatch({ type: 'UNSAVE_PROMPT', payload: _id });
-        }
-
-        // Fetch updated prompt data to ensure counts are accurate
-        try {
-          const { data: updatedPrompt } = await promptsAPI.getById(_id);
-          if (updatedPrompt) {
-            dispatch({ 
-              type: 'UPDATE_PROMPT', 
-              payload: { 
-                id: _id, 
-                updates: { 
-                  hearts: updatedPrompt.hearts,
-                  saveCount: updatedPrompt.save_count 
-                } 
-              } 
-            });
-          }
-        } catch (error) {
-          console.warn('Failed to refresh prompt counts after save toggle:', error);
+          console.log('Removing heart - updating UI')
+          dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: _id } })
         }
       } else {
-        console.error('Save error:', result.error);
+        console.error('Heart error:', result.error)
       }
     } catch (error) {
-      console.error('Save exception:', error);
+      console.error('Heart exception:', error)
     }
-  };
+  }
 
-  const categoryData = categories.find(cat =>
-    cat.id === category?.toLowerCase() ||
-    cat.label?.toLowerCase() === category?.toLowerCase() ||
-    cat.name?.toLowerCase() === category?.toLowerCase()
-  );
-  const primaryImage = images?.find(img => img.isPrimary) || images?.[0];
-  
+  const handleSave = async () => {
+    if (!state.user) {
+      console.log('User not authenticated')
+      return
+    }
+
+    // Trigger animation
+    setSaveAnimating(true)
+    setTimeout(() => setSaveAnimating(false), 400)
+
+    console.log(
+      'Toggling save for prompt:',
+      _id,
+      'Current isSaved:',
+      isActuallySaved
+    )
+    try {
+      const result = await saves.toggle(_id)
+      console.log('Save result:', result)
+
+      if (!result.error && result.data) {
+        // Update global state immediately for instant visual feedback
+        if (result.data.action === 'added') {
+          console.log('Adding save - updating UI')
+          dispatch({ type: 'SAVE_PROMPT', payload: { promptId: _id } })
+        } else {
+          console.log('Removing save - updating UI')
+          dispatch({ type: 'UNSAVE_PROMPT', payload: _id })
+        }
+      } else {
+        console.error('Save error:', result.error)
+      }
+    } catch (error) {
+      console.error('Save exception:', error)
+    }
+  }
+
+  const categoryData = categories.find(
+    cat =>
+      cat.id === category?.toLowerCase() ||
+      cat.label?.toLowerCase() === category?.toLowerCase() ||
+      cat.name?.toLowerCase() === category?.toLowerCase()
+  )
+
   return (
     <Card
       className="group hover:shadow-lg transition-all duration-200 cursor-pointer h-full flex flex-col overflow-hidden"
       onClick={() => {
-        console.log('PromptCard onClick fired for id:', _id);
-        onClick?.();
+        console.log('PromptCard onClick fired for id:', _id)
+        onClick?.()
       }}
     >
-      {/* Primary Image */}
-      {primaryImage && (
-        <div className="aspect-video w-full overflow-hidden">
-          <ImageWithFallback
-            src={primaryImage.url}
-            alt={primaryImage.altText}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-          />
-        </div>
-      )}
-
       <CardContent className="p-4 flex-1 flex flex-col space-y-3">
         {/* Title */}
         <h3 className="line-clamp-2 group-hover:text-primary transition-colors">
@@ -246,9 +210,7 @@ export function PromptCard({
           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs">
             {getInitials(author.name)}
           </div>
-          <span className="text-muted-foreground">
-            {author.username}
-          </span>
+          <span className="text-muted-foreground">{author.username}</span>
           <SubscriptionBadge
             role={author.role || 'general'}
             subscriptionStatus={author.subscriptionStatus}
@@ -281,7 +243,7 @@ export function PromptCard({
               style={{
                 borderColor: categoryData.color + '40',
                 color: categoryData.color,
-                backgroundColor: categoryData.color + '10'
+                backgroundColor: categoryData.color + '10',
               }}
             >
               {categoryData.label}
@@ -315,25 +277,23 @@ export function PromptCard({
               size="sm"
               variant="ghost"
               onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                handleHeart();
+                e.stopPropagation()
+                handleHeart()
               }}
               className={isHearted ? 'bg-red-50 text-red-600' : ''}
             >
-              <Heart className={`h-3 w-3 mr-2 transition-all duration-300 ease-out ${
-                isHearted
-                  ? 'fill-current scale-110'
-                  : 'scale-100'
-              } ${
-                heartAnimating
-                  ? 'animate-bounce scale-125'
-                  : ''
-              }`}
-              style={{
-                transform: heartAnimating ? 'scale(1.2) rotate(-5deg)' : undefined,
-                transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
-              }} />
-              {currentHeartCount}
+              <Heart
+                className={`h-3 w-3 mr-2 transition-all duration-300 ease-out ${
+                  isHearted ? 'fill-current scale-110' : 'scale-100'
+                } ${heartAnimating ? 'animate-bounce scale-125' : ''}`}
+                style={{
+                  transform: heartAnimating
+                    ? 'scale(1.2) rotate(-5deg)'
+                    : undefined,
+                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                }}
+              />
+              {stats?.hearts || 0}
             </Button>
 
             <Button
@@ -343,8 +303,8 @@ export function PromptCard({
                 isActuallySaved ? 'bg-primary/10 text-primary' : ''
               }`}
               onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                handleSave();
+                e.stopPropagation()
+                handleSave()
               }}
             >
               <BookmarkPlus
@@ -352,20 +312,20 @@ export function PromptCard({
                   isActuallySaved
                     ? 'fill-current text-primary scale-110'
                     : 'scale-100'
-                } ${
-                  saveAnimating
-                    ? 'animate-bounce scale-125'
-                    : ''
-                }`}
+                } ${saveAnimating ? 'animate-bounce scale-125' : ''}`}
                 style={{
-                  transform: saveAnimating ? 'scale(1.2) rotate(-5deg)' : undefined,
-                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  transform: saveAnimating
+                    ? 'scale(1.2) rotate(-5deg)'
+                    : undefined,
+                  transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               />
-              <span className={`transition-colors duration-300 ${
-                isActuallySaved ? 'text-primary' : ''
-              } ${saveAnimating ? 'animate-pulse' : ''}`}>
-                {currentSaveCount}
+              <span
+                className={`transition-colors duration-300 ${
+                  isActuallySaved ? 'text-primary' : ''
+                } ${saveAnimating ? 'animate-pulse' : ''}`}
+              >
+                {stats?.saves || 0}
               </span>
             </Button>
 
@@ -374,9 +334,9 @@ export function PromptCard({
               variant="ghost"
               className="h-8 px-2"
               onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                console.log('Share button clicked for id:', _id);
-                onShare?.();
+                e.stopPropagation()
+                console.log('Share button clicked for id:', _id)
+                onShare?.()
               }}
             >
               <Share className="h-3 w-3" />
@@ -385,5 +345,5 @@ export function PromptCard({
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

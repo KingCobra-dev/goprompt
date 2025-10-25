@@ -1,63 +1,76 @@
-import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Switch } from './ui/switch';
-import { PromptCard } from './PromptCard';
-import { useApp } from '../contexts/AppContext';
-import { Portfolio, Prompt } from '../lib/types';
+import { useState, useEffect } from 'react'
+import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Badge } from './ui/badge'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Textarea } from './ui/textarea'
+import { Switch } from './ui/switch'
+import { PromptCard } from './prompts/PromptCard'
+import { useApp } from '../contexts/AppContext'
+import { Portfolio, Prompt } from '../lib/types'
 import {
-  ArrowLeft, Lock, Globe, Copy,
-  Plus, Trash2, Edit, Save, X, Settings, Share2
-} from 'lucide-react';
+  ArrowLeft,
+  Lock,
+  Globe,
+  Copy,
+  Plus,
+  Trash2,
+  Edit,
+  Save,
+  X,
+  Settings,
+  Share2,
+} from 'lucide-react'
 
 interface PortfolioViewPageProps {
-  portfolioId: string;
-  onBack: () => void;
-  onPromptClick: (promptId: string) => void;
+  portfolioId: string
+  onBack: () => void
+  onPromptClick: (promptId: string) => void
 }
 
-export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: PortfolioViewPageProps) {
-  const { state, dispatch } = useApp();
-  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
-  const [portfolioPrompts, setPortfolioPrompts] = useState<Prompt[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
+export function PortfolioViewPage({
+  portfolioId,
+  onBack,
+  onPromptClick,
+}: PortfolioViewPageProps) {
+  const { state, dispatch } = useApp()
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
+  const [portfolioPrompts, setPortfolioPrompts] = useState<Prompt[]>([])
+  const [isEditing, setIsEditing] = useState(false)
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
     isPasswordProtected: false,
     password: '',
-    isPublished: false
-  });
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [isOwner, setIsOwner] = useState(false);
+    isPublished: false,
+  })
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
-    const foundPortfolio = state.portfolios.find(p => p.id === portfolioId);
+    const foundPortfolio = state.portfolios.find(p => p.id === portfolioId)
     if (foundPortfolio) {
-      setPortfolio(foundPortfolio);
-      setIsOwner(state.user?.id === foundPortfolio.userId);
+      setPortfolio(foundPortfolio)
+      setIsOwner(state.user?.id === foundPortfolio.userId)
       setEditForm({
         name: foundPortfolio.name,
         description: foundPortfolio.description,
         isPasswordProtected: foundPortfolio.isPasswordProtected,
         password: foundPortfolio.password || '',
-        isPublished: foundPortfolio.isPublished
-      });
+        isPublished: foundPortfolio.isPublished,
+      })
 
       // Get prompts in this portfolio
       const prompts = state.prompts.filter(p =>
         foundPortfolio.promptIds.includes(p.id)
-      );
-      setPortfolioPrompts(prompts);
+      )
+      setPortfolioPrompts(prompts)
     }
-  }, [portfolioId, state.portfolios, state.prompts, state.user]);
+  }, [portfolioId, state.portfolios, state.prompts, state.user])
 
   const handleSave = () => {
-    if (!portfolio) return;
+    if (!portfolio) return
 
     const updatedPortfolio: Portfolio = {
       ...portfolio,
@@ -66,44 +79,51 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
       isPasswordProtected: editForm.isPasswordProtected,
       password: editForm.isPasswordProtected ? editForm.password : undefined,
       isPublished: editForm.isPublished,
-      updatedAt: new Date().toISOString()
-    };
+      updatedAt: new Date().toISOString(),
+    }
 
-    dispatch({ type: 'UPDATE_PORTFOLIO', payload: { id: portfolio.id, updates: updatedPortfolio } });
-    setPortfolio(updatedPortfolio);
-    setIsEditing(false);
-  };
+    dispatch({
+      type: 'UPDATE_PORTFOLIO',
+      payload: { id: portfolio.id, updates: updatedPortfolio },
+    })
+    setPortfolio(updatedPortfolio)
+    setIsEditing(false)
+  }
 
   const handleRemovePrompt = (promptId: string) => {
-    if (!portfolio) return;
+    if (!portfolio) return
 
-    const updatedPromptIds = portfolio.promptIds.filter(id => id !== promptId);
+    const updatedPromptIds = portfolio.promptIds.filter(id => id !== promptId)
     const updatedPortfolio: Portfolio = {
       ...portfolio,
       promptIds: updatedPromptIds,
-      updatedAt: new Date().toISOString()
-    };
+      updatedAt: new Date().toISOString(),
+    }
 
-    dispatch({ type: 'UPDATE_PORTFOLIO', payload: { id: portfolio.id, updates: updatedPortfolio } });
-    setPortfolio(updatedPortfolio);
-    setPortfolioPrompts(prev => prev.filter(p => p.id !== promptId));
-  };
+    dispatch({
+      type: 'UPDATE_PORTFOLIO',
+      payload: { id: portfolio.id, updates: updatedPortfolio },
+    })
+    setPortfolio(updatedPortfolio)
+    setPortfolioPrompts(prev => prev.filter(p => p.id !== promptId))
+  }
 
   const handleCopyLink = async () => {
-    if (!portfolio) return;
+    if (!portfolio) return
 
-    const url = state.user?.subscriptionPlan === 'pro'
-      ? `${portfolio.subdomain}.promptsgo.com`
-      : `promptsgo.com/portfolio/${portfolio.subdomain}`;
+    const url =
+      state.user?.subscriptionPlan === 'pro'
+        ? `${portfolio.subdomain}.promptsgo.com`
+        : `promptsgo.com/portfolio/${portfolio.subdomain}`
 
     try {
-      await navigator.clipboard.writeText(`https://${url}`);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
+      await navigator.clipboard.writeText(`https://${url}`)
+      setCopiedLink(true)
+      setTimeout(() => setCopiedLink(false), 2000)
     } catch (err) {
-      console.error('Failed to copy link:', err);
+      console.error('Failed to copy link:', err)
     }
-  };
+  }
 
   if (!portfolio) {
     return (
@@ -113,12 +133,13 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
           <Button onClick={onBack}>← Back</Button>
         </div>
       </div>
-    );
+    )
   }
 
-  const portfolioUrl = state.user?.subscriptionPlan === 'pro'
-    ? `${portfolio.subdomain}.promptsgo.com`
-    : `promptsgo.com/portfolio/${portfolio.subdomain}`;
+  const portfolioUrl =
+    state.user?.subscriptionPlan === 'pro'
+      ? `${portfolio.subdomain}.promptsgo.com`
+      : `promptsgo.com/portfolio/${portfolio.subdomain}`
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -137,19 +158,14 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
                 Protected
               </Badge>
             )}
-            {!portfolio.isPublished && (
-              <Badge variant="secondary">Draft</Badge>
-            )}
+            {!portfolio.isPublished && <Badge variant="secondary">Draft</Badge>}
           </div>
           <p className="text-muted-foreground mt-1">{portfolio.description}</p>
         </div>
 
         {isOwner && (
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditing(!isEditing)}
-            >
+            <Button variant="outline" onClick={() => setIsEditing(!isEditing)}>
               <Edit className="h-4 w-4 mr-2" />
               {isEditing ? 'Cancel' : 'Edit'}
             </Button>
@@ -173,11 +189,7 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
           <div className="flex items-center gap-3">
             <Globe className="h-5 w-5 text-muted-foreground" />
             <code className="flex-1 text-sm">{portfolioUrl}</code>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCopyLink}
-            >
+            <Button variant="ghost" size="sm" onClick={handleCopyLink}>
               <Copy className="h-4 w-4" />
             </Button>
           </div>
@@ -200,7 +212,9 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
                 <Input
                   id="name"
                   value={editForm.name}
-                  onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
                 />
               </div>
               <div>
@@ -221,7 +235,9 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
               <Textarea
                 id="description"
                 value={editForm.description}
-                onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                onChange={e =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
                 rows={3}
               />
             </div>
@@ -235,7 +251,9 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
               </div>
               <Switch
                 checked={editForm.isPasswordProtected}
-                onCheckedChange={(checked: boolean) => setEditForm({...editForm, isPasswordProtected: checked})}
+                onCheckedChange={(checked: boolean) =>
+                  setEditForm({ ...editForm, isPasswordProtected: checked })
+                }
               />
             </div>
 
@@ -246,7 +264,9 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
                   id="password"
                   type="password"
                   value={editForm.password}
-                  onChange={(e) => setEditForm({...editForm, password: e.target.value})}
+                  onChange={e =>
+                    setEditForm({ ...editForm, password: e.target.value })
+                  }
                   placeholder="Enter password"
                 />
               </div>
@@ -261,7 +281,9 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
               </div>
               <Switch
                 checked={editForm.isPublished}
-                onCheckedChange={(checked: boolean) => setEditForm({...editForm, isPublished: checked})}
+                onCheckedChange={(checked: boolean) =>
+                  setEditForm({ ...editForm, isPublished: checked })
+                }
               />
             </div>
 
@@ -289,7 +311,9 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold">{portfolio.clientAccessCount}</div>
+            <div className="text-2xl font-bold">
+              {portfolio.clientAccessCount}
+            </div>
             <div className="text-sm text-muted-foreground">Client Accesses</div>
           </CardContent>
         </Card>
@@ -323,7 +347,7 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
 
         {portfolioPrompts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {portfolioPrompts.map((prompt) => (
+            {portfolioPrompts.map(prompt => (
               <div key={prompt.id} className="relative">
                 <PromptCard
                   id={prompt.id}
@@ -332,7 +356,7 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
                   author={{
                     name: prompt.author.name,
                     username: prompt.author.username,
-                    subscriptionPlan: prompt.author.subscriptionPlan
+                    subscriptionPlan: prompt.author.subscriptionPlan,
                   }}
                   category={prompt.category}
                   tags={prompt.tags}
@@ -340,43 +364,52 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
                   stats={{
                     hearts: prompt.hearts,
                     saves: prompt.saveCount,
-                    forks: prompt.forkCount
+                    forks: prompt.forkCount,
                   }}
                   isSaved={prompt.isSaved}
                   isHearted={prompt.isHearted}
                   createdAt={prompt.createdAt}
                   onClick={() => onPromptClick(prompt.id)}
                   onHeart={() => {
-                    if (!state.user) return;
+                    if (!state.user) return
                     if (prompt.isHearted) {
-                      dispatch({ type: 'UNHEART_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'UNHEART_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     } else {
-                      dispatch({ type: 'HEART_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'HEART_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     }
                   }}
                   onSave={() => {
-                    if (!state.user) return;
+                    if (!state.user) return
                     if (prompt.isSaved) {
-                      dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id });
+                      dispatch({ type: 'UNSAVE_PROMPT', payload: prompt.id })
                     } else {
-                      dispatch({ type: 'SAVE_PROMPT', payload: { promptId: prompt.id } });
+                      dispatch({
+                        type: 'SAVE_PROMPT',
+                        payload: { promptId: prompt.id },
+                      })
                     }
                   }}
                   onShare={async () => {
-                    const url = `${window.location.origin}/prompts/${prompt.slug}`;
+                    const url = `${window.location.origin}/prompts/${prompt.slug}`
                     try {
                       if (navigator.share) {
                         await navigator.share({
                           title: prompt.title,
                           text: prompt.description,
-                          url: url
-                        });
+                          url: url,
+                        })
                       } else {
-                        await navigator.clipboard.writeText(url);
+                        await navigator.clipboard.writeText(url)
                         // Could show a toast notification here
                       }
                     } catch (err) {
-                      console.error('Failed to share:', err);
+                      console.error('Failed to share:', err)
                     }
                   }}
                 />
@@ -386,8 +419,8 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
                     size="sm"
                     className="absolute top-2 right-2"
                     onClick={(e: React.MouseEvent) => {
-                      e.stopPropagation();
-                      handleRemovePrompt(prompt.id);
+                      e.stopPropagation()
+                      handleRemovePrompt(prompt.id)
                     }}
                   >
                     <Trash2 className="h-3 w-3" />
@@ -415,5 +448,5 @@ export function PortfolioViewPage({ portfolioId, onBack, onPromptClick }: Portfo
         )}
       </div>
     </div>
-  );
+  )
 }

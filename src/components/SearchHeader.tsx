@@ -1,16 +1,22 @@
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Badge } from "./ui/badge";
-import { Search, Filter, Grid3X3, List } from "lucide-react";
+import { Input } from './ui/input'
+import { Button } from './ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import { Badge } from './ui/badge'
+import { Search, Filter, Grid3X3, List } from 'lucide-react'
 
 interface SearchHeaderProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  resultCount: number;
-  onFilterToggle: () => void;
-  viewMode: "grid" | "list";
-  onViewModeChange: (mode: "grid" | "list") => void;
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  resultCount: number
+  onFilterToggle: () => void
+  viewMode: 'grid' | 'list'
+  onViewModeChange: (mode: 'grid' | 'list') => void
 }
 
 export function SearchHeader({
@@ -29,7 +35,7 @@ export function SearchHeader({
         <Input
           placeholder="Search for products, brands, and more..."
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={e => onSearchChange(e.target.value)}
           className="pl-10 pr-4"
         />
       </div>
@@ -41,7 +47,8 @@ export function SearchHeader({
             {resultCount.toLocaleString()} results
             {searchQuery && (
               <>
-                {" "}for <Badge variant="secondary">"{searchQuery}"</Badge>
+                {' '}
+                for <Badge variant="secondary">"{searchQuery}"</Badge>
               </>
             )}
           </p>
@@ -66,17 +73,17 @@ export function SearchHeader({
           {/* View Mode Toggle */}
           <div className="flex border rounded-md">
             <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => onViewModeChange("grid")}
+              onClick={() => onViewModeChange('grid')}
               className="rounded-r-none"
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => onViewModeChange("list")}
+              onClick={() => onViewModeChange('list')}
               className="rounded-l-none"
             >
               <List className="h-4 w-4" />
@@ -96,5 +103,5 @@ export function SearchHeader({
         </div>
       </div>
     </div>
-  );
+  )
 }

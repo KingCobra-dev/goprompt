@@ -1,108 +1,126 @@
-import { useState } from 'react';
-import { useApp } from '../contexts/AppContext';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Checkbox } from './ui/checkbox';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ArrowLeft, Eye, Lock, Plus, X, Package, User, Heart } from 'lucide-react';
-import { Portfolio, Prompt } from '../lib/types';
+import { useState } from 'react'
+import { useApp } from '../contexts/AppContext'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Textarea } from './ui/textarea'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Checkbox } from './ui/checkbox'
+import { ArrowLeft } from 'lucide-react'
+import { Portfolio } from '../lib/types'
 
 interface CreatePortfolioPageProps {
-  onBack: () => void;
-  onPortfolioCreated?: () => void;
+  onBack: () => void
+  onPortfolioCreated?: () => void
 }
 
-export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfolioPageProps) {
-  const { state, dispatch } = useApp();
+export function CreatePortfolioPage({
+  onBack,
+  onPortfolioCreated,
+}: CreatePortfolioPageProps) {
+  const { state, dispatch } = useApp()
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     subdomain: '',
     isPasswordProtected: false,
-    password: ''
-  });
-  const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+    password: '',
+  })
+  const [selectedPrompts, setSelectedPrompts] = useState<string[]>([])
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Get user's prompts
-  const userPrompts = state.prompts.filter(p => p.userId === state.user?.id);
-  
+  const userPrompts = state.prompts.filter(p => p.userId === state.user?.id)
+
   // Get prompts from user's pack library
-  const packPrompts = state.userPackLibrary?.packs.flatMap(pack => 
-    pack.packId ? state.prompts.filter(p => 
-      state.promptPacks.find(pp => pp.id === pack.packId)?.promptIds.includes(p.id)
-    ).map(p => ({ ...p, packSource: pack.packName })) : []
-  ) || [];
-  
+  const packPrompts =
+    state.userPackLibrary?.packs.flatMap(pack =>
+      pack.packId
+        ? state.prompts
+            .filter(p =>
+              state.promptPacks
+                .find(pp => pp.id === pack.packId)
+                ?.promptIds.includes(p.id)
+            )
+            .map(p => ({ ...p, packSource: pack.packName }))
+        : []
+    ) || []
+
   // Get saved prompts (from other users)
-  const savedPromptIds = state.saves.filter(s => s.userId === state.user?.id).map(s => s.promptId);
-  const savedPrompts = state.prompts.filter(p => 
-    savedPromptIds.includes(p.id) && p.userId !== state.user?.id
-  );
+  const savedPromptIds = state.saves
+    .filter(s => s.userId === state.user?.id)
+    .map(s => s.promptId)
+  const savedPrompts = state.prompts.filter(
+    p => savedPromptIds.includes(p.id) && p.userId !== state.user?.id
+  )
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Portfolio name is required';
+      newErrors.name = 'Portfolio name is required'
     }
 
     if (!formData.subdomain.trim()) {
-      newErrors.subdomain = 'Subdomain is required';
+      newErrors.subdomain = 'Subdomain is required'
     } else if (!/^[a-z0-9-]+$/.test(formData.subdomain)) {
-      newErrors.subdomain = 'Subdomain can only contain lowercase letters, numbers, and hyphens';
+      newErrors.subdomain =
+        'Subdomain can only contain lowercase letters, numbers, and hyphens'
     }
 
     if (selectedPrompts.length === 0) {
-      newErrors.prompts = 'Please select at least one prompt';
+      newErrors.prompts = 'Please select at least one prompt'
     }
 
     if (formData.isPasswordProtected && !formData.password.trim()) {
-      newErrors.password = 'Password is required when protection is enabled';
+      newErrors.password = 'Password is required when protection is enabled'
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubdomainChange = (value: string) => {
-    const cleaned = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    setFormData(prev => ({ ...prev, subdomain: cleaned }));
-  };
+    const cleaned = value.toLowerCase().replace(/[^a-z0-9-]/g, '')
+    setFormData(prev => ({ ...prev, subdomain: cleaned }))
+  }
 
   const handlePromptToggle = (promptId: string) => {
-    setSelectedPrompts(prev => 
+    setSelectedPrompts(prev =>
       prev.includes(promptId)
         ? prev.filter(id => id !== promptId)
         : [...prev, promptId]
-    );
-  };
+    )
+  }
 
   const handleSubmit = () => {
-    if (!validateForm() || !state.user) return;
+    if (!validateForm() || !state.user) return
 
     // Create enhanced prompt tracking
     const portfolioPrompts = selectedPrompts.map((promptId, index) => {
-      const userPrompt = userPrompts.find(p => p.id === promptId);
-      const packPrompt = packPrompts.find(p => p.id === promptId);
-      const savedPrompt = savedPrompts.find(p => p.id === promptId);
+      const packPrompt = packPrompts.find(p => p.id === promptId)
+      const savedPrompt = savedPrompts.find(p => p.id === promptId)
 
-      let source: 'original' | 'pack' | 'customized' = 'original';
-      let packId: string | undefined;
-      let packName: string | undefined;
+      let source: 'original' | 'pack' | 'customized' = 'original'
+      let packId: string | undefined
+      let packName: string | undefined
 
       if (packPrompt) {
-        source = 'pack';
-        const pack = state.userPackLibrary?.packs.find(p => 
-          state.promptPacks.find(pp => pp.id === p.packId)?.promptIds.includes(promptId)
-        );
-        packId = pack?.packId;
-        packName = pack?.packName;
+        source = 'pack'
+        const pack = state.userPackLibrary?.packs.find(p =>
+          state.promptPacks
+            .find(pp => pp.id === p.packId)
+            ?.promptIds.includes(promptId)
+        )
+        packId = pack?.packId
+        packName = pack?.packName
       } else if (savedPrompt) {
-        source = 'customized';
+        source = 'customized'
       }
 
       return {
@@ -112,9 +130,9 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
         packName,
         customized: false,
         addedAt: new Date().toISOString(),
-        order: index
-      };
-    });
+        order: index,
+      }
+    })
 
     const portfolio: Portfolio = {
       id: `portfolio-${Date.now()}`,
@@ -131,21 +149,22 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
       viewCount: 0,
       clientAccessCount: 0,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    dispatch({ type: 'ADD_PORTFOLIO', payload: portfolio });
-    
-    if (onPortfolioCreated) {
-      onPortfolioCreated();
-    } else {
-      onBack();
+      updatedAt: new Date().toISOString(),
     }
-  };
 
-  const previewUrl = state.user?.subscriptionPlan === 'pro' 
-    ? `${formData.subdomain || 'your-portfolio'}.promptsgo.com`
-    : `promptsgo.com/portfolio/${formData.subdomain || 'your-portfolio'}`;
+    dispatch({ type: 'ADD_PORTFOLIO', payload: portfolio })
+
+    if (onPortfolioCreated) {
+      onPortfolioCreated()
+    } else {
+      onBack()
+    }
+  }
+
+  const previewUrl =
+    state.user?.subscriptionPlan === 'pro'
+      ? `${formData.subdomain || 'your-portfolio'}.promptsgo.com`
+      : `promptsgo.com/portfolio/${formData.subdomain || 'your-portfolio'}`
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,17 +198,28 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
                   <label className="block mb-2">Portfolio Name</label>
                   <Input
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={e =>
+                      setFormData(prev => ({ ...prev, name: e.target.value }))
+                    }
                     placeholder="e.g., Marketing Prompt Collection"
                   />
-                  {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
+                  {errors.name && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.name}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block mb-2">Description</label>
                   <Textarea
                     value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={e =>
+                      setFormData(prev => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
                     placeholder="Brief description of your portfolio"
                     rows={3}
                   />
@@ -199,13 +229,17 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
                   <label className="block mb-2">Subdomain</label>
                   <Input
                     value={formData.subdomain}
-                    onChange={(e) => handleSubdomainChange(e.target.value)}
+                    onChange={e => handleSubdomainChange(e.target.value)}
                     placeholder="your-name"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
                     Your portfolio will be available at: {previewUrl}
                   </p>
-                  {errors.subdomain && <p className="text-destructive text-sm mt-1">{errors.subdomain}</p>}
+                  {errors.subdomain && (
+                    <p className="text-destructive text-sm mt-1">
+                      {errors.subdomain}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -222,8 +256,11 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
                   <Checkbox
                     id="password-protection"
                     checked={formData.isPasswordProtected}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, isPasswordProtected: checked as boolean }))
+                    onCheckedChange={(checked: boolean) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        isPasswordProtected: checked,
+                      }))
                     }
                   />
                   <label htmlFor="password-protection" className="text-sm">
@@ -237,10 +274,19 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
                     <Input
                       type="password"
                       value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                      onChange={e =>
+                        setFormData(prev => ({
+                          ...prev,
+                          password: e.target.value,
+                        }))
+                      }
                       placeholder="Enter password"
                     />
-                    {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
+                    {errors.password && (
+                      <p className="text-destructive text-sm mt-1">
+                        {errors.password}
+                      </p>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -260,14 +306,20 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {userPrompts.length > 0 ? (
                     userPrompts.map(prompt => (
-                      <div key={prompt.id} className="flex items-start space-x-3 p-3 border rounded-lg">
+                      <div
+                        key={prompt.id}
+                        className="flex items-start space-x-3 p-3 border rounded-lg"
+                      >
                         <Checkbox
                           id={prompt.id}
                           checked={selectedPrompts.includes(prompt.id)}
                           onCheckedChange={() => handlePromptToggle(prompt.id)}
                         />
                         <div className="flex-1 min-w-0">
-                          <label htmlFor={prompt.id} className="block text-sm font-medium cursor-pointer">
+                          <label
+                            htmlFor={prompt.id}
+                            className="block text-sm font-medium cursor-pointer"
+                          >
                             {prompt.title}
                           </label>
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
@@ -284,11 +336,17 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>You haven't created any prompts yet.</p>
-                      <p className="text-sm mt-1">Create some prompts first to add them to your portfolio.</p>
+                      <p className="text-sm mt-1">
+                        Create some prompts first to add them to your portfolio.
+                      </p>
                     </div>
                   )}
                 </div>
-                {errors.prompts && <p className="text-destructive text-sm mt-2">{errors.prompts}</p>}
+                {errors.prompts && (
+                  <p className="text-destructive text-sm mt-2">
+                    {errors.prompts}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -303,12 +361,10 @@ export function CreatePortfolioPage({ onBack, onPortfolioCreated }: CreatePortfo
             <Button variant="outline" onClick={onBack}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
-              Create Portfolio
-            </Button>
+            <Button onClick={handleSubmit}>Create Portfolio</Button>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,41 +1,49 @@
-import { useState, useEffect } from 'react';
-import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
+import { useState } from 'react'
+import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js'
 import {
   Elements,
   PaymentElement,
   useStripe,
-  useElements
-} from '@stripe/react-stripe-js';
-import { Button } from './button';
-import { Card, CardContent, CardHeader, CardTitle } from './card';
-import { Alert, AlertDescription } from './alert';
-import { Loader2, CreditCard, Shield } from 'lucide-react';
+  useElements,
+} from '@stripe/react-stripe-js'
+import { Button } from './button'
+import { Card, CardContent, CardHeader, CardTitle } from './card'
+import { Alert, AlertDescription } from './alert'
+import { Loader2, CreditCard, Shield } from 'lucide-react'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ''
+)
 
 interface StripeCheckoutFormProps {
-  clientSecret: string;
-  onSuccess: (paymentIntent: any) => void;
-  onError: (error: string) => void;
-  amount: number;
-  currency?: string;
+  clientSecret: string
+  onSuccess: (paymentIntent: any) => void
+  onError: (error: string) => void
+  amount: number
+  currency?: string
 }
 
-function CheckoutForm({ clientSecret, onSuccess, onError, amount, currency = 'usd' }: StripeCheckoutFormProps) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [message, setMessage] = useState<string>('');
+function CheckoutForm({
+  clientSecret,
+  onSuccess,
+  onError,
+  amount,
+  currency = 'usd',
+}: StripeCheckoutFormProps) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [message, setMessage] = useState<string>('')
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+    event.preventDefault()
 
     if (!stripe || !elements) {
-      return;
+      return
     }
 
-    setIsProcessing(true);
-    setMessage('');
+    setIsProcessing(true)
+    setMessage('')
 
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
@@ -44,23 +52,24 @@ function CheckoutForm({ clientSecret, onSuccess, onError, amount, currency = 'us
           return_url: `${window.location.origin}/subscription/success`,
         },
         redirect: 'if_required',
-      });
+      })
 
       if (error) {
-        setMessage(error.message || 'An error occurred during payment.');
-        onError(error.message || 'Payment failed');
+        setMessage(error.message || 'An error occurred during payment.')
+        onError(error.message || 'Payment failed')
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        setMessage('Payment succeeded!');
-        onSuccess(paymentIntent);
+        setMessage('Payment succeeded!')
+        onSuccess(paymentIntent)
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setMessage(errorMessage);
-      onError(errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : 'An unexpected error occurred'
+      setMessage(errorMessage)
+      onError(errorMessage)
     }
 
-    setIsProcessing(false);
-  };
+    setIsProcessing(false)
+  }
 
   const paymentElementOptions: StripeElementsOptions = {
     clientSecret,
@@ -70,7 +79,7 @@ function CheckoutForm({ clientSecret, onSuccess, onError, amount, currency = 'us
         colorPrimary: '#3b82f6',
       },
     },
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -82,8 +91,18 @@ function CheckoutForm({ clientSecret, onSuccess, onError, amount, currency = 'us
       <PaymentElement options={paymentElementOptions} />
 
       {message && (
-        <Alert className={message.includes('succeeded') ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
-          <AlertDescription className={message.includes('succeeded') ? 'text-green-800' : 'text-red-800'}>
+        <Alert
+          className={
+            message.includes('succeeded')
+              ? 'border-green-200 bg-green-50'
+              : 'border-red-200 bg-red-50'
+          }
+        >
+          <AlertDescription
+            className={
+              message.includes('succeeded') ? 'text-green-800' : 'text-red-800'
+            }
+          >
             {message}
           </AlertDescription>
         </Alert>
@@ -108,15 +127,15 @@ function CheckoutForm({ clientSecret, onSuccess, onError, amount, currency = 'us
         )}
       </Button>
     </form>
-  );
+  )
 }
 
 interface StripeCheckoutProps {
-  clientSecret: string;
-  onSuccess: (paymentIntent: any) => void;
-  onError: (error: string) => void;
-  amount: number;
-  currency?: string;
+  clientSecret: string
+  onSuccess: (paymentIntent: any) => void
+  onError: (error: string) => void
+  amount: number
+  currency?: string
 }
 
 export function StripeCheckout({
@@ -124,7 +143,7 @@ export function StripeCheckout({
   onSuccess,
   onError,
   amount,
-  currency = 'usd'
+  currency = 'usd',
 }: StripeCheckoutProps) {
   const options: StripeElementsOptions = {
     clientSecret,
@@ -134,7 +153,7 @@ export function StripeCheckout({
         colorPrimary: '#3b82f6',
       },
     },
-  };
+  }
 
   return (
     <Elements stripe={stripePromise} options={options}>
@@ -156,5 +175,5 @@ export function StripeCheckout({
         </CardContent>
       </Card>
     </Elements>
-  );
+  )
 }

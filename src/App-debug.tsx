@@ -1,65 +1,67 @@
-import React, { useState, useEffect } from 'react';
-import { AppProvider } from "./contexts/AppContext";
+import { useState, useEffect } from 'react'
+import { AppProvider } from './contexts/AppContext'
 
 function DebugApp() {
-  const [logs, setLogs] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [logs, setLogs] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   const addLog = (message: string) => {
-    console.log(message);
-    setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
+    console.log(message)
+    setLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`])
+  }
 
   useEffect(() => {
     const runDebug = async () => {
-      addLog("🚀 Debug App Started");
-      addLog("📦 Checking imports...");
+      addLog('🚀 Debug App Started')
+      addLog('📦 Checking imports...')
 
       try {
         // Test basic React functionality
-        addLog("✅ React is working");
+        addLog('✅ React is working')
 
         // Test if we can import components
-        addLog("🔍 Testing component imports...");
+        addLog('🔍 Testing component imports...')
 
         // Test Supabase import (using dynamic import for ES modules)
         try {
-          const supabaseModule = await import('./lib/supabase');
+          const supabaseModule = await import('./lib/supabase')
           if (supabaseModule.supabase) {
-            addLog("✅ Supabase client imported successfully");
+            addLog('✅ Supabase client imported successfully')
           }
         } catch (err) {
-          addLog(`❌ Supabase import failed: ${err}`);
+          addLog(`❌ Supabase import failed: ${err}`)
         }
 
         // Test environment variables
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
         if (supabaseUrl && supabaseKey) {
-          addLog("✅ Environment variables are set");
-          addLog(`📍 Supabase URL: ${supabaseUrl.substring(0, 30)}...`);
+          addLog('✅ Environment variables are set')
+          addLog(`📍 Supabase URL: ${supabaseUrl.substring(0, 30)}...`)
         } else {
-          addLog("❌ Environment variables missing");
-          setError("Environment variables not configured");
+          addLog('❌ Environment variables missing')
+          setError('Environment variables not configured')
         }
-
       } catch (err) {
-        addLog(`❌ Error during initialization: ${err}`);
-        setError(`Initialization error: ${err}`);
+        addLog(`❌ Error during initialization: ${err}`)
+        setError(`Initialization error: ${err}`)
       }
-    };
+    }
 
-    runDebug();
-  }, []);
+    runDebug()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">🔧 PromptsGo Debug Mode</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            🔧 PromptsGo Debug Mode
+          </h1>
           <p className="text-gray-600 mb-4">
-            This debug version helps identify what's preventing the main app from loading.
+            This debug version helps identify what's preventing the main app
+            from loading.
           </p>
 
           {error && (
@@ -87,7 +89,9 @@ function DebugApp() {
             ) : (
               <div className="space-y-1 font-mono text-sm">
                 {logs.map((log, index) => (
-                  <div key={index} className="text-gray-700">{log}</div>
+                  <div key={index} className="text-gray-700">
+                    {log}
+                  </div>
                 ))}
               </div>
             )}
@@ -97,7 +101,8 @@ function DebugApp() {
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
           <h3 className="text-blue-800 font-semibold mb-2">🔄 Next Steps</h3>
           <p className="text-blue-700 mb-2">
-            If you see this page, the basic setup is working. The issue is likely in:
+            If you see this page, the basic setup is working. The issue is
+            likely in:
           </p>
           <ul className="text-blue-700 list-disc list-inside text-sm">
             <li>AppProvider/AppContext initialization</li>
@@ -113,7 +118,7 @@ function DebugApp() {
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 export default function App() {
@@ -121,5 +126,5 @@ export default function App() {
     <AppProvider>
       <DebugApp />
     </AppProvider>
-  );
+  )
 }

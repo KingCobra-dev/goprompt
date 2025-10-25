@@ -1,95 +1,132 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Label } from './ui/label';
-import { Switch } from './ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Badge } from './ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { useApp } from '../contexts/AppContext';
-import { admin as adminAPI } from '../lib/api';
-import { isAdmin } from '../lib/admin';
-import { Mail, Flag, Key, Webhook, Plus, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from './ui/card'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Textarea } from './ui/textarea'
+import { Label } from './ui/label'
+import { Switch } from './ui/switch'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
+import { Badge } from './ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './ui/alert-dialog'
+import { useApp } from '../contexts/AppContext'
+import { admin as adminAPI } from '../lib/api'
+import { isAdmin } from '../lib/admin'
+import { Mail, Flag, Key, Webhook, Plus, Edit, Trash2 } from 'lucide-react'
 
 interface EmailTemplate {
-  id: string;
-  type: 'welcome' | 'billing' | 'notification' | 'password_reset' | 'verification';
-  name: string;
-  subject: string;
-  html_content: string;
-  text_content?: string;
-  variables: string[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  id: string
+  type:
+    | 'welcome'
+    | 'billing'
+    | 'notification'
+    | 'password_reset'
+    | 'verification'
+  name: string
+  subject: string
+  html_content: string
+  text_content?: string
+  variables: string[]
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 interface FeatureFlag {
-  id: string;
-  name: string;
-  description?: string;
-  enabled: boolean;
-  environment: 'development' | 'staging' | 'production';
-  rollout_percentage: number;
-  conditions: any;
-  created_at: string;
-  updated_at: string;
+  id: string
+  name: string
+  description?: string
+  enabled: boolean
+  environment: 'development' | 'staging' | 'production'
+  rollout_percentage: number
+  conditions: any
+  created_at: string
+  updated_at: string
 }
 
 interface ApiKey {
-  id: string;
-  name: string;
-  permissions: string[];
-  environment: 'development' | 'staging' | 'production';
-  is_active: boolean;
-  expires_at?: string;
-  last_used_at?: string;
-  created_at: string;
-  updated_at: string;
+  id: string
+  name: string
+  permissions: string[]
+  environment: 'development' | 'staging' | 'production'
+  is_active: boolean
+  expires_at?: string
+  last_used_at?: string
+  created_at: string
+  updated_at: string
 }
 
 interface Webhook {
-  id: string;
-  name: string;
-  url: string;
-  events: string[];
-  headers?: any;
-  is_active: boolean;
-  environment: 'development' | 'staging' | 'production';
-  retry_count: number;
-  timeout_seconds: number;
-  created_at: string;
-  updated_at: string;
+  id: string
+  name: string
+  url: string
+  events: string[]
+  headers?: any
+  is_active: boolean
+  environment: 'development' | 'staging' | 'production'
+  retry_count: number
+  timeout_seconds: number
+  created_at: string
+  updated_at: string
 }
 
 export function PlatformSettings() {
-  const { state } = useApp();
-  const user = state.user;
+  const { state } = useApp()
+  const user = state.user
 
   // State for data
-  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
-  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
-  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([])
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([])
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([])
+  const [webhooks, setWebhooks] = useState<Webhook[]>([])
 
   // State for loading
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true)
 
   // State for dialogs
-  const [emailTemplateDialog, setEmailTemplateDialog] = useState(false);
-  const [featureFlagDialog, setFeatureFlagDialog] = useState(false);
-  const [apiKeyDialog, setApiKeyDialog] = useState(false);
-  const [webhookDialog, setWebhookDialog] = useState(false);
+  const [emailTemplateDialog, setEmailTemplateDialog] = useState(false)
+  const [featureFlagDialog, setFeatureFlagDialog] = useState(false)
+  const [apiKeyDialog, setApiKeyDialog] = useState(false)
+  const [webhookDialog, setWebhookDialog] = useState(false)
 
   // State for editing
-  const [editingEmailTemplate, setEditingEmailTemplate] = useState<EmailTemplate | null>(null);
-  const [editingFeatureFlag, setEditingFeatureFlag] = useState<FeatureFlag | null>(null);
-  const [editingApiKey, setEditingApiKey] = useState<ApiKey | null>(null);
-  const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null);
+  const [editingEmailTemplate, setEditingEmailTemplate] =
+    useState<EmailTemplate | null>(null)
+  const [editingFeatureFlag, setEditingFeatureFlag] =
+    useState<FeatureFlag | null>(null)
+  const [editingApiKey, setEditingApiKey] = useState<ApiKey | null>(null)
+  const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null)
 
   // State for form data
   const [emailTemplateForm, setEmailTemplateForm] = useState({
@@ -98,8 +135,8 @@ export function PlatformSettings() {
     subject: '',
     html_content: '',
     text_content: '',
-    variables: [] as string[]
-  });
+    variables: [] as string[],
+  })
 
   const [featureFlagForm, setFeatureFlagForm] = useState({
     name: '',
@@ -107,15 +144,15 @@ export function PlatformSettings() {
     enabled: false,
     environment: 'production' as FeatureFlag['environment'],
     rollout_percentage: 100,
-    conditions: {}
-  });
+    conditions: {},
+  })
 
   const [apiKeyForm, setApiKeyForm] = useState({
     name: '',
     permissions: [] as string[],
     environment: 'production' as ApiKey['environment'],
-    expires_at: ''
-  });
+    expires_at: '',
+  })
 
   const [webhookForm, setWebhookForm] = useState({
     name: '',
@@ -124,194 +161,218 @@ export function PlatformSettings() {
     headers: {},
     environment: 'production' as Webhook['environment'],
     retry_count: 3,
-    timeout_seconds: 30
-  });
+    timeout_seconds: 30,
+  })
 
   // Load data on mount
   useEffect(() => {
-    if (!isAdmin(user)) return;
+    if (!isAdmin(user)) return
 
     const loadData = async () => {
-      setLoading(true);
+      setLoading(true)
       try {
-        const [templatesResult, flagsResult, keysResult, webhooksResult] = await Promise.all([
-          adminAPI.getEmailTemplates(),
-          adminAPI.getFeatureFlags(),
-          adminAPI.getApiKeys(),
-          adminAPI.getWebhooks()
-        ]);
+        const [templatesResult, flagsResult, keysResult, webhooksResult] =
+          await Promise.all([
+            adminAPI.getEmailTemplates(),
+            adminAPI.getFeatureFlags(),
+            adminAPI.getApiKeys(),
+            adminAPI.getWebhooks(),
+          ])
 
-        if (templatesResult.data) setEmailTemplates(templatesResult.data);
-        if (flagsResult.data) setFeatureFlags(flagsResult.data);
-        if (keysResult.data) setApiKeys(keysResult.data);
-        if (webhooksResult.data) setWebhooks(webhooksResult.data);
+        if (templatesResult.data) setEmailTemplates(templatesResult.data)
+        if (flagsResult.data) setFeatureFlags(flagsResult.data)
+        if (keysResult.data) setApiKeys(keysResult.data)
+        if (webhooksResult.data) setWebhooks(webhooksResult.data)
       } catch (error) {
-        console.error('Error loading platform settings:', error);
+        console.error('Error loading platform settings:', error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    loadData();
-  }, [user]);
+    loadData()
+  }, [user])
 
   // Email Template handlers
   const handleCreateEmailTemplate = async () => {
     try {
-      const result = await adminAPI.createEmailTemplate(emailTemplateForm);
+      const result = await adminAPI.createEmailTemplate(emailTemplateForm)
       if (result.data) {
-        setEmailTemplates([...emailTemplates, result.data]);
-        setEmailTemplateDialog(false);
-        resetEmailTemplateForm();
+        setEmailTemplates([...emailTemplates, result.data])
+        setEmailTemplateDialog(false)
+        resetEmailTemplateForm()
       }
     } catch (error) {
-      console.error('Error creating email template:', error);
+      console.error('Error creating email template:', error)
     }
-  };
+  }
 
   const handleUpdateEmailTemplate = async () => {
-    if (!editingEmailTemplate) return;
+    if (!editingEmailTemplate) return
 
     try {
-      const result = await adminAPI.updateEmailTemplate(editingEmailTemplate.id, emailTemplateForm);
+      const result = await adminAPI.updateEmailTemplate(
+        editingEmailTemplate.id,
+        emailTemplateForm
+      )
       if (result.data) {
-        setEmailTemplates(emailTemplates.map(t => t.id === editingEmailTemplate.id ? result.data : t));
-        setEmailTemplateDialog(false);
-        setEditingEmailTemplate(null);
-        resetEmailTemplateForm();
+        setEmailTemplates(
+          emailTemplates.map(t =>
+            t.id === editingEmailTemplate.id ? result.data : t
+          )
+        )
+        setEmailTemplateDialog(false)
+        setEditingEmailTemplate(null)
+        resetEmailTemplateForm()
       }
     } catch (error) {
-      console.error('Error updating email template:', error);
+      console.error('Error updating email template:', error)
     }
-  };
+  }
 
   const handleDeleteEmailTemplate = async (id: string) => {
     try {
-      await adminAPI.deleteEmailTemplate(id);
-      setEmailTemplates(emailTemplates.filter(t => t.id !== id));
+      await adminAPI.deleteEmailTemplate(id)
+      setEmailTemplates(emailTemplates.filter(t => t.id !== id))
     } catch (error) {
-      console.error('Error deleting email template:', error);
+      console.error('Error deleting email template:', error)
     }
-  };
+  }
 
   // Feature Flag handlers
   const handleCreateFeatureFlag = async () => {
     try {
-      const result = await adminAPI.createFeatureFlag(featureFlagForm);
+      const result = await adminAPI.createFeatureFlag(featureFlagForm)
       if (result.data) {
-        setFeatureFlags([...featureFlags, result.data]);
-        setFeatureFlagDialog(false);
-        resetFeatureFlagForm();
+        setFeatureFlags([...featureFlags, result.data])
+        setFeatureFlagDialog(false)
+        resetFeatureFlagForm()
       }
     } catch (error) {
-      console.error('Error creating feature flag:', error);
+      console.error('Error creating feature flag:', error)
     }
-  };
+  }
 
   const handleUpdateFeatureFlag = async () => {
-    if (!editingFeatureFlag) return;
+    if (!editingFeatureFlag) return
 
     try {
-      const result = await adminAPI.updateFeatureFlag(editingFeatureFlag.id, featureFlagForm);
+      const result = await adminAPI.updateFeatureFlag(
+        editingFeatureFlag.id,
+        featureFlagForm
+      )
       if (result.data) {
-        setFeatureFlags(featureFlags.map(f => f.id === editingFeatureFlag.id ? result.data : f));
-        setFeatureFlagDialog(false);
-        setEditingFeatureFlag(null);
-        resetFeatureFlagForm();
+        setFeatureFlags(
+          featureFlags.map(f =>
+            f.id === editingFeatureFlag.id ? result.data : f
+          )
+        )
+        setFeatureFlagDialog(false)
+        setEditingFeatureFlag(null)
+        resetFeatureFlagForm()
       }
     } catch (error) {
-      console.error('Error updating feature flag:', error);
+      console.error('Error updating feature flag:', error)
     }
-  };
+  }
 
   const handleDeleteFeatureFlag = async (id: string) => {
     try {
-      await adminAPI.deleteFeatureFlag(id);
-      setFeatureFlags(featureFlags.filter(f => f.id !== id));
+      await adminAPI.deleteFeatureFlag(id)
+      setFeatureFlags(featureFlags.filter(f => f.id !== id))
     } catch (error) {
-      console.error('Error deleting feature flag:', error);
+      console.error('Error deleting feature flag:', error)
     }
-  };
+  }
 
   // API Key handlers
   const handleCreateApiKey = async () => {
     try {
-      const result = await adminAPI.createApiKey(apiKeyForm);
+      const result = await adminAPI.createApiKey(apiKeyForm)
       if (result.data) {
-        setApiKeys([...apiKeys, result.data]);
-        setApiKeyDialog(false);
-        resetApiKeyForm();
+        setApiKeys([...apiKeys, result.data])
+        setApiKeyDialog(false)
+        resetApiKeyForm()
         // Show the generated key to the user
-        alert(`API Key created! Key: ${result.data.plain_key}\n\nSave this key securely - it will not be shown again.`);
+        alert(
+          `API Key created! Key: ${result.data.plain_key}\n\nSave this key securely - it will not be shown again.`
+        )
       }
     } catch (error) {
-      console.error('Error creating API key:', error);
+      console.error('Error creating API key:', error)
     }
-  };
+  }
 
   const handleUpdateApiKey = async () => {
-    if (!editingApiKey) return;
+    if (!editingApiKey) return
 
     try {
-      const result = await adminAPI.updateApiKey(editingApiKey.id, apiKeyForm);
+      const result = await adminAPI.updateApiKey(editingApiKey.id, apiKeyForm)
       if (result.data) {
-        setApiKeys(apiKeys.map(k => k.id === editingApiKey.id ? result.data : k));
-        setApiKeyDialog(false);
-        setEditingApiKey(null);
-        resetApiKeyForm();
+        setApiKeys(
+          apiKeys.map(k => (k.id === editingApiKey.id ? result.data : k))
+        )
+        setApiKeyDialog(false)
+        setEditingApiKey(null)
+        resetApiKeyForm()
       }
     } catch (error) {
-      console.error('Error updating API key:', error);
+      console.error('Error updating API key:', error)
     }
-  };
+  }
 
   const handleDeleteApiKey = async (id: string) => {
     try {
-      await adminAPI.deleteApiKey(id);
-      setApiKeys(apiKeys.filter(k => k.id !== id));
+      await adminAPI.deleteApiKey(id)
+      setApiKeys(apiKeys.filter(k => k.id !== id))
     } catch (error) {
-      console.error('Error deleting API key:', error);
+      console.error('Error deleting API key:', error)
     }
-  };
+  }
 
   // Webhook handlers
   const handleCreateWebhook = async () => {
     try {
-      const result = await adminAPI.createWebhook(webhookForm);
+      const result = await adminAPI.createWebhook(webhookForm)
       if (result.data) {
-        setWebhooks([...webhooks, result.data]);
-        setWebhookDialog(false);
-        resetWebhookForm();
+        setWebhooks([...webhooks, result.data])
+        setWebhookDialog(false)
+        resetWebhookForm()
       }
     } catch (error) {
-      console.error('Error creating webhook:', error);
+      console.error('Error creating webhook:', error)
     }
-  };
+  }
 
   const handleUpdateWebhook = async () => {
-    if (!editingWebhook) return;
+    if (!editingWebhook) return
 
     try {
-      const result = await adminAPI.updateWebhook(editingWebhook.id, webhookForm);
+      const result = await adminAPI.updateWebhook(
+        editingWebhook.id,
+        webhookForm
+      )
       if (result.data) {
-        setWebhooks(webhooks.map(w => w.id === editingWebhook.id ? result.data : w));
-        setWebhookDialog(false);
-        setEditingWebhook(null);
-        resetWebhookForm();
+        setWebhooks(
+          webhooks.map(w => (w.id === editingWebhook.id ? result.data : w))
+        )
+        setWebhookDialog(false)
+        setEditingWebhook(null)
+        resetWebhookForm()
       }
     } catch (error) {
-      console.error('Error updating webhook:', error);
+      console.error('Error updating webhook:', error)
     }
-  };
+  }
 
   const handleDeleteWebhook = async (id: string) => {
     try {
-      await adminAPI.deleteWebhook(id);
-      setWebhooks(webhooks.filter(w => w.id !== id));
+      await adminAPI.deleteWebhook(id)
+      setWebhooks(webhooks.filter(w => w.id !== id))
     } catch (error) {
-      console.error('Error deleting webhook:', error);
+      console.error('Error deleting webhook:', error)
     }
-  };
+  }
 
   // Form reset functions
   const resetEmailTemplateForm = () => {
@@ -321,9 +382,9 @@ export function PlatformSettings() {
       subject: '',
       html_content: '',
       text_content: '',
-      variables: []
-    });
-  };
+      variables: [],
+    })
+  }
 
   const resetFeatureFlagForm = () => {
     setFeatureFlagForm({
@@ -332,18 +393,18 @@ export function PlatformSettings() {
       enabled: false,
       environment: 'production',
       rollout_percentage: 100,
-      conditions: {}
-    });
-  };
+      conditions: {},
+    })
+  }
 
   const resetApiKeyForm = () => {
     setApiKeyForm({
       name: '',
       permissions: [],
       environment: 'production',
-      expires_at: ''
-    });
-  };
+      expires_at: '',
+    })
+  }
 
   const resetWebhookForm = () => {
     setWebhookForm({
@@ -353,50 +414,50 @@ export function PlatformSettings() {
       headers: {},
       environment: 'production',
       retry_count: 3,
-      timeout_seconds: 30
-    });
-  };
+      timeout_seconds: 30,
+    })
+  }
 
   // Edit handlers
   const handleEditEmailTemplate = (template: EmailTemplate) => {
-    setEditingEmailTemplate(template);
+    setEditingEmailTemplate(template)
     setEmailTemplateForm({
       type: template.type,
       name: template.name,
       subject: template.subject,
       html_content: template.html_content,
       text_content: template.text_content || '',
-      variables: template.variables
-    });
-    setEmailTemplateDialog(true);
-  };
+      variables: template.variables,
+    })
+    setEmailTemplateDialog(true)
+  }
 
   const handleEditFeatureFlag = (flag: FeatureFlag) => {
-    setEditingFeatureFlag(flag);
+    setEditingFeatureFlag(flag)
     setFeatureFlagForm({
       name: flag.name,
       description: flag.description || '',
       enabled: flag.enabled,
       environment: flag.environment,
       rollout_percentage: flag.rollout_percentage,
-      conditions: flag.conditions
-    });
-    setFeatureFlagDialog(true);
-  };
+      conditions: flag.conditions,
+    })
+    setFeatureFlagDialog(true)
+  }
 
   const handleEditApiKey = (key: ApiKey) => {
-    setEditingApiKey(key);
+    setEditingApiKey(key)
     setApiKeyForm({
       name: key.name,
       permissions: key.permissions,
       environment: key.environment,
-      expires_at: key.expires_at || ''
-    });
-    setApiKeyDialog(true);
-  };
+      expires_at: key.expires_at || '',
+    })
+    setApiKeyDialog(true)
+  }
 
   const handleEditWebhook = (webhook: Webhook) => {
-    setEditingWebhook(webhook);
+    setEditingWebhook(webhook)
     setWebhookForm({
       name: webhook.name,
       url: webhook.url,
@@ -404,20 +465,22 @@ export function PlatformSettings() {
       headers: webhook.headers || {},
       environment: webhook.environment,
       retry_count: webhook.retry_count,
-      timeout_seconds: webhook.timeout_seconds
-    });
-    setWebhookDialog(true);
-  };
+      timeout_seconds: webhook.timeout_seconds,
+    })
+    setWebhookDialog(true)
+  }
 
   if (!isAdmin(user)) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <h1 className="text-2xl font-bold text-red-600 mb-4">
+            Access Denied
+          </h1>
           <p>You don't have permission to access this page.</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (loading) {
@@ -431,7 +494,7 @@ export function PlatformSettings() {
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -439,17 +502,25 @@ export function PlatformSettings() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">Platform Settings</h1>
-          <p className="text-muted-foreground">Manage email templates, feature flags, API keys, and webhooks</p>
+          <p className="text-muted-foreground">
+            Manage email templates, feature flags, API keys, and webhooks
+          </p>
         </div>
       </div>
 
       <Tabs defaultValue="email-templates" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4 mb-6">
-          <TabsTrigger value="email-templates" className="flex items-center gap-2">
+          <TabsTrigger
+            value="email-templates"
+            className="flex items-center gap-2"
+          >
             <Mail className="w-4 h-4" />
             Email Templates
           </TabsTrigger>
-          <TabsTrigger value="feature-flags" className="flex items-center gap-2">
+          <TabsTrigger
+            value="feature-flags"
+            className="flex items-center gap-2"
+          >
             <Flag className="w-4 h-4" />
             Feature Flags
           </TabsTrigger>
@@ -467,34 +538,61 @@ export function PlatformSettings() {
         <TabsContent value="email-templates" className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Email Templates</h2>
-            <Dialog open={emailTemplateDialog} onOpenChange={setEmailTemplateDialog}>
+            <Dialog
+              open={emailTemplateDialog}
+              onOpenChange={setEmailTemplateDialog}
+            >
               <DialogTrigger asChild>
-                <Button onClick={() => { setEditingEmailTemplate(null); resetEmailTemplateForm(); }}>
+                <Button
+                  onClick={() => {
+                    setEditingEmailTemplate(null)
+                    resetEmailTemplateForm()
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Template
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>{editingEmailTemplate ? 'Edit Email Template' : 'Create Email Template'}</DialogTitle>
+                  <DialogTitle>
+                    {editingEmailTemplate
+                      ? 'Edit Email Template'
+                      : 'Create Email Template'}
+                  </DialogTitle>
                   <DialogDescription>
-                    Configure email templates for different types of notifications.
+                    Configure email templates for different types of
+                    notifications.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="template-type">Type</Label>
-                      <Select value={emailTemplateForm.type} onValueChange={(value: EmailTemplate['type']) => setEmailTemplateForm({...emailTemplateForm, type: value})}>
+                      <Select
+                        value={emailTemplateForm.type}
+                        onValueChange={(value: EmailTemplate['type']) =>
+                          setEmailTemplateForm({
+                            ...emailTemplateForm,
+                            type: value,
+                          })
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="welcome">Welcome</SelectItem>
                           <SelectItem value="billing">Billing</SelectItem>
-                          <SelectItem value="notification">Notification</SelectItem>
-                          <SelectItem value="password_reset">Password Reset</SelectItem>
-                          <SelectItem value="verification">Verification</SelectItem>
+                          <SelectItem value="notification">
+                            Notification
+                          </SelectItem>
+                          <SelectItem value="password_reset">
+                            Password Reset
+                          </SelectItem>
+                          <SelectItem value="verification">
+                            Verification
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -503,7 +601,12 @@ export function PlatformSettings() {
                       <Input
                         id="template-name"
                         value={emailTemplateForm.name}
-                        onChange={(e) => setEmailTemplateForm({...emailTemplateForm, name: e.target.value})}
+                        onChange={e =>
+                          setEmailTemplateForm({
+                            ...emailTemplateForm,
+                            name: e.target.value,
+                          })
+                        }
                         placeholder="Template name"
                       />
                     </div>
@@ -513,7 +616,12 @@ export function PlatformSettings() {
                     <Input
                       id="template-subject"
                       value={emailTemplateForm.subject}
-                      onChange={(e) => setEmailTemplateForm({...emailTemplateForm, subject: e.target.value})}
+                      onChange={e =>
+                        setEmailTemplateForm({
+                          ...emailTemplateForm,
+                          subject: e.target.value,
+                        })
+                      }
                       placeholder="Email subject line"
                     />
                   </div>
@@ -522,25 +630,48 @@ export function PlatformSettings() {
                     <Textarea
                       id="template-html"
                       value={emailTemplateForm.html_content}
-                      onChange={(e) => setEmailTemplateForm({...emailTemplateForm, html_content: e.target.value})}
+                      onChange={e =>
+                        setEmailTemplateForm({
+                          ...emailTemplateForm,
+                          html_content: e.target.value,
+                        })
+                      }
                       placeholder="HTML email content"
                       rows={8}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="template-text">Text Content (Optional)</Label>
+                    <Label htmlFor="template-text">
+                      Text Content (Optional)
+                    </Label>
                     <Textarea
                       id="template-text"
                       value={emailTemplateForm.text_content}
-                      onChange={(e) => setEmailTemplateForm({...emailTemplateForm, text_content: e.target.value})}
+                      onChange={e =>
+                        setEmailTemplateForm({
+                          ...emailTemplateForm,
+                          text_content: e.target.value,
+                        })
+                      }
                       placeholder="Plain text version"
                       rows={4}
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setEmailTemplateDialog(false)}>Cancel</Button>
-                  <Button onClick={editingEmailTemplate ? handleUpdateEmailTemplate : handleCreateEmailTemplate}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setEmailTemplateDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={
+                      editingEmailTemplate
+                        ? handleUpdateEmailTemplate
+                        : handleCreateEmailTemplate
+                    }
+                  >
                     {editingEmailTemplate ? 'Update' : 'Create'} Template
                   </Button>
                 </DialogFooter>
@@ -549,15 +680,17 @@ export function PlatformSettings() {
           </div>
 
           <div className="grid gap-4">
-            {emailTemplates.map((template) => (
+            {emailTemplates.map(template => (
               <Card key={template.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         {template.name}
-                        <Badge variant={template.is_active ? "default" : "secondary"}>
-                          {template.is_active ? "Active" : "Inactive"}
+                        <Badge
+                          variant={template.is_active ? 'default' : 'secondary'}
+                        >
+                          {template.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </CardTitle>
                       <CardDescription>
@@ -565,7 +698,11 @@ export function PlatformSettings() {
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditEmailTemplate(template)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditEmailTemplate(template)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <AlertDialog>
@@ -576,14 +713,21 @@ export function PlatformSettings() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Email Template</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Delete Email Template
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this email template? This action cannot be undone.
+                              Are you sure you want to delete this email
+                              template? This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteEmailTemplate(template.id)}>
+                            <AlertDialogAction
+                              onClick={() =>
+                                handleDeleteEmailTemplate(template.id)
+                              }
+                            >
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -606,16 +750,28 @@ export function PlatformSettings() {
         <TabsContent value="feature-flags" className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Feature Flags</h2>
-            <Dialog open={featureFlagDialog} onOpenChange={setFeatureFlagDialog}>
+            <Dialog
+              open={featureFlagDialog}
+              onOpenChange={setFeatureFlagDialog}
+            >
               <DialogTrigger asChild>
-                <Button onClick={() => { setEditingFeatureFlag(null); resetFeatureFlagForm(); }}>
+                <Button
+                  onClick={() => {
+                    setEditingFeatureFlag(null)
+                    resetFeatureFlagForm()
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Feature Flag
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingFeatureFlag ? 'Edit Feature Flag' : 'Create Feature Flag'}</DialogTitle>
+                  <DialogTitle>
+                    {editingFeatureFlag
+                      ? 'Edit Feature Flag'
+                      : 'Create Feature Flag'}
+                  </DialogTitle>
                   <DialogDescription>
                     Control feature availability across different environments.
                   </DialogDescription>
@@ -626,7 +782,12 @@ export function PlatformSettings() {
                     <Input
                       id="flag-name"
                       value={featureFlagForm.name}
-                      onChange={(e) => setFeatureFlagForm({...featureFlagForm, name: e.target.value})}
+                      onChange={e =>
+                        setFeatureFlagForm({
+                          ...featureFlagForm,
+                          name: e.target.value,
+                        })
+                      }
                       placeholder="Feature flag name"
                       disabled={!!editingFeatureFlag}
                     />
@@ -636,7 +797,12 @@ export function PlatformSettings() {
                     <Textarea
                       id="flag-description"
                       value={featureFlagForm.description}
-                      onChange={(e) => setFeatureFlagForm({...featureFlagForm, description: e.target.value})}
+                      onChange={e =>
+                        setFeatureFlagForm({
+                          ...featureFlagForm,
+                          description: e.target.value,
+                        })
+                      }
                       placeholder="Feature description"
                       rows={2}
                     />
@@ -644,26 +810,43 @@ export function PlatformSettings() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="flag-environment">Environment</Label>
-                      <Select value={featureFlagForm.environment} onValueChange={(value: FeatureFlag['environment']) => setFeatureFlagForm({...featureFlagForm, environment: value})}>
+                      <Select
+                        value={featureFlagForm.environment}
+                        onValueChange={(value: FeatureFlag['environment']) =>
+                          setFeatureFlagForm({
+                            ...featureFlagForm,
+                            environment: value,
+                          })
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="development">Development</SelectItem>
+                          <SelectItem value="development">
+                            Development
+                          </SelectItem>
                           <SelectItem value="staging">Staging</SelectItem>
                           <SelectItem value="production">Production</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="flag-percentage">Rollout Percentage</Label>
+                      <Label htmlFor="flag-percentage">
+                        Rollout Percentage
+                      </Label>
                       <Input
                         id="flag-percentage"
                         type="number"
                         min="0"
                         max="100"
                         value={featureFlagForm.rollout_percentage}
-                        onChange={(e) => setFeatureFlagForm({...featureFlagForm, rollout_percentage: parseInt(e.target.value) || 0})}
+                        onChange={e =>
+                          setFeatureFlagForm({
+                            ...featureFlagForm,
+                            rollout_percentage: parseInt(e.target.value) || 0,
+                          })
+                        }
                       />
                     </div>
                   </div>
@@ -671,14 +854,30 @@ export function PlatformSettings() {
                     <Switch
                       id="flag-enabled"
                       checked={featureFlagForm.enabled}
-                      onCheckedChange={(checked: boolean) => setFeatureFlagForm({...featureFlagForm, enabled: checked})}
+                      onCheckedChange={(checked: boolean) =>
+                        setFeatureFlagForm({
+                          ...featureFlagForm,
+                          enabled: checked,
+                        })
+                      }
                     />
                     <Label htmlFor="flag-enabled">Enabled</Label>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setFeatureFlagDialog(false)}>Cancel</Button>
-                  <Button onClick={editingFeatureFlag ? handleUpdateFeatureFlag : handleCreateFeatureFlag}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setFeatureFlagDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={
+                      editingFeatureFlag
+                        ? handleUpdateFeatureFlag
+                        : handleCreateFeatureFlag
+                    }
+                  >
                     {editingFeatureFlag ? 'Update' : 'Create'} Feature Flag
                   </Button>
                 </DialogFooter>
@@ -687,22 +886,26 @@ export function PlatformSettings() {
           </div>
 
           <div className="grid gap-4">
-            {featureFlags.map((flag) => (
+            {featureFlags.map(flag => (
               <Card key={flag.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         {flag.name}
-                        <Badge variant={flag.enabled ? "default" : "secondary"}>
-                          {flag.enabled ? "Enabled" : "Disabled"}
+                        <Badge variant={flag.enabled ? 'default' : 'secondary'}>
+                          {flag.enabled ? 'Enabled' : 'Disabled'}
                         </Badge>
                         <Badge variant="outline">{flag.environment}</Badge>
                       </CardTitle>
                       <CardDescription>{flag.description}</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditFeatureFlag(flag)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditFeatureFlag(flag)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <AlertDialog>
@@ -713,14 +916,19 @@ export function PlatformSettings() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Feature Flag</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Delete Feature Flag
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this feature flag? This action cannot be undone.
+                              Are you sure you want to delete this feature flag?
+                              This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteFeatureFlag(flag.id)}>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteFeatureFlag(flag.id)}
+                            >
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -745,14 +953,21 @@ export function PlatformSettings() {
             <h2 className="text-xl font-semibold">API Keys</h2>
             <Dialog open={apiKeyDialog} onOpenChange={setApiKeyDialog}>
               <DialogTrigger asChild>
-                <Button onClick={() => { setEditingApiKey(null); resetApiKeyForm(); }}>
+                <Button
+                  onClick={() => {
+                    setEditingApiKey(null)
+                    resetApiKeyForm()
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add API Key
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingApiKey ? 'Edit API Key' : 'Create API Key'}</DialogTitle>
+                  <DialogTitle>
+                    {editingApiKey ? 'Edit API Key' : 'Create API Key'}
+                  </DialogTitle>
                   <DialogDescription>
                     Generate API keys for programmatic access to the platform.
                   </DialogDescription>
@@ -763,13 +978,20 @@ export function PlatformSettings() {
                     <Input
                       id="key-name"
                       value={apiKeyForm.name}
-                      onChange={(e) => setApiKeyForm({...apiKeyForm, name: e.target.value})}
+                      onChange={e =>
+                        setApiKeyForm({ ...apiKeyForm, name: e.target.value })
+                      }
                       placeholder="API key name"
                     />
                   </div>
                   <div>
                     <Label htmlFor="key-environment">Environment</Label>
-                    <Select value={apiKeyForm.environment} onValueChange={(value: ApiKey['environment']) => setApiKeyForm({...apiKeyForm, environment: value})}>
+                    <Select
+                      value={apiKeyForm.environment}
+                      onValueChange={(value: ApiKey['environment']) =>
+                        setApiKeyForm({ ...apiKeyForm, environment: value })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -785,7 +1007,15 @@ export function PlatformSettings() {
                     <Input
                       id="key-permissions"
                       value={apiKeyForm.permissions.join(', ')}
-                      onChange={(e) => setApiKeyForm({...apiKeyForm, permissions: e.target.value.split(',').map(p => p.trim()).filter(p => p)})}
+                      onChange={e =>
+                        setApiKeyForm({
+                          ...apiKeyForm,
+                          permissions: e.target.value
+                            .split(',')
+                            .map(p => p.trim())
+                            .filter(p => p),
+                        })
+                      }
                       placeholder="Comma-separated permissions (e.g., read:prompts, write:prompts)"
                     />
                   </div>
@@ -795,13 +1025,27 @@ export function PlatformSettings() {
                       id="key-expires"
                       type="datetime-local"
                       value={apiKeyForm.expires_at}
-                      onChange={(e) => setApiKeyForm({...apiKeyForm, expires_at: e.target.value})}
+                      onChange={e =>
+                        setApiKeyForm({
+                          ...apiKeyForm,
+                          expires_at: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setApiKeyDialog(false)}>Cancel</Button>
-                  <Button onClick={editingApiKey ? handleUpdateApiKey : handleCreateApiKey}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setApiKeyDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={
+                      editingApiKey ? handleUpdateApiKey : handleCreateApiKey
+                    }
+                  >
                     {editingApiKey ? 'Update' : 'Create'} API Key
                   </Button>
                 </DialogFooter>
@@ -810,25 +1054,32 @@ export function PlatformSettings() {
           </div>
 
           <div className="grid gap-4">
-            {apiKeys.map((key) => (
+            {apiKeys.map(key => (
               <Card key={key.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         {key.name}
-                        <Badge variant={key.is_active ? "default" : "secondary"}>
-                          {key.is_active ? "Active" : "Inactive"}
+                        <Badge
+                          variant={key.is_active ? 'default' : 'secondary'}
+                        >
+                          {key.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                         <Badge variant="outline">{key.environment}</Badge>
                       </CardTitle>
                       <CardDescription>
                         Created: {new Date(key.created_at).toLocaleDateString()}
-                        {key.last_used_at && ` | Last used: ${new Date(key.last_used_at).toLocaleDateString()}`}
+                        {key.last_used_at &&
+                          ` | Last used: ${new Date(key.last_used_at).toLocaleDateString()}`}
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditApiKey(key)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditApiKey(key)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <AlertDialog>
@@ -841,12 +1092,15 @@ export function PlatformSettings() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete API Key</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this API key? This action cannot be undone.
+                              Are you sure you want to delete this API key? This
+                              action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteApiKey(key.id)}>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteApiKey(key.id)}
+                            >
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -858,7 +1112,8 @@ export function PlatformSettings() {
                 <CardContent>
                   <div className="text-sm text-muted-foreground">
                     Permissions: {key.permissions.join(', ') || 'None'}
-                    {key.expires_at && ` | Expires: ${new Date(key.expires_at).toLocaleDateString()}`}
+                    {key.expires_at &&
+                      ` | Expires: ${new Date(key.expires_at).toLocaleDateString()}`}
                   </div>
                 </CardContent>
               </Card>
@@ -872,16 +1127,24 @@ export function PlatformSettings() {
             <h2 className="text-xl font-semibold">Webhooks</h2>
             <Dialog open={webhookDialog} onOpenChange={setWebhookDialog}>
               <DialogTrigger asChild>
-                <Button onClick={() => { setEditingWebhook(null); resetWebhookForm(); }}>
+                <Button
+                  onClick={() => {
+                    setEditingWebhook(null)
+                    resetWebhookForm()
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Webhook
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{editingWebhook ? 'Edit Webhook' : 'Create Webhook'}</DialogTitle>
+                  <DialogTitle>
+                    {editingWebhook ? 'Edit Webhook' : 'Create Webhook'}
+                  </DialogTitle>
                   <DialogDescription>
-                    Configure webhooks to receive real-time notifications about platform events.
+                    Configure webhooks to receive real-time notifications about
+                    platform events.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -890,7 +1153,9 @@ export function PlatformSettings() {
                     <Input
                       id="webhook-name"
                       value={webhookForm.name}
-                      onChange={(e) => setWebhookForm({...webhookForm, name: e.target.value})}
+                      onChange={e =>
+                        setWebhookForm({ ...webhookForm, name: e.target.value })
+                      }
                       placeholder="Webhook name"
                     />
                   </div>
@@ -899,13 +1164,20 @@ export function PlatformSettings() {
                     <Input
                       id="webhook-url"
                       value={webhookForm.url}
-                      onChange={(e) => setWebhookForm({...webhookForm, url: e.target.value})}
+                      onChange={e =>
+                        setWebhookForm({ ...webhookForm, url: e.target.value })
+                      }
                       placeholder="https://your-app.com/webhook"
                     />
                   </div>
                   <div>
                     <Label htmlFor="webhook-environment">Environment</Label>
-                    <Select value={webhookForm.environment} onValueChange={(value: Webhook['environment']) => setWebhookForm({...webhookForm, environment: value})}>
+                    <Select
+                      value={webhookForm.environment}
+                      onValueChange={(value: Webhook['environment']) =>
+                        setWebhookForm({ ...webhookForm, environment: value })
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -921,7 +1193,15 @@ export function PlatformSettings() {
                     <Input
                       id="webhook-events"
                       value={webhookForm.events.join(', ')}
-                      onChange={(e) => setWebhookForm({...webhookForm, events: e.target.value.split(',').map(e => e.trim()).filter(e => e)})}
+                      onChange={e =>
+                        setWebhookForm({
+                          ...webhookForm,
+                          events: e.target.value
+                            .split(',')
+                            .map(e => e.trim())
+                            .filter(e => e),
+                        })
+                      }
                       placeholder="Comma-separated events (e.g., user_created, prompt_created)"
                     />
                   </div>
@@ -934,7 +1214,12 @@ export function PlatformSettings() {
                         min="0"
                         max="10"
                         value={webhookForm.retry_count}
-                        onChange={(e) => setWebhookForm({...webhookForm, retry_count: parseInt(e.target.value) || 0})}
+                        onChange={e =>
+                          setWebhookForm({
+                            ...webhookForm,
+                            retry_count: parseInt(e.target.value) || 0,
+                          })
+                        }
                       />
                     </div>
                     <div>
@@ -945,14 +1230,28 @@ export function PlatformSettings() {
                         min="1"
                         max="300"
                         value={webhookForm.timeout_seconds}
-                        onChange={(e) => setWebhookForm({...webhookForm, timeout_seconds: parseInt(e.target.value) || 30})}
+                        onChange={e =>
+                          setWebhookForm({
+                            ...webhookForm,
+                            timeout_seconds: parseInt(e.target.value) || 30,
+                          })
+                        }
                       />
                     </div>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setWebhookDialog(false)}>Cancel</Button>
-                  <Button onClick={editingWebhook ? handleUpdateWebhook : handleCreateWebhook}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setWebhookDialog(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={
+                      editingWebhook ? handleUpdateWebhook : handleCreateWebhook
+                    }
+                  >
                     {editingWebhook ? 'Update' : 'Create'} Webhook
                   </Button>
                 </DialogFooter>
@@ -961,22 +1260,28 @@ export function PlatformSettings() {
           </div>
 
           <div className="grid gap-4">
-            {webhooks.map((webhook) => (
+            {webhooks.map(webhook => (
               <Card key={webhook.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         {webhook.name}
-                        <Badge variant={webhook.is_active ? "default" : "secondary"}>
-                          {webhook.is_active ? "Active" : "Inactive"}
+                        <Badge
+                          variant={webhook.is_active ? 'default' : 'secondary'}
+                        >
+                          {webhook.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                         <Badge variant="outline">{webhook.environment}</Badge>
                       </CardTitle>
                       <CardDescription>{webhook.url}</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditWebhook(webhook)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditWebhook(webhook)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <AlertDialog>
@@ -989,12 +1294,15 @@ export function PlatformSettings() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Webhook</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this webhook? This action cannot be undone.
+                              Are you sure you want to delete this webhook? This
+                              action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteWebhook(webhook.id)}>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteWebhook(webhook.id)}
+                            >
                               Delete
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -1005,9 +1313,8 @@ export function PlatformSettings() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground">
-                    Events: {webhook.events.join(', ') || 'None'} |
-                    Retries: {webhook.retry_count} |
-                    Timeout: {webhook.timeout_seconds}s
+                    Events: {webhook.events.join(', ') || 'None'} | Retries:{' '}
+                    {webhook.retry_count} | Timeout: {webhook.timeout_seconds}s
                   </div>
                 </CardContent>
               </Card>
@@ -1016,5 +1323,5 @@ export function PlatformSettings() {
         </TabsContent>
       </Tabs>
     </div>
-  );
+  )
 }
