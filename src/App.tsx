@@ -1,6 +1,3 @@
-/* ORIGINAL_APP_START
-Everything below was commented out per request so only the HomePage is used.
-
 import { useState } from "react";
 import { AppProvider, useApp } from "./contexts/AppContext";
 import { Navigation } from "./components/Navigation";
@@ -10,73 +7,43 @@ import { CreatePromptPage } from "./components/CreatePromptPage";
 import { PromptDetailPage } from "./components/PromptDetailPage";
 import { UserProfilePage } from "./components/UserProfilePage";
 import { SettingsPage } from "./components/SettingsPage";
+import { ReposPage } from "./components/ReposPage";
+import { RepoDetailPage } from "./components/RepoDetailPage";
 import AboutPage from "./components/AboutPage";
-
-import { AuthModal } from "./components/auth/AuthModal";import { Footer } from "./components/Footer";
-import { IndustryPacksPage } from "./components/IndustryPacksPage";
-import { PackViewPage } from "./components/PackViewPage";
-import { CreatePackPage } from "./components/CreatePackPage";
-import { PortfolioViewPage } from "./components/PortfolioViewPage";
-import { SubscriptionPage } from "./components/SubscriptionPage";
-import { InviteSystemPage } from "./components/ui/InviteSystemPage";
-import { AffiliateProgramPage } from "./components/ui/AffiliateProgramPage";
-import { AdminDashboard } from "./components/admin/AdminDashboard";
-import { UserManagement } from "./components/UserManagement";
-import { SubscriptionManagement } from "./components/SubscriptionManagement";
-import { PlatformSettings } from "./components/PlatformSettings";
-import { SystemLogsHealth } from "./components/SystemLogsHealth";
-import { UIPlayground } from "./components/UIPlayground";
+import { AuthModal } from "./components/AuthModal";
+import { Footer } from "./components/Footer";
 import { Prompt } from "./lib/types";
-import { isAdmin } from "./lib/admin";
-import { prompts } from "./lib/api";
+import CreateRepoModal from "./components/CreateRepoModal";
 
 type Page =
-   | { type: 'home' }
-   | { type: 'explore'; searchQuery?: string }
-   | { type: 'create'; editingPrompt?: Prompt }
-   | { type: 'prompt'; promptId: string }
-   | { type: 'profile'; userId: string; tab?: string }
-   | { type: 'portfolio-view'; portfolioId: string }
-   | { type: 'settings' }
-   | { type: 'subscription' }
-   | { type: 'billing' }
-   | { type: 'industry-packs' }
-   | { type: 'pack-view'; packId: string }
-   | { type: 'pack-create' }
-   | { type: 'about' }
-   | { type: 'terms' }
-   | { type: 'privacy' }
-   | { type: 'invite' }
-   | { type: 'affiliate' }
-   | { type: 'affiliate-dashboard' }
-   | { type: 'admin-dashboard' }
-   | { type: 'admin-bulk-import' }
-   | { type: 'admin-content-moderation' }
-   | { type: 'admin-user-management' }
-   | { type: 'admin-analytics-reports' }
-   | { type: 'admin-subscription-management' }
-   | { type: 'admin-invite-affiliate-management' }
-   | { type: 'admin-platform-settings' }
-   | { type: 'admin-system-logs-health' }
-   | { type: 'ui-playground' };
+ | { type: "home" }
+  | { type: "explore"; searchQuery?: string }
+  | { type: "repos"; userId?: string }
+  | { type: "repo"; repoId: string; from?: "explore" | "repos" }
+  | { type: "create"; editingPrompt?: Prompt }
+  | { type: "prompt"; promptId: string }
+  | { type: "profile"; userId: string; tab?: string }
+  | { type: "settings" }
+  | { type: "about" }
+  | { type: "terms" }
+  | { type: "privacy" };
 
 function AppContent() {
   const { state, dispatch } = useApp();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState<Page>({ type: 'home' });
-
-  // Simple test to see if React is working
-  // Contrast validation logs (safely wrapped)
+  const [currentPage, setCurrentPage] = useState<Page>({ type: "home" });
+  const [isCreateRepoOpen, setIsCreateRepoOpen] = useState(false);
+ 
+    /** ---------- Color Contrast Debug ---------- */
   try {
     const getLuminance = (hex: string) => {
-      // Ensure hex is a valid hex color
-      if (!hex || !hex.startsWith('#') || hex.length !== 7) {
-        return 0;
-      }
-      const r = parseInt(hex.slice(1,3),16)/255;
-      const g = parseInt(hex.slice(3,5),16)/255;
-      const b = parseInt(hex.slice(5,7),16)/255;
-      const [rr, gg, bb] = [r, g, b].map(c => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    if (!hex || !hex.startsWith("#") || hex.length !== 7) return 0;
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      const [rr, gg, bb] = [r, g, b].map((c) =>
+        c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+      );
       return 0.2126 * rr + 0.7152 * gg + 0.0722 * bb;
     };
     const getContrast = (c1: string, c2: string) => {
@@ -85,115 +52,116 @@ function AppContent() {
       return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
     };
     
-    if (typeof document !== 'undefined') {
-      const primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-      const background = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
-      
-      if (primary && background && primary.startsWith('#') && background.startsWith('#')) {
+   if (typeof document !== "undefined") {
+      const root = document.documentElement;
+      const primary = getComputedStyle(root).getPropertyValue("--primary").trim();
+      const background = getComputedStyle(root).getPropertyValue("--background").trim();
+
+      if (primary.startsWith("#") && background.startsWith("#")) {
         const contrast = getContrast(primary, background);
-        console.log('Primary on background contrast ratio:', contrast.toFixed(2));
-        
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-        if (accent && accent.startsWith('#')) {
+         console.log("Primary contrast ratio:", contrast.toFixed(2));
+
+        const accent = getComputedStyle(root).getPropertyValue("--accent").trim();
+        if (accent.startsWith("#")) {
           const accentContrast = getContrast(accent, background);
-          console.log('Accent on background contrast ratio:', accentContrast.toFixed(2));
+          console.log("Accent on background contrast ratio:", accentContrast.toFixed(2));
         }
       }
     }
-  } catch (error) {
-    console.warn('Color contrast calculation failed:', error);
+  } catch (err) {
+    console.warn("Color contrast check failed:", err);
   }
-  console.log('AppContent rendering, state:', state);
 
-  const handleAuthClick = () => {
-    setIsAuthModalOpen(true);
-  };
+console.log("AppContent rendering, state:", state);
 
+  /** ---------- Navigation Handlers ---------- */
+  const handleAuthClick = () => setIsAuthModalOpen(true);
+ 
   const handleGetStarted = () => {
     if (state.user) {
-      setCurrentPage({ type: 'create' });
+       setCurrentPage({ type: "create" });
     } else {
       setIsAuthModalOpen(true);
     }
   };
 
   const handleExplore = (searchQuery?: string) => {
-    setCurrentPage({ type: 'explore', searchQuery });
+      setCurrentPage({ type: "explore", searchQuery });
   };
 
   const handlePromptClick = (promptId: string) => {
-    setCurrentPage({ type: 'prompt', promptId });
+    setCurrentPage({ type: "prompt", promptId });
   };
 
   const handleEditPrompt = async (prompt: Prompt) => {
     try {
-      // Load the full prompt data including images from database
-      const { data: fullPromptData, error } = await prompts.getById(prompt.id);
-
-      if (error) {
-        console.error('Error loading full prompt data:', error);
-        // Fallback to the provided prompt data
-        setCurrentPage({ type: 'create', editingPrompt: prompt });
+    // @ts-ignore - assuming `prompts` API is available globally or imported elsewhere
+  const { data: fullPromptData, error } = await prompts.getById(prompt.id);
+      if (error || !fullPromptData) {
+        console.error("Error loading full prompt data:", error);
+        setCurrentPage({ type: "create", editingPrompt: prompt });
         return;
       }
 
-      if (fullPromptData) {
-        // Transform the database data to match our Prompt type
-        const fullPrompt: Prompt = {
-          id: fullPromptData.id,
-          userId: fullPromptData.user_id,
-          title: fullPromptData.title,
-          slug: fullPromptData.slug,
-          description: fullPromptData.description,
-          content: fullPromptData.content,
-          type: fullPromptData.type,
-          modelCompatibility: fullPromptData.model_compatibility,
-          tags: fullPromptData.tags,
-          visibility: fullPromptData.visibility,
-          category: fullPromptData.category,
-          language: fullPromptData.language,
-          version: fullPromptData.version,
-          parentId: fullPromptData.parent_id || undefined,
-          viewCount: fullPromptData.view_count,
-          hearts: fullPromptData.hearts,
-          saveCount: fullPromptData.save_count,
-          forkCount: fullPromptData.fork_count,
-          commentCount: fullPromptData.comment_count,
-          createdAt: fullPromptData.created_at,
-          updatedAt: fullPromptData.updated_at,
-          attachments: [],
-          author: fullPromptData.profiles ? {
-            id: fullPromptData.profiles.id,
-            username: fullPromptData.profiles.username,
-            email: fullPromptData.profiles.email || '',
-            name: fullPromptData.profiles.name,
-            bio: fullPromptData.profiles.bio || undefined,
-            website: fullPromptData.profiles.website || undefined,
-            github: fullPromptData.profiles.github || undefined,
-            twitter: fullPromptData.profiles.twitter || undefined,
-            reputation: 0,
-            createdAt: fullPromptData.profiles.created_at || fullPromptData.created_at,
-            lastLogin: fullPromptData.profiles.created_at || fullPromptData.created_at,
-            badges: [],
-            skills: [],
-            role: fullPromptData.profiles.role || 'general',
-            subscriptionStatus: fullPromptData.profiles.subscription_status || 'active',
-            saveCount: 0
-          } : {
-            id: fullPromptData.user_id,
-            username: 'user',
-            email: '',
-            name: 'User',
-            reputation: 0,
-            createdAt: fullPromptData.created_at,
-            lastLogin: fullPromptData.created_at,
-            badges: [],
-            skills: [],
-            role: 'general',
-            subscriptionStatus: 'active',
-            saveCount: 0
-          },
-          images: fullPromptData.prompt_images?.map((img: any) => ({
+     const f: any = fullPromptData as any;
+      const fullPrompt: Prompt = {
+        repoId: f.repo_id || '',
+        id: f.id,
+        userId: f.user_id,
+        title: fullPromptData.title,
+        slug: fullPromptData.slug,
+        description: f.description,
+        content: f.content,
+        type: f.type,
+        modelCompatibility: f.model_compatibility,
+        tags: f.tags,
+        visibility: f.visibility,
+        category: f.category,
+        language: f.language,
+        version: f.version,
+        parentId: f.parent_id || undefined,
+        viewCount: f.view_count,
+        hearts: f.hearts,
+        saveCount: f.save_count,
+        forkCount: f.fork_count,
+        commentCount: f.comment_count,
+        createdAt: f.created_at,
+        updatedAt: f.updated_at,
+        attachments: [],
+        author: f.profiles
+          ? {
+              id: f.profiles.id,
+              username: f.profiles.username,
+              email: f.profiles.email || "",
+              name: f.profiles.name,
+              bio: f.profiles.bio || undefined,
+              website: f.profiles.website || undefined,
+              github: f.profiles.github || undefined,
+              twitter: f.profiles.twitter || undefined,
+              reputation: 0,
+              createdAt: f.profiles.created_at || f.created_at,
+              lastLogin: f.profiles.created_at || f.created_at,
+              badges: [],
+              skills: [],
+              role: f.profiles.role || "general",
+              subscriptionStatus: f.profiles.subscription_status || "active",
+              saveCount: 0,
+            }
+          : {
+              id: f.user_id,
+              username: "user",
+              name: "User",
+              reputation: 0,
+              createdAt: f.created_at,
+              lastLogin: f.created_at,
+              badges: [],
+              skills: [],
+              role: "general",
+              subscriptionStatus: "active",
+              saveCount: 0,
+            },
+        images:
+          f.prompt_images?.map((img: any) => ({
             id: img.id,
             url: img.url,
             altText: img.alt_text,
@@ -202,30 +170,24 @@ function AppContent() {
             mimeType: img.mime_type,
             width: img.width || undefined,
             height: img.height || undefined,
-            caption: img.caption || undefined
+            caption: img.caption || undefined,
           })) || [],
-          isHearted: false, // Will be set by the component
-          isSaved: false,   // Will be set by the component
-          isForked: false,
-          template: fullPromptData.template || undefined
-        };
+          isHearted: false,
+        isSaved: false,
+        isForked: false,
+        template: f.template || undefined,
+      };
 
-        setCurrentPage({ type: 'create', editingPrompt: fullPrompt });
-      } else {
-        // Fallback to the provided prompt data
-        setCurrentPage({ type: 'create', editingPrompt: prompt });
-      }
+      setCurrentPage({ type: "create", editingPrompt: fullPrompt });
     } catch (err) {
-      console.error('Error in handleEditPrompt:', err);
-      // Fallback to the provided prompt data
-      setCurrentPage({ type: 'create', editingPrompt: prompt });
+    console.error("Error in handleEditPrompt:", err);
+      setCurrentPage({ type: "create", editingPrompt: prompt });
     }
   };
 
   const handleForkPrompt = (originalPrompt: Prompt) => {
     if (!state.user) return;
 
-    // Create a forked version
     const forkedPrompt: Prompt = {
       ...originalPrompt,
       id: `prompt-${Date.now()}`,
@@ -233,7 +195,7 @@ function AppContent() {
       title: `Fork of ${originalPrompt.title}`,
       slug: `fork-of-${originalPrompt.slug}-${Date.now()}`,
       parentId: originalPrompt.id,
-      version: '1.0.0',
+      version: "1.0.0",
       viewCount: 0,
       hearts: 0,
       saveCount: 0,
@@ -244,63 +206,53 @@ function AppContent() {
       author: state.user,
       isHearted: false,
       isSaved: false,
-      isForked: false
+      isForked: false,
     };
 
-    dispatch({ 
-      type: 'FORK_PROMPT', 
-      payload: { 
-        originalId: originalPrompt.id, 
-        newPrompt: forkedPrompt 
-      } 
+   dispatch({
+      type: "FORK_PROMPT",
+      payload: { originalId: originalPrompt.id, newPrompt: forkedPrompt },
     });
+    
 
-    setCurrentPage({ type: 'create', editingPrompt: forkedPrompt });
+    setCurrentPage({ type: "create", editingPrompt: forkedPrompt });
   };
 
   const handleProfileClick = (userId: string, tab?: string) => {
-    setCurrentPage({ type: 'profile', userId, tab });
+    setCurrentPage({ type: "profile", userId, tab });
   };
-
   const handleSavedClick = () => {
     if (state.user) {
-      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'saved' });
+      setCurrentPage({ type: "profile", userId: state.user.id, tab: "saved" });
     }
   };
 
   const handleSettingsClick = () => {
-    if (state.user) {
-      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'settings' });
-    }
+    // Navigate to dedicated Settings page
+    setCurrentPage({ type: "settings" })
   };
 
-  const handleBack = () => {
-    setCurrentPage({ type: 'home' });
+  const handleBack = () => setCurrentPage({ type: "home" });
+
+  const handleReposClick = () => {
+    setCurrentPage({ type: "repos", userId: state.user?.id });
+  };
+ 
+   const handleRepoClick = (repoId: string, from?: "explore" | "repos") => {
+    setCurrentPage({ type: "repo", repoId, from });
   };
 
-  const handleAdminClick = (feature: string) => {
-    if (feature === 'dashboard') {
-      setCurrentPage({ type: 'admin-dashboard' });
-    } else if (feature === 'bulk-import') {
-      setCurrentPage({ type: 'admin-bulk-import' });
-    } else if (feature === 'content-moderation') {
-      setCurrentPage({ type: 'admin-content-moderation' });
-    } else if (feature === 'user-management') {
-      setCurrentPage({ type: 'admin-user-management' });
-    } else if (feature === 'analytics-reports') {
-      setCurrentPage({ type: 'admin-analytics-reports' });
-    } else if (feature === 'subscription-management') {
-      setCurrentPage({ type: 'admin-subscription-management' });
-    } else if (feature === 'invite-affiliate-management') {
-      setCurrentPage({ type: 'admin-invite-affiliate-management' });
-    } else if (feature === 'platform-settings') {
-      setCurrentPage({ type: 'admin-platform-settings' });
-    } else if (feature === 'system-logs-health') {
-      setCurrentPage({ type: 'admin-system-logs-health' });
-    } else if (feature === 'ui-playground') {
-      setCurrentPage({ type: 'ui-playground' });
+   const handleRepoBackClick = () => {
+    // Go back to explore page when coming from repo detail
+    setCurrentPage({ type: "explore" });
+  };
+
+  const handleCreateRepo = () => {
+    if (!state.user) {
+      setIsAuthModalOpen(true);
+      return;
     }
-    // Add more admin features here in the future
+    setIsCreateRepoOpen(true);
   };
 
   return (
@@ -308,18 +260,22 @@ function AppContent() {
       <Navigation
         user={state.user}
         onAuthClick={handleAuthClick}
-        onProfileClick={() => state.user && handleProfileClick(state.user.id)}
-        onCreateClick={() => setCurrentPage({ type: 'create' })}
+
+
+        
+        onProfileClick={() =>
+          state.user && handleProfileClick(state.user.id)
+        }
+        onCreateClick={() => setCurrentPage({ type: "create" })}
         onExploreClick={handleExplore}
-        onHomeClick={() => setCurrentPage({ type: 'home' })}
+        onReposClick={handleReposClick}
+         onHomeClick={() => setCurrentPage({ type: "home" })}
         onSavedClick={handleSavedClick}
         onSettingsClick={handleSettingsClick}
-        onPromptPacksClick={() => setCurrentPage({ type: 'industry-packs' })}
-        onAdminClick={handleAdminClick}
       />
       
       <main>
-        {currentPage.type === 'home' && (
+         {currentPage.type === "home" && (
           <HomePage
             onGetStarted={handleGetStarted}
             onExplore={handleExplore}
@@ -327,22 +283,44 @@ function AppContent() {
           />
         )}
         
-        {currentPage.type === 'explore' && (
+        {currentPage.type === "explore" && (
           <ExplorePage
             onBack={handleBack}
+             onRepoClick={(repoId) => handleRepoClick(repoId, "explore")}
             onPromptClick={handlePromptClick}
             initialSearchQuery={currentPage.searchQuery}
           />
         )}
         
-        {currentPage.type === 'create' && (
-          <CreatePromptPage 
+         {currentPage.type === "repos" && (
+          <ReposPage
+            userId={currentPage.userId}
+            onRepoClick={(repoId) => handleRepoClick(repoId, "repos")}
+            onCreateRepo={handleCreateRepo}
+          />
+        )}
+
+        {currentPage.type === "repo" && (
+          <RepoDetailPage
+            repoId={currentPage.repoId}
+            userId={state.user?.id}
+            onBack={handleRepoBackClick}
+            onPromptClick={handlePromptClick}
+            onCreatePrompt={() => setCurrentPage({ type: "create" })}
+          />
+        )}
+
+        {currentPage.type === "create" && (
+          <CreatePromptPage
             onBack={handleBack}
             editingPrompt={currentPage.editingPrompt}
             onPublish={(isNewPrompt) => {
               if (isNewPrompt && state.user) {
-                // Navigate to user's profile "Created" tab
-                setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'created' });
+                 setCurrentPage({
+                  type: "profile",
+                  userId: state.user.id,
+                  tab: "created",
+                });
               } else {
                 handleBack();
               }
@@ -350,7 +328,7 @@ function AppContent() {
           />
         )}
 
-        {currentPage.type === 'prompt' && (
+        {currentPage.type === "prompt" && (
           <PromptDetailPage
             promptId={currentPage.promptId}
             onBack={handleBack}
@@ -359,287 +337,48 @@ function AppContent() {
           />
         )}
 
-        {currentPage.type === 'profile' && (
+        {currentPage.type === "profile" && (
           <UserProfilePage
             userId={currentPage.userId}
             initialTab={currentPage.tab}
             onBack={handleBack}
             onPromptClick={handlePromptClick}
-            onNavigateToPromptPacks={() => setCurrentPage({ type: 'industry-packs' })}
-            onNavigateToPackView={(packId) => setCurrentPage({ type: 'pack-view', packId })}
-            onNavigateToPortfolioView={(portfolioId) => setCurrentPage({ type: 'portfolio-view', portfolioId })}
-            onNavigateToBilling={() => setCurrentPage({ type: 'billing' })}
-            onNavigateToSubscription={() => setCurrentPage({ type: 'subscription' })}
+           
           />
+          )}
+           {currentPage.type === "settings" && (
+          <SettingsPage onBack={handleBack} />
+        
         )}
 
-        {currentPage.type === 'settings' && (
-          <SettingsPage
-            onBack={handleBack}
-            onNavigateToSubscription={() => setCurrentPage({ type: 'subscription' })}
-            onNavigateToBilling={() => setCurrentPage({ type: 'billing' })}
-          />
-        )}
+        {currentPage.type === "about" && <AboutPage onBack={handleBack} />}
+      </main>
 
-        {currentPage.type === 'subscription' && (
-          <SubscriptionPage
-            onBack={handleBack}
-            onNavigateToBilling={() => setCurrentPage({ type: 'billing' })}
-          />
-        )}
+      <Footer
+        onGetStarted={handleGetStarted}
+         onNavigateToAbout={() => setCurrentPage({ type: "about" })}
+        onNavigateToTerms={() => setCurrentPage({ type: "terms" })}
+        onNavigateToPrivacy={() => setCurrentPage({ type: "privacy" })}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+   
 
   
 
-        {currentPage.type === 'industry-packs' && (
-          <IndustryPacksPage
-            onBack={handleBack}
-            onPackClick={(packId) => setCurrentPage({ type: 'pack-view', packId })}
-            onCreatePackClick={() => setCurrentPage({ type: 'pack-create' })}
-          />
-        )}
-
-        {currentPage.type === 'pack-view' && (
-          <PackViewPage
-            packId={currentPage.packId}
-            onBack={() => setCurrentPage({ type: 'industry-packs' })}
-            onPromptClick={handlePromptClick}
-          />
-        )}
-
-        {/* Portfolio pages removed - now handled in UserProfilePage *\/}
-
-        {currentPage.type === 'pack-create' && (
-          <CreatePackPage
-            onBack={() => setCurrentPage({ type: 'industry-packs' })}
-            onPackCreated={(packId) => setCurrentPage({ type: 'pack-view', packId })}
-          />
-        )}
-
-        {currentPage.type === 'portfolio-view' && (
-          <PortfolioViewPage
-            portfolioId={currentPage.portfolioId}
-            onBack={() => setCurrentPage({ type: 'home' })}
-            onPromptClick={handlePromptClick}
-          />
-        )}
-
-        {currentPage.type === 'about' && (
-          <AboutPage
-            onBack={handleBack}
-          />
-        )}
-
      
 
-        {currentPage.type === 'invite' && (
-          <InviteSystemPage onBack={handleBack} />
-        )}
-
-        {currentPage.type === 'affiliate' && (
-          <AffiliateProgramPage
-            onBack={handleBack}
-            onNavigateToDashboard={() => setCurrentPage({ type: 'affiliate-dashboard' })}
-          />
-        )}
-
-   
-
-        {currentPage.type === 'admin-dashboard' && isAdmin(state.user) && (
-          <AdminDashboard />
-        )}
-
-   
-
-        {currentPage.type === 'admin-user-management' && isAdmin(state.user) && (
-          <UserManagement />
-        )}
-
-     
-        {currentPage.type === 'admin-subscription-management' && isAdmin(state.user) && (
-          <SubscriptionManagement />
-        )}
-
-
-        {currentPage.type === 'admin-platform-settings' && isAdmin(state.user) && (
-          <PlatformSettings />
-        )}
-
-        {currentPage.type === 'admin-system-logs-health' && isAdmin(state.user) && (
-          <SystemLogsHealth />
-        )}
-
-        {currentPage.type === 'ui-playground' && isAdmin(state.user) && (
-          <UIPlayground />
-        )}
-      </main>
-
-      <Footer
-        onGetStarted={handleGetStarted}
-        onNavigateToAbout={() => setCurrentPage({ type: 'about' })}
-        onNavigateToTerms={() => setCurrentPage({ type: 'terms' })}
-        onNavigateToPrivacy={() => setCurrentPage({ type: 'privacy' })}
-        onNavigateToInvites={() => setCurrentPage({ type: 'invite' })}
-        onNavigateToAffiliate={() => setCurrentPage({ type: 'affiliate' })}
-      />
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
-    </div>
-  );
-}
-
-export default function App() {
-  return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  );
-}
-
-ORIGINAL_APP_END */
-
-// App with basic profile functionality
-import { useState } from 'react'
-import { AppProvider, useApp } from './contexts/AppContext'
-import { HomePage } from './components/HomePage'
-import { ExplorePage } from './components/ExplorePage'
-import { UserProfilePage } from './components/UserProfilePage'
-import { Navigation } from './components/Navigation'
-import { Footer } from './components/Footer'
-import { AuthModal } from './components/auth/AuthModal'
-
-type Page =
-  | { type: 'home' }
-  | { type: 'explore'; searchQuery?: string }
-  | { type: 'profile'; userId: string; tab?: string }
-
-function AppContent() {
-  const { state } = useApp()
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState<Page>({ type: 'home' })
-
-  const handleAuthClick = () => {
-    setIsAuthModalOpen(true)
-  }
-
-  const handleGetStarted = () => {
-    if (state.user) {
-      // Navigate to user profile when authenticated
-      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'created' })
-    } else {
-      setIsAuthModalOpen(true)
-    }
-  }
-
-  const handleExplore = (searchQuery?: string) => {
-    setCurrentPage({ type: 'explore', searchQuery })
-  }
-
-  const handleBack = () => {
-    setCurrentPage({ type: 'home' })
-  }
-
-  const handlePromptClick = (promptId: string) => {
-    console.log('Prompt clicked:', promptId)
-  }
-
-  const handleProfileClick = () => {
-    if (state.user) {
-      setCurrentPage({ type: 'profile', userId: state.user.id })
-    }
-  }
-
-  const handleSavedClick = () => {
-    if (state.user) {
-      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'saved' })
-    }
-  }
-
-  const handleSettingsClick = () => {
-    if (state.user) {
-      setCurrentPage({
-        type: 'profile',
-        userId: state.user.id,
-        tab: 'settings',
-      })
-    }
-  }
-
-  const handleAuthSuccess = () => {
-    // After successful authentication, navigate to profile
-    if (state.user) {
-      setCurrentPage({ type: 'profile', userId: state.user.id, tab: 'created' })
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Navigation
-        user={state.user}
-        onAuthClick={handleAuthClick}
-        onProfileClick={handleProfileClick}
-        onCreateClick={() => console.log('Create clicked')}
-        onExploreClick={handleExplore}
-        onHomeClick={() => setCurrentPage({ type: 'home' })}
-        onSavedClick={handleSavedClick}
-        onSettingsClick={handleSettingsClick}
-        onPromptPacksClick={() => console.log('Prompt Packs clicked')}
-        onAdminClick={feature => console.log('Admin clicked:', feature)}
-      />
-
-      <main>
-        {currentPage.type === 'home' && (
-          <HomePage
-            onGetStarted={handleGetStarted}
-            onExplore={handleExplore}
-            onPromptClick={handlePromptClick}
-          />
-        )}
-
-        {currentPage.type === 'explore' && (
-          <ExplorePage
-            onBack={handleBack}
-            onPromptClick={handlePromptClick}
-            initialSearchQuery={currentPage.searchQuery}
-          />
-        )}
-
-        {currentPage.type === 'profile' && (
-          <UserProfilePage
-            userId={currentPage.userId}
-            initialTab={currentPage.tab}
-            onBack={handleBack}
-            onPromptClick={handlePromptClick}
-            onNavigateToPromptPacks={() =>
-              console.log('Navigate to prompt packs')
-            }
-            onNavigateToPackView={packId =>
-              console.log('Navigate to pack view:', packId)
-            }
-            onNavigateToPortfolioView={portfolioId =>
-              console.log('Navigate to portfolio view:', portfolioId)
-            }
-            onNavigateToBilling={() => console.log('Navigate to billing')}
-            onNavigateToSubscription={() =>
-              console.log('Navigate to subscription')
-            }
-          />
-        )}
-      </main>
-
-      <Footer
-        onGetStarted={handleGetStarted}
-        onNavigateToAbout={() => console.log('About clicked')}
-        onNavigateToTerms={() => console.log('Terms clicked')}
-        onNavigateToPrivacy={() => console.log('Privacy clicked')}
-      />
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onAuthSuccess={handleAuthSuccess}
+    <CreateRepoModal
+    isOpen={isCreateRepoOpen}
+        onClose={() => setIsCreateRepoOpen(false)}
+        userId={state.user?.id}
+        onCreated={(repoId) => {
+          setIsCreateRepoOpen(false);
+          setCurrentPage({ type: "repo", repoId, from: "repos" });
+        }}
       />
     </div>
   )
@@ -650,5 +389,5 @@ export default function App() {
     <AppProvider>
       <AppContent />
     </AppProvider>
-  )
+  );
 }

@@ -17,8 +17,7 @@ import { useApp } from '../contexts/AppContext'
 import { Prompt, PromptImage, Draft } from '../lib/types'
 import { ImageUpload } from './ImageUpload'
 import { categories, models } from '../lib/data'
-import { prompts, storage } from '../lib/api'
-import { supabase } from '../lib/supabase'
+
 import {
   ArrowLeft,
   Save,
@@ -114,7 +113,7 @@ export function CreatePromptPage({
   )
   const [content, setContent] = useState(editingPrompt?.content || '')
   const [type, setType] = useState<
-    'text' | 'image' | 'code' | 'agent' | 'chain'
+   'text' | 'image' | 'code' | 'agent' | 'chain' | 'conversation'
   >(editingPrompt?.type || 'text')
   const [category, setCategory] = useState(editingPrompt?.category || '')
   const [visibility, setVisibility] = useState<
@@ -129,9 +128,7 @@ export function CreatePromptPage({
     editingPrompt?.images || []
   )
 
-  // Template state
-  const [template, setTemplate] = useState(editingPrompt?.template || '')
-
+  
   // Meta description state
   const [metaDescription, setMetaDescription] = useState('')
 
@@ -156,7 +153,6 @@ export function CreatePromptPage({
     selectedModels,
     tags,
     images,
-    template,
   ])
 
   // Auto-save functionality
@@ -178,7 +174,6 @@ export function CreatePromptPage({
     selectedModels,
     tags,
     images,
-    template,
     saveStatus,
   ])
 
@@ -195,13 +190,15 @@ export function CreatePromptPage({
         description,
         content,
         type,
+        category,
+        tags,
+        modelCompatibility: selectedModels,
         metadata: {
           category,
           visibility,
           selectedModels,
           tags,
           images,
-          template,
           metaDescription,
         },
         lastSaved: new Date().toISOString(),
@@ -256,72 +253,26 @@ export function CreatePromptPage({
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
 
-      const promptData = {
-        user_id: state.user.id,
-        title,
-        slug,
-        description,
-        content,
-        type,
-        model_compatibility: selectedModels,
-        tags,
-        visibility,
-        category,
-        version: editingPrompt ? editingPrompt.version : '1.0.0',
-        parent_id: editingPrompt?.parentId || null,
-        view_count: editingPrompt?.viewCount || 0,
-        hearts: editingPrompt?.hearts || 0,
-        save_count: editingPrompt?.saveCount || 0,
-        fork_count: editingPrompt?.forkCount || 0,
-        comment_count: editingPrompt?.commentCount || 0,
-        created_at: editingPrompt?.createdAt || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        template: template || null,
-      }
+     
 
       const isNewPrompt = !editingPrompt
 
       // Try Supabase first, fallback to local state if it fails
       let success = false
-      let promptId = editingPrompt?.id
+      // let promptId = editingPrompt?.id
 
       try {
-        if (editingPrompt) {
-          // Update existing prompt
-          const { data: updatedPrompt, error } = await prompts.update(
-            editingPrompt.id,
-            promptData
-          )
-
-          if (!error && updatedPrompt) {
-            promptId = updatedPrompt.id
-            success = true
-          } else {
-            console.error('❌ Prompt update failed:', error)
-          }
-        } else {
-          // Create new prompt
-          const { data: newPrompt, error } = await prompts.create(promptData)
-
-          if (!error && newPrompt) {
-            promptId = newPrompt.id
-            success = true
-          } else {
-            console.error('❌ Prompt creation failed:', error)
-          }
-        }
-
-        // Handle images if we have a prompt ID and Supabase worked
-        if (success && promptId) {
-          await handleImageUpdates(promptId)
-        }
+       // TODO: Implement prompt creation/update with new database
+        console.warn('Database operations not yet implemented')
+        success = false
       } catch (apiError) {
-        console.warn('Supabase API not available, using local state:', apiError)
+        console.warn('Database API not available:', apiError)
       }
 
       // Fallback to local state management if Supabase fails
       if (!success) {
         const newPrompt: Prompt = {
+          repoId: editingPrompt?.repoId || '',
           id: editingPrompt?.id || `prompt-${Date.now()}`,
           userId: state.user.id,
           title,
@@ -348,7 +299,6 @@ export function CreatePromptPage({
           isHearted: false,
           isSaved: false,
           isForked: false,
-          template: template || undefined,
         }
 
         if (editingPrompt) {
@@ -376,104 +326,7 @@ export function CreatePromptPage({
     }
   }
 
-  // Handle image updates for Supabase
-  const handleImageUpdates = async (promptId: string) => {
-    try {
-      // Get existing images for this prompt
-      const { data: existingImages, error: fetchError } = await supabase
-        .from('prompt_images')
-        .select('*')
-        .eq('prompt_id', promptId)
-
-      if (fetchError) {
-        console.error('❌ Error fetching existing images:', fetchError)
-        return
-      }
-
-      const existingImageUrls = new Set(
-        existingImages?.map((img: any) => img.url) || []
-      )
-
-      // Images to add (new images not in existing)
-      const imagesToAdd = images.filter(img => !existingImageUrls.has(img.url))
-
-      // Images to update (existing images with changes) - match by URL
-      const imagesToUpdate = images.filter(img =>
-        existingImageUrls.has(img.url)
-      )
-
-      // Images to remove (existing images not in current images)
-      const imagesToRemove =
-        existingImages?.filter(
-          (img: any) => !images.some(currImg => currImg.url === img.url)
-        ) || []
-
-      // Add new images
-      for (const image of imagesToAdd) {
-        const { error } = await supabase
-          .from('prompt_images')
-          .insert({
-            prompt_id: promptId,
-            url: image.url,
-            alt_text: image.altText,
-            is_primary: image.isPrimary,
-            size: image.size,
-            mime_type: image.mimeType,
-            width: image.width,
-            height: image.height,
-            caption: image.caption,
-          })
-          .select()
-
-        if (error) {
-          console.error('❌ Error adding image:', error)
-        }
-      }
-
-      // Update existing images
-      for (const image of imagesToUpdate) {
-        const { error } = await supabase
-          .from('prompt_images')
-          .update({
-            alt_text: image.altText,
-            is_primary: image.isPrimary,
-            caption: image.caption,
-          })
-          .eq('url', image.url)
-          .eq('prompt_id', promptId) // Ensure we only update images for this prompt
-
-        if (error) {
-          console.error('❌ Error updating image:', error)
-        }
-      }
-
-      // Remove deleted images
-      for (const image of imagesToRemove) {
-        // Delete from database
-        const { error: dbError } = await supabase
-          .from('prompt_images')
-          .delete()
-          .eq('id', image.id)
-
-        if (dbError) {
-          console.error('Error removing image from database:', dbError)
-        }
-
-        // Try to delete from storage (optional, as storage cleanup can be done separately)
-        try {
-          const path = image.url.split('/').pop()
-          if (path) {
-            await storage.deleteImage('prompt-images', [path])
-          }
-        } catch (storageError) {
-          console.warn('Could not delete image from storage:', storageError)
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error handling image updates:', error)
-    }
-  }
-
+    // Image updates will be handled when backend is wired
   const addTag = () => {
     if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 10) {
       setTags([...tags, newTag.trim()])
@@ -713,27 +566,9 @@ export function CreatePromptPage({
 
               {/* Template Placeholder */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Template Placeholder (Optional)
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Add a template or pattern for this prompt to help yourself
-                    or others generate new versions quickly.
-                  </p>
-                </CardHeader>
+               
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="template">Template Text</Label>
-                    <Textarea
-                      id="template"
-                      value={template}
-                      onChange={e => setTemplate(e.target.value)}
-                      placeholder="e.g., A photorealistic [shot type] of [subject], [action or expression], set in [environment]. The scene is illuminated by [lighting description], creating a [mood] atmosphere. Captured with a [camera/lens details], emphasizing [key textures and details]. The image should be in a [aspect ratio] format."
-                      rows={6}
-                    />
-                  </div>
+                    {/* Removed template feature */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -817,7 +652,7 @@ export function CreatePromptPage({
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map(cat => (
+                       {categories.map((cat: any) => (
                       <SelectItem key={cat.id} value={cat.name}>
                         <div className="flex items-center gap-2">
                           <span>{cat.icon}</span>
@@ -872,14 +707,14 @@ export function CreatePromptPage({
                   </div>
                   {models
                     .filter(
-                      model =>
+                    (model: any) =>
                         model.name
                           .toLowerCase()
                           .includes(customModel.toLowerCase()) &&
                         !selectedModels.includes(model.name)
                     )
                     .slice(0, 5)
-                    .map(model => (
+                     .map((model: any) => (
                       <div
                         key={model.id}
                         className="px-2 py-1 text-sm hover:bg-muted cursor-pointer rounded"
@@ -892,7 +727,7 @@ export function CreatePromptPage({
                       </div>
                     ))}
                   {models.filter(
-                    model =>
+                    (model: any) =>
                       model.name
                         .toLowerCase()
                         .includes(customModel.toLowerCase()) &&
