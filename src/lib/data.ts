@@ -298,3 +298,5 @@ export const comments: Comment[] = [
     createdAt: '2024-01-17T14:30:00Z',
   },
 ]
+// Mock prompt feedbacks data
+export const promptFeedbacks: PromptFeedback[] = []

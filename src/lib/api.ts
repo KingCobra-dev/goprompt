@@ -691,7 +691,8 @@ export const prompts = {
       } catch (err: any) {
         console.warn('prompts.update: falling back to mock data:', err?.message)
       }
-       await delay(100)
+    }
+    await delay(100)
     const prompt = mockPrompts.find(p => p.id === promptId)
     if (!prompt) {
       return { error: { message: 'Prompt not found' }, data: null }
@@ -887,5 +888,4 @@ export const profiles = {
       return { error: { message: err?.message || 'Failed to load profile' }, data: null }
     }
   },
-  }
 }

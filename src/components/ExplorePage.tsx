@@ -144,6 +144,7 @@ export function ExplorePage({
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
+        </div>
       </div>
  
         {/* Filters */}

@@ -217,8 +217,15 @@ export function Navigation({
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                 <DropdownMenuItem onClick={async () => { try { await supabase.auth.signOut() } catch (e) { console.warn('Sign out failed', e) } }}>
-                  </DropdownMenuContent>
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        try {
+                          await supabase.auth.signOut()
+                        } catch (e) {
+                          console.warn('Sign out failed', e)
+                        }
+                      }}
+                    >
                       Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>

@@ -72,8 +72,8 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader></DialogHeader>
-        <DialogTitle>Welcome to PromptsGo</DialogTitle>
+        <DialogHeader>
+          <DialogTitle>Welcome to PromptsGo</DialogTitle>
           <DialogDescription>
             Sign in to your account or create a new one.
           </DialogDescription>
