@@ -6,8 +6,7 @@ import { Card, CardContent } from './ui/card'
 import { ImageWithFallback } from './figma/ImageWithFallback'
 import { Upload, X, Star, StarOff } from 'lucide-react'
 import { PromptImage } from '../lib/types'
-import { storage } from '../lib/api'
-import { supabase } from '../lib/supabase'
+// Database imports removed - will be replaced with new Supabase project
 
 interface ImageUploadProps {
   images: PromptImage[]
@@ -28,46 +27,28 @@ export function ImageUpload({
     async (files: FileList | null) => {
       if (!files) return
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) {
-        console.error('User not authenticated')
-        return
-      }
+    // TODO: Re-implement image upload with new Supabase project
+      console.warn('Image upload not yet implemented - will be replaced with new database')
+
+      // Placeholder: For now, create local URLs
 
       const uploadPromises = Array.from(files)
         .slice(0, maxImages - images.length)
         .filter(file => file.type.startsWith('image/'))
         .map(async (file, index) => {
           try {
-            // Create unique filename
-            const fileExt = file.name.split('.').pop()
-            const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-
-            // Upload to Supabase Storage
-            const { error } = await storage.uploadImage(
-              'prompt-images',
-              fileName,
-              file
-            )
-            if (error) throw error
-
-            // Get public URL
-            const publicUrl = storage.getPublicUrl(
-              'prompt-images',
-              fileName
-            ).publicUrl
+           // Create temporary local URL for preview
+            const localUrl = URL.createObjectURL(file)
 
             // Get image dimensions
             const img = new Image()
-            img.src = publicUrl
+            img.src = localUrl
 
             return new Promise<PromptImage>(resolve => {
               img.onload = () => {
                 resolve({
                   id: `image-${Date.now()}-${index}`,
-                  url: publicUrl,
+                  url: localUrl,
                   altText: file.name.replace(/\.[^/.]+$/, ''),
                   isPrimary: images.length === 0 && index === 0,
                   size: file.size,
@@ -214,7 +195,7 @@ export function ImageUpload({
               <div className="aspect-video relative">
                 <ImageWithFallback
                   src={image.url}
-                  alt={image.altText}
+                  alt={image.altText || ''}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-2 right-2 flex gap-1">
@@ -271,8 +252,8 @@ export function ImageUpload({
                   {image.width &&
                     image.height &&
                     `${image.width}×${image.height} • `}
-                  {image.size > 0 &&
-                    `${(image.size / 1024 / 1024).toFixed(1)}MB`}
+                    {typeof image.size === 'number' && image.size > 0 &&
+                    `${((image.size || 0) / 1024 / 1024).toFixed(1)}MB`}
                 </div>
               </CardContent>
             </Card>

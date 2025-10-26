@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import supabase from '../lib/supabaseClient'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import {
@@ -7,32 +8,21 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
+  
 } from './ui/dropdown-menu'
-// Badge import removed (unused)
-import { SubscriptionBadge } from './ui/SubscriptionBadge'
+
+
 import { ThemeToggle } from './ui/ThemeToggle'
-import { useApp } from '../contexts/AppContext'
-import { auth } from '../lib/api'
-import { isAdmin } from '../lib/admin'
 import {
   Search,
   Plus,
   Menu,
   User,
   Settings,
-  LogOut,
   Home,
   Compass,
   BookmarkPlus,
   Package,
-  Shield,
-  Upload,
-  Users,
-  BarChart,
-  Eye,
-  DollarSign,
-  Gift,
   Activity,
 } from 'lucide-react'
 
@@ -40,7 +30,7 @@ interface NavigationProps {
   user?: {
     name: string
     username: string
-    reputation: number
+     reputation?: number
     role?: 'general' | 'pro' | 'admin'
     subscriptionStatus?: 'active' | 'cancelled' | 'past_due'
   } | null
@@ -48,11 +38,10 @@ interface NavigationProps {
   onProfileClick?: () => void
   onCreateClick?: () => void
   onExploreClick?: (searchQuery?: string) => void
+  onReposClick?: () => void
   onHomeClick?: () => void
   onSavedClick?: () => void
   onSettingsClick?: () => void
-  onPromptPacksClick?: () => void
-  onAdminClick?: (feature: string) => void
 }
 
 export function Navigation({
@@ -61,28 +50,14 @@ export function Navigation({
   onProfileClick,
   onCreateClick,
   onExploreClick,
+  onReposClick,
   onHomeClick,
   onSavedClick,
   onSettingsClick,
-  onPromptPacksClick,
-  onAdminClick,
 }: NavigationProps) {
-  const { state, dispatch } = useApp()
-  const currentUser = state.user
-  const [searchQuery, setSearchQuery] = useState(
-    typeof state.searchFilters.query === 'string'
-      ? state.searchFilters.query
-      : ''
-  )
+  
 
-  // Sync local search query with global search filters
-  useEffect(() => {
-    const query =
-      typeof state.searchFilters.query === 'string'
-        ? state.searchFilters.query
-        : ''
-    setSearchQuery(query)
-  }, [state.searchFilters.query])
+  const [searchQuery, setSearchQuery] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const getInitials = (name: string) => {
@@ -131,14 +106,16 @@ export function Navigation({
                 <Compass className="h-4 w-4 group-hover:text-accent" />
                 Explore
               </Button>
-              <Button
-                variant="ghost"
-                className="flex items-center gap-2 nav-button group"
-                onClick={onPromptPacksClick}
-              >
-                <Package className="h-4 w-4 group-hover:text-accent" />
-                Prompt Packs
-              </Button>
+              {user && (
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 nav-button group"
+                  onClick={onReposClick}
+                >
+                  <Package className="h-4 w-4 group-hover:text-accent" />
+                  Repos
+                </Button>
+              )}
             </nav>
           </div>
 
@@ -149,15 +126,7 @@ export function Navigation({
               <Input
                 placeholder="Search prompts, creators, tags..."
                 value={searchQuery}
-                onChange={e => {
-                  const value = e.target.value
-                  setSearchQuery(value)
-                  // Update global search filters immediately
-                  dispatch({
-                    type: 'SET_SEARCH_FILTERS',
-                    payload: { query: value },
-                  })
-                }}
+                onChange={e => setSearchQuery(e.target.value)}
                 onKeyPress={e => {
                   if (e.key === 'Enter') {
                     // Navigate to explore page when Enter is pressed
@@ -190,91 +159,7 @@ export function Navigation({
 
             {user ? (
               <>
-                {/* Admin Menu (Only visible to admins) */}
-                {isAdmin(currentUser) && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        <Shield className="h-4 w-4" />
-                        <span className="hidden sm:inline">Admin</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Admin Tools
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('dashboard')}
-                      >
-                        <BarChart className="mr-2 h-4 w-4" />
-                        Dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('bulk-import')}
-                      >
-                        <Upload className="mr-2 h-4 w-4" />
-                        Bulk Import Prompts
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('ui-playground')}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        UI Playground
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('content-moderation')}
-                      >
-                        <Shield className="mr-2 h-4 w-4" />
-                        Content Moderation
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('user-management')}
-                      >
-                        <Users className="mr-2 h-4 w-4" />
-                        Manage Users
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('analytics-reports')}
-                      >
-                        <BarChart className="mr-2 h-4 w-4" />
-                        Analytics & Reports
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          onAdminClick?.('subscription-management')
-                        }
-                      >
-                        <DollarSign className="mr-2 h-4 w-4" />
-                        Subscription Management
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          onAdminClick?.('invite-affiliate-management')
-                        }
-                      >
-                        <Gift className="mr-2 h-4 w-4" />
-                        Invite & Affiliate Management
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('platform-settings')}
-                      >
-                        <Settings className="mr-2 h-4 w-4" />
-                        Platform Settings
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => onAdminClick?.('system-logs-health')}
-                      >
-                        <Activity className="mr-2 h-4 w-4" />
-                        System Logs & Health
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+  
 
                 {/* Create Button */}
                 <Button
@@ -296,12 +181,9 @@ export function Navigation({
                         {getInitials(user.name)}
                       </div>
                       <div className="hidden md:block text-left">
-                        <div className="text-sm font-medium flex items-center gap-2">
+                       <div className="text-sm font-medium">
                           {user.name}
-                          <SubscriptionBadge
-                            role={user.role || 'general'}
-                            subscriptionStatus={user.subscriptionStatus}
-                          />
+                         
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {user.reputation} rep
@@ -311,12 +193,8 @@ export function Navigation({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <div className="p-2">
-                      <div className="font-medium flex items-center gap-2">
+               <div className="font-medium">
                         {user.name}
-                        <SubscriptionBadge
-                          role={user.role || 'general'}
-                          subscriptionStatus={user.subscriptionStatus}
-                        />
                       </div>
                       <div className="text-sm text-muted-foreground">
                         @{user.username}
@@ -339,23 +217,8 @@ export function Navigation({
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={async () => {
-                        try {
-                          console.log('[Navigation] Signing out user...')
-                          // First clear user state
-                          dispatch({ type: 'SET_USER', payload: null })
-
-                          // Then sign out from Supabase (this will trigger SIGNED_OUT event)
-                          await auth.signOut()
-
-                          console.log('[Navigation] Sign out complete')
-                        } catch (error) {
-                          console.error('[Navigation] Sign out error:', error)
-                        }
-                      }}
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
+                 <DropdownMenuItem onClick={async () => { try { await supabase.auth.signOut() } catch (e) { console.warn('Sign out failed', e) } }}>
+                  </DropdownMenuContent>
                       Sign out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -406,14 +269,7 @@ export function Navigation({
                 <Compass className="mr-2 h-4 w-4 group-hover:text-accent" />
                 Explore
               </Button>
-              <Button
-                variant="ghost"
-                className="justify-start nav-button group"
-                onClick={onPromptPacksClick}
-              >
-                <Package className="mr-2 h-4 w-4 group-hover:text-accent" />
-                Prompt Packs
-              </Button>
+             
             </nav>
           </div>
         )}

@@ -1,9 +1,6 @@
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
-import { SubscriptionBadge } from './ui/SubscriptionBadge'
-import { useApp } from '../contexts/AppContext'
 import { ArrowRight, GitFork, Star, User, Package, Crown } from 'lucide-react'
-import { getSaveLimit } from '../lib/limits'
 
 interface HomePageProps {
   onGetStarted: () => void
@@ -12,8 +9,6 @@ interface HomePageProps {
 }
 
 export function HomePage({ onGetStarted, onExplore }: HomePageProps) {
-  const { state } = useApp()
-
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Hero Section */}
@@ -46,24 +41,6 @@ export function HomePage({ onGetStarted, onExplore }: HomePageProps) {
               Create Free Account
             </Button>
           </div>
-
-          {/* Role Status */}
-          {state.user && (
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <SubscriptionBadge
-                role={state.user.role || 'general'}
-                subscriptionStatus={state.user.subscriptionStatus}
-              />
-              {(state.user.role || 'general') === 'general' && (
-                <Badge variant="secondary">Free Plan</Badge>
-              )}
-              <span className="text-xs text-muted-foreground">
-                {getSaveLimit(state.user) === 'unlimited'
-                  ? 'Unlimited saves'
-                  : `${state.user.saveCount}/${getSaveLimit(state.user)} saves used`}
-              </span>
-            </div>
-          )}
 
           <p className="text-sm text-muted-foreground mb-6 max-w-2xl mx-auto">
             Join a growing community of AI professionals sharing their best

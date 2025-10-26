@@ -6,35 +6,32 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
 import { Switch } from './ui/switch'
-import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
 import { useApp } from '../contexts/AppContext'
+import { profiles as profilesApi } from '../lib/api'
 import {
   ArrowLeft,
   User,
-  CreditCard,
   Shield,
   Globe,
   Github,
   Twitter,
-  Crown,
-  ExternalLink,
+
 } from 'lucide-react'
 
 interface SettingsPageProps {
   onBack: () => void
-  onNavigateToSubscription?: () => void
-  onNavigateToBilling?: () => void
 }
 
 export function SettingsPage({
   onBack,
-  onNavigateToSubscription,
-  onNavigateToBilling,
 }: SettingsPageProps) {
   const { state, dispatch } = useApp()
   const [activeTab, setActiveTab] = useState('profile')
   const [isEditing, setIsEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [usernameOk, setUsernameOk] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: state.user?.name || '',
     username: state.user?.username || '',
@@ -57,24 +54,90 @@ export function SettingsPage({
     )
   }
 
-  const handleSave = () => {
-    const updatedUser = {
-      ...state.user!,
-      name: formData.name,
-      username: formData.username,
-      email: formData.email,
-      bio: formData.bio,
-      website: formData.website,
-      github: formData.github,
-      twitter: formData.twitter,
-      skills: formData.skills
-        .split(',')
-        .map(s => s.trim())
-        .filter(s => s),
+  const validateUsername = (u: string) => {
+    const val = (u || '').trim()
+    if (val.length < 3) return 'Username must be at least 3 characters'
+    if (val.length > 30) return 'Username must be at most 30 characters'
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(val)) return 'Only letters, numbers, underscore; must start with a letter'
+    return null
+  }
+
+  const handleSave = async () => {
+    setUsernameError(null)
+    setUsernameOk(null)
+
+    const usernameChanged = formData.username !== state.user!.username
+    if (usernameChanged) {
+      const err = validateUsername(formData.username)
+      if (err) {
+        setUsernameError(err)
+        return
+      }
     }
 
-    dispatch({ type: 'SET_USER', payload: updatedUser })
-    setIsEditing(false)
+     try {
+      setSaving(true)
+      // If username changed, check availability first
+      if (usernameChanged) {
+        const chk = await profilesApi.checkUsernameAvailable(formData.username)
+        if (chk.error) {
+          setUsernameError(chk.error.message)
+          return
+        }
+        if (!chk.data?.available) {
+          setUsernameError('That username is already taken')
+          return
+        }
+      }
+
+      // Update profile in DB (username, name, bio)
+      const upd = await profilesApi.updateProfile(state.user!.id, {
+        username: usernameChanged ? formData.username : undefined,
+        full_name: formData.name,
+        bio: formData.bio,
+      })
+      if (upd.error) {
+        setUsernameError(
+          upd.error.message?.toLowerCase().includes('duplicate')
+            ? 'That username is already taken'
+            : upd.error.message
+        )
+        return
+      }
+      // Read back from DB to confirm and hydrate state from source of truth
+      const fresh = await profilesApi.getProfile(state.user!.id)
+      if (fresh.error || !fresh.data) {
+        setUsernameError(
+          fresh.error?.message || 'Saved locally but could not verify changes from database.'
+        )
+        return
+      }
+
+      if (usernameChanged && fresh.data.username === formData.username) {
+        setUsernameOk('Username updated')
+      }
+
+      const updatedUser = {
+        ...state.user!,
+        name: (fresh.data as any).full_name || (fresh.data as any).name || formData.name,
+        username: (fresh.data as any).username || formData.username,
+        email: state.user!.email, // email not edited here
+        bio: (fresh.data as any).bio ?? formData.bio,
+        // keep client-only fields until we add DB columns for them
+        website: formData.website,
+        github: formData.github,
+        twitter: formData.twitter,
+        skills: formData.skills
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => s),
+      }
+
+      dispatch({ type: 'SET_USER', payload: updatedUser })
+      setIsEditing(false)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleCancel = () => {
@@ -109,14 +172,10 @@ export function SettingsPage({
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
             Profile
-          </TabsTrigger>
-          <TabsTrigger value="subscription" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Subscription
           </TabsTrigger>
           <TabsTrigger value="privacy" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
@@ -136,7 +195,9 @@ export function SettingsPage({
                       <Button variant="outline" onClick={handleCancel}>
                         Cancel
                       </Button>
-                      <Button onClick={handleSave}>Save Changes</Button>
+                       <Button onClick={handleSave} disabled={saving}>
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </Button>
                     </>
                   ) : (
                     <Button onClick={() => setIsEditing(true)}>
@@ -169,6 +230,12 @@ export function SettingsPage({
                     }
                     disabled={!isEditing}
                   />
+                      {usernameError && (
+                    <p className="text-xs text-destructive mt-1">{usernameError}</p>
+                  )}
+                  {usernameOk && (
+                    <p className="text-xs text-green-600 mt-1">{usernameOk}</p>
+                  )}
                 </div>
               </div>
 
@@ -256,121 +323,7 @@ export function SettingsPage({
           </Card>
         </TabsContent>
 
-        {/* Subscription Settings */}
-        <TabsContent value="subscription" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Current Plan
-                {state.user.subscriptionPlan === 'pro' && (
-                  <Badge
-                    variant="secondary"
-                    className="flex items-center gap-1"
-                  >
-                    <Crown className="h-3 w-3" />
-                    Pro
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="p-4 border rounded-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-medium">
-                      {state.user.subscriptionPlan === 'pro'
-                        ? 'Pro Plan'
-                        : 'Free Plan'}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {state.user.subscriptionPlan === 'pro'
-                        ? '$7.99/month - Advanced features included'
-                        : 'Basic features only'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">
-                      {state.user.subscriptionPlan === 'pro' ? '$7.99' : 'Free'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {state.user.subscriptionPlan === 'pro' ? 'per month' : ''}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Saves per month</span>
-                    <span>
-                      {state.user.subscriptionPlan === 'pro'
-                        ? 'Unlimited'
-                        : '10'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Forks per month</span>
-                    <span>
-                      {state.user.subscriptionPlan === 'pro'
-                        ? 'Unlimited'
-                        : '5'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Export collections</span>
-                    <span>
-                      {state.user.subscriptionPlan === 'pro' ? 'Yes' : 'No'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span>API Access</span>
-                    <span>
-                      {state.user.subscriptionPlan === 'pro' ? 'Yes' : 'No'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {state.user.subscriptionPlan === 'free' ? (
-                    <Button
-                      className="w-full"
-                      onClick={onNavigateToSubscription}
-                    >
-                      Upgrade to Pro
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={onNavigateToBilling}
-                      >
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Manage Billing & Subscription
-                      </Button>
-                      {state.user.isAdmin && (
-                        <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-                          <p className="text-xs text-blue-800 dark:text-blue-200">
-                            👑 <strong>Admin Note:</strong> You have Pro
-                            features automatically. Billing page shows UI demo.
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  <Button
-                    variant="ghost"
-                    className="w-full text-sm"
-                    onClick={onNavigateToSubscription}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View all plans & pricing
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        
 
         {/* Privacy Settings */}
         <TabsContent value="privacy" className="space-y-6">

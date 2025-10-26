@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+// Database imports removed - will be replaced with new Supabase project
 
 interface AuthCallbackProps {
   onAuthSuccess: () => void
@@ -21,27 +21,11 @@ export default function AuthCallback({
         setStatus('loading')
         setMessage('Completing sign in...')
 
-        const { data, error } = await supabase.auth.getSession()
-
-        if (error) {
-          console.error('Auth callback error:', error)
-          setStatus('error')
-          setMessage('Authentication failed. Please try again.')
-          onAuthError(error.message)
-          return
-        }
-
-        if (data.session) {
-          setStatus('success')
-          setMessage('Successfully signed in!')
-          setTimeout(() => {
-            onAuthSuccess()
-          }, 1000)
-        } else {
-          setStatus('error')
-          setMessage('No active session found.')
-          onAuthError('No active session found')
-        }
+       // TODO: Re-implement auth callback with new Supabase project
+        console.warn('Auth callback not yet implemented')
+        setStatus('error')
+        setMessage('Authentication system not yet configured.')
+        onAuthError('Authentication system not yet configured')
       } catch (err) {
         console.error('Unexpected error in auth callback:', err)
         setStatus('error')

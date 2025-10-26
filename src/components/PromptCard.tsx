@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
-import { SuccessBadge } from './ui/SuccessBadge'
-import { SubscriptionBadge } from './ui/SubscriptionBadge'
 import { Button } from './ui/button'
 import { Heart, Share, BookmarkPlus, GitFork } from 'lucide-react'
 import { categories } from '../lib/data'
-import { SubscriptionPlan, PromptImage } from '../lib/types'
+import { PromptImage } from '../lib/types'
 import { useApp } from '../contexts/AppContext'
 import { hearts, saves } from '../lib/api'
+import { getInitials } from '../lib/utils/string'
+import { getRelativeTime } from '../lib/utils/date'
+
 
 interface PromptCardProps {
   id: string
@@ -18,8 +19,7 @@ interface PromptCardProps {
     name: string
     username: string
     role?: 'general' | 'pro' | 'admin'
-    subscriptionStatus?: 'active' | 'cancelled' | 'past_due'
-    subscriptionPlan?: SubscriptionPlan
+    
   }
   category: string
   tags: string[]
@@ -44,38 +44,6 @@ interface PromptCardProps {
   onSave?: () => void // Keep for backwards compatibility
   onShare?: () => void
 }
-
-// Get initials from name
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
-
-// Get relative time
-function getRelativeTime(date: string): string {
-  const now = new Date()
-  const created = new Date(date)
-  const diffInHours = Math.floor(
-    (now.getTime() - created.getTime()) / (1000 * 60 * 60)
-  )
-
-  if (diffInHours < 1) return 'Just now'
-  if (diffInHours < 24) return `${diffInHours}h ago`
-
-  const diffInDays = Math.floor(diffInHours / 24)
-  if (diffInDays < 7) return `${diffInDays}d ago`
-
-  const diffInWeeks = Math.floor(diffInDays / 7)
-  if (diffInWeeks < 4) return `${diffInWeeks}w ago`
-
-  const diffInMonths = Math.floor(diffInDays / 30)
-  return `${diffInMonths}mo ago`
-}
-
 export function PromptCard({
   id: _id,
   title,
@@ -85,7 +53,7 @@ export function PromptCard({
   tags: _tags,
   stats,
   successRate,
-  successVotesCount,
+ successVotesCount: _successVotesCount,
   isSaved: _isSaved = false, // Renamed to indicate it's not used internally
   createdAt,
   parentAuthor,
@@ -211,10 +179,12 @@ export function PromptCard({
             {getInitials(author.name)}
           </div>
           <span className="text-muted-foreground">{author.username}</span>
-          <SubscriptionBadge
-            role={author.role || 'general'}
-            subscriptionStatus={author.subscriptionStatus}
-          />
+          {author.role === 'pro' && (
+            <Badge variant="secondary" className="text-xs">PRO</Badge>
+          )}
+          {author.role === 'admin' && (
+            <Badge variant="default" className="text-xs">ADMIN</Badge>
+          )}
           <span className="text-xs text-muted-foreground">
             • {getRelativeTime(createdAt)}
           </span>
@@ -255,11 +225,9 @@ export function PromptCard({
           ) : null}
 
           {successRate !== undefined && successRate > 0 && (
-            <SuccessBadge
-              successRate={successRate}
-              voteCount={successVotesCount || 0}
-              size="sm"
-            />
+          <Badge variant="outline" className="text-xs text-green-600">
+              ✓ {Math.round(successRate)}% success
+            </Badge>
           )}
         </div>
 

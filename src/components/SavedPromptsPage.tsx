@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-import { PromptCard } from './prompts/PromptCard'
+import { PromptCard } from './PromptCard'
 import { useApp } from '../contexts/AppContext'
 import { Prompt } from '../lib/types'
 import { ArrowLeft, BookmarkPlus, Heart } from 'lucide-react'
@@ -64,7 +64,7 @@ export function SavedPromptsPage({
             author={{
               name: prompt.author.name,
               username: prompt.author.username,
-              subscriptionPlan: prompt.author.subscriptionPlan,
+                 role: prompt.author.role,
             }}
             category={prompt.category}
             tags={prompt.tags}
