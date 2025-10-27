@@ -459,10 +459,8 @@ export function PromptDetailPage({
 
   const isOwner = state.user?.id === prompt.userId
 
-  // Check if this prompt is part of any pack
-  const isPackPrompt = state.promptPacks.some(pack =>
-    pack.promptIds.includes(promptId)
-  )
+  // Packs feature not implemented in AppState yet; default to not a pack prompt
+  const isPackPrompt = false
 
   const canEdit = isOwner
   // Pro users cannot fork pack prompts to protect content creators' IP

@@ -428,7 +428,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } as User & { reputation?: number }
     }
 
-    const init = async () => {
+  const init = async () => {
 
       try {
               const { data } = await supabase.auth.getSession()
@@ -437,7 +437,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         console.warn('Auth init error', err)
       }
-    }
+  }
+
+  // Initialize session on mount
+  init()
 
      const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return

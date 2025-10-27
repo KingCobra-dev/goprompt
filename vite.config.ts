@@ -59,6 +59,13 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['@radix-ui/react-dropdown-menu'],
+    // Force-prebundle React ESM runtimes to avoid named export errors in dev
+    include: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+    ],
   },
   build: {
     target: 'esnext',

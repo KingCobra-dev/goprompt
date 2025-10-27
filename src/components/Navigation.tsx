@@ -23,7 +23,6 @@ import {
   Compass,
   BookmarkPlus,
   Package,
-  Activity,
 } from 'lucide-react'
 
 interface NavigationProps {

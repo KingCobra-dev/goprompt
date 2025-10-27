@@ -7,7 +7,8 @@ interface UserProfilePageProps {
   onPromptClick: (promptId: string) => void
 }
 
-export function UserProfilePage({ userId, initialTab, onBack, onPromptClick }: UserProfilePageProps) {
+export function UserProfilePage(props: UserProfilePageProps) {
+  const { onBack, onPromptClick } = props
   // Minimal placeholder: reuse SavedPromptsPage for now
   // Future: render tabs for Created, Saved, Repos, etc.
   return (

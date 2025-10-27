@@ -83,7 +83,7 @@ export interface Prompt extends Omit<PromptData, 'author' | 'type'> {
   successVotesCount?: number
   language?: string
 }
-/ Image types
+// Image types
 export interface PromptImage {
   id: string
   url: string

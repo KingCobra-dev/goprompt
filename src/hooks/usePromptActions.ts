@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useApp } from '../../contexts/AppContext'
+import { useApp } from '../contexts/AppContext'
 // Note: Adjust import path based on where api is actually located
 // import { hearts, saves } from '../api'
 

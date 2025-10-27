@@ -14,6 +14,7 @@ import { AuthModal } from "./components/AuthModal";
 import { Footer } from "./components/Footer";
 import { Prompt } from "./lib/types";
 import CreateRepoModal from "./components/CreateRepoModal";
+import { prompts as promptsApi } from "./lib/api";
 
 type Page =
  | { type: "home" }
@@ -95,8 +96,7 @@ console.log("AppContent rendering, state:", state);
 
   const handleEditPrompt = async (prompt: Prompt) => {
     try {
-    // @ts-ignore - assuming `prompts` API is available globally or imported elsewhere
-  const { data: fullPromptData, error } = await prompts.getById(prompt.id);
+      const { data: fullPromptData, error } = await promptsApi.getById(prompt.id);
       if (error || !fullPromptData) {
         console.error("Error loading full prompt data:", error);
         setCurrentPage({ type: "create", editingPrompt: prompt });

@@ -12,7 +12,7 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Alert, AlertDescription } from './ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-import { Eye, EyeOff, CheckCircle } from 'lucide-react'
+import { Eye, EyeOff, CheckCircle, Loader2 } from 'lucide-react'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -25,11 +25,17 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [isSigningIn, setIsSigningIn] = useState(false)
+  const [isSigningUp, setIsSigningUp] = useState(false)
   const resetForm = () => {
     setEmail('')
     setPassword('')
     setName('')
     setSuccessMessage('')
+    setErrorMessage('')
+    setIsSigningIn(false)
+    setIsSigningUp(false)
   }
   const handleClose = () => {
     resetForm()
@@ -37,6 +43,9 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
   }
   const handleSignIn = async () => {
      try {
+      setErrorMessage('')
+      setSuccessMessage('')
+      setIsSigningIn(true)
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
       setSuccessMessage('Signed in successfully!')
@@ -44,12 +53,17 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
       setTimeout(() => handleClose(), 800)
     } catch (err: any) {
       setSuccessMessage('')
-      alert(err.message || 'Sign in failed')
+      setErrorMessage(err?.message || 'Sign in failed')
+    } finally {
+      setIsSigningIn(false)
     }
   }
 
   const handleSignUp = async () => {
      try {
+      setErrorMessage('')
+      setSuccessMessage('')
+      setIsSigningUp(true)
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -63,7 +77,9 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
       onAuthSuccess?.()
     } catch (err: any) {
       setSuccessMessage('')
-      alert(err.message || 'Sign up failed')
+      setErrorMessage(err?.message || 'Sign up failed')
+    } finally {
+      setIsSigningUp(false)
     }
   }
 
@@ -92,6 +108,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isSigningIn}
               />
             </div>
             <div className="space-y-2">
@@ -103,6 +120,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isSigningIn}
                 />
                 <Button
                   type="button"
@@ -110,6 +128,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSigningIn}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -119,8 +138,14 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                 </Button>
               </div>
                </div>
-            <Button onClick={handleSignIn} className="w-full">
-              Sign In
+            <Button onClick={handleSignIn} className="w-full" disabled={isSigningIn || !email || !password}>
+              {isSigningIn ? (
+                <span className="inline-flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing in...
+                </span>
+              ) : (
+                'Sign In'
+              )}
             </Button>
           </TabsContent>
           <TabsContent value="signup" className="space-y-4">
@@ -132,6 +157,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                 placeholder="Enter your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isSigningUp}
               />
             </div>
             <div className="space-y-2">
@@ -142,6 +168,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isSigningUp}
               />
             </div>
             <div className="space-y-2">
@@ -153,6 +180,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  disabled={isSigningUp}
                 />
                 <Button
                   type="button"
@@ -160,6 +188,7 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSigningUp}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -169,12 +198,23 @@ export function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalProps) {
                 </Button>
               </div>
               </div>
-            <Button onClick={handleSignUp} className="w-full">
-              Create Account
+            <Button onClick={handleSignUp} className="w-full" disabled={isSigningUp || !email || !password}>
+              {isSigningUp ? (
+                <span className="inline-flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           </TabsContent>
         </Tabs>
 
+        {errorMessage && (
+          <Alert variant="destructive">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
         {successMessage && (
           <Alert>
             <CheckCircle className="h-4 w-4" />
