@@ -3,38 +3,72 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { RepoCard } from './RepoCard'
-import { Plus, Search, Package } from 'lucide-react'
-import { repos as reposApi } from '../lib/api'
+import { PromptCard } from './PromptCard'
+import { Plus, Search, Package, Grid3X3, List } from 'lucide-react'
+import { repos as reposApi, prompts as promptsApi } from '../lib/api'
 import type { Repo } from '../lib/data'
+import type { Prompt } from '../lib/types'
 
 interface ReposPageProps {
   userId?: string
-  onRepoClick: (repoId: string) => void
-  onCreateRepo: () => void
+  onRepoClick?: (repoId: string) => void
+  onPromptClick?: (promptId: string) => void
+  onCreateRepo?: () => void
+  onCreatePrompt?: () => void
+  mode: 'repos' | 'prompts'
 }
 
-export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps) {
+export function ReposPage({ 
+  userId, 
+  onRepoClick, 
+  onPromptClick, 
+  onCreateRepo, 
+  onCreatePrompt,
+  mode 
+}: ReposPageProps) {
   const [repos, setRepos] = useState<Repo[]>([])
   const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
+  const [starredRepos, setStarredRepos] = useState<Set<string>>(new Set())
+  
+  // State for prompts mode
+  const [prompts, setPrompts] = useState<Prompt[]>([])
+  const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>([])
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  
+  // Common state
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'public' | 'private' | 'all'>('all')
-  const [starredRepos, setStarredRepos] = useState<Set<string>>(new Set())
+  const [activeTab, setActiveTab] = useState<'all' | 'public' | 'private' | 'trending' | 'recent'>('all')
 
-  // Load repos
+  // Load data based on mode
   useEffect(() => {
-    loadRepos()
-  }, [userId])
+    if (mode === 'repos') {
+      loadRepos()
+    } else {
+      loadPrompts()
+    }
+  }, [userId, mode])
 
-  // Filter repos when search or tab changes
+  // Filter data when search or tab changes
   useEffect(() => {
-    filterRepos()
-  }, [repos, searchQuery, activeTab])
+    if (mode === 'repos') {
+      filterRepos()
+    } else {
+      filterPrompts()
+    }
+  }, [mode === 'repos' ? repos : prompts, searchQuery, activeTab])
 
   const loadRepos = async () => {
     setLoading(true)
     const { data } = await reposApi.getAll(userId)
     setRepos(data || [])
+    setLoading(false)
+  }
+
+  const loadPrompts = async () => {
+    setLoading(true)
+    const { data } = await promptsApi.getAll()
+    setPrompts(data || [])
     setLoading(false)
   }
 
@@ -57,6 +91,29 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
     }
 
     setFilteredRepos(filtered)
+  }
+
+  const filterPrompts = () => {
+    let filtered = [...prompts]
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (prompt) =>
+          prompt.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          prompt.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          prompt.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    }
+
+    // Filter by tab
+    if (activeTab === 'trending') {
+      filtered = filtered.sort((a, b) => (b.hearts || 0) - (a.hearts || 0))
+    } else if (activeTab === 'recent') {
+      filtered = filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    }
+
+    setFilteredPrompts(filtered)
   }
 
   const handleStarRepo = async (repoId: string) => {
@@ -85,15 +142,42 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Repositories</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {mode === 'repos' ? 'My Repositories' : 'Explore Prompts'}
+          </h1>
           <p className="text-muted-foreground">
-            Organize your prompts into repositories
+            {mode === 'repos' 
+              ? 'Manage your prompt repositories' 
+              : 'Discover and explore amazing prompts from the community'
+            }
           </p>
         </div>
-        <Button onClick={onCreateRepo} size="lg">
-          <Plus className="h-5 w-5 mr-2" />
-          New Repository
-        </Button>
+        <div className="flex items-center gap-2">
+          {mode === 'prompts' && (
+            <>
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+          {mode === 'repos' && onCreateRepo && (
+            <Button onClick={onCreateRepo} size="lg">
+              <Plus className="h-5 w-5 mr-2" />
+              New Repository
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Search and filters */}
@@ -101,7 +185,7 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search repositories..."
+            placeholder={`Search ${mode === 'repos' ? 'repositories' : 'prompts'}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -112,50 +196,161 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
         <TabsList className="mb-6">
-          <TabsTrigger value="all">
-            All ({repos.length})
-          </TabsTrigger>
-          <TabsTrigger value="public">
-            Public ({repos.filter((r) => r.visibility === 'public').length})
-          </TabsTrigger>
-          <TabsTrigger value="private">
-            Private ({repos.filter((r) => r.visibility === 'private').length})
-          </TabsTrigger>
+          {mode === 'repos' ? (
+            <>
+              <TabsTrigger value="all">
+                All ({repos.length})
+              </TabsTrigger>
+              <TabsTrigger value="public">
+                Public ({repos.filter((r) => r.visibility === 'public').length})
+              </TabsTrigger>
+              <TabsTrigger value="private">
+                Private ({repos.filter((r) => r.visibility === 'private').length})
+              </TabsTrigger>
+            </>
+          ) : (
+            <>
+              <TabsTrigger value="all">
+                All ({prompts.length})
+              </TabsTrigger>
+              <TabsTrigger value="trending">
+                Trending
+              </TabsTrigger>
+              <TabsTrigger value="recent">
+                Recent
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
 
-        <TabsContent value="all" className="mt-0">
-          <RepoList
-            repos={filteredRepos}
-            loading={loading}
-            starredRepos={starredRepos}
-            onRepoClick={onRepoClick}
-            onStarRepo={handleStarRepo}
-            // onForkRepo={handleForkRepo}
-          />
-        </TabsContent>
+        {mode === 'repos' ? (
+          <>
+            <TabsContent value="all" className="mt-0">
+              <RepoList
+                repos={filteredRepos}
+                loading={loading}
+                starredRepos={starredRepos}
+                onRepoClick={onRepoClick!}
+                onStarRepo={handleStarRepo}
+              />
+            </TabsContent>
 
-        <TabsContent value="public" className="mt-0">
-          <RepoList
-            repos={filteredRepos}
-            loading={loading}
-            starredRepos={starredRepos}
-            onRepoClick={onRepoClick}
-            onStarRepo={handleStarRepo}
-            // onForkRepo={handleForkRepo}
-          />
-        </TabsContent>
+            <TabsContent value="public" className="mt-0">
+              <RepoList
+                repos={filteredRepos}
+                loading={loading}
+                starredRepos={starredRepos}
+                onRepoClick={onRepoClick!}
+                onStarRepo={handleStarRepo}
+              />
+            </TabsContent>
 
-        <TabsContent value="private" className="mt-0">
-          <RepoList
-            repos={filteredRepos}
-            loading={loading}
-            starredRepos={starredRepos}
-            onRepoClick={onRepoClick}
-            onStarRepo={handleStarRepo}
-            // onForkRepo={handleForkRepo}
-          />
-        </TabsContent>
+            <TabsContent value="private" className="mt-0">
+              <RepoList
+                repos={filteredRepos}
+                loading={loading}
+                starredRepos={starredRepos}
+                onRepoClick={onRepoClick!}
+                onStarRepo={handleStarRepo}
+              />
+            </TabsContent>
+          </>
+        ) : (
+          <>
+            <TabsContent value="all" className="mt-0">
+              <PromptList
+                prompts={filteredPrompts}
+                loading={loading}
+                onPromptClick={onPromptClick!}
+                viewMode={viewMode}
+              />
+            </TabsContent>
+
+            <TabsContent value="trending" className="mt-0">
+              <PromptList
+                prompts={filteredPrompts}
+                loading={loading}
+                onPromptClick={onPromptClick!}
+                viewMode={viewMode}
+              />
+            </TabsContent>
+
+            <TabsContent value="recent" className="mt-0">
+              <PromptList
+                prompts={filteredPrompts}
+                loading={loading}
+                onPromptClick={onPromptClick!}
+                viewMode={viewMode}
+              />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
+    </div>
+  )
+}
+
+interface PromptListProps {
+  prompts: Prompt[]
+  loading: boolean
+  onPromptClick: (promptId: string) => void
+  viewMode: 'grid' | 'list'
+}
+
+function PromptList({
+  prompts,
+  loading,
+  onPromptClick,
+  viewMode,
+}: PromptListProps) {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-64 bg-muted animate-pulse rounded-lg" />
+        ))}
+      </div>
+    )
+  }
+
+  if (prompts.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No prompts found</h3>
+        <p className="text-muted-foreground">
+          Try adjusting your search or filters
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={
+        viewMode === 'grid'
+          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+          : 'space-y-4'
+      }
+    >
+      {prompts.map((prompt) => (
+        <PromptCard
+          key={prompt.id}
+          id={prompt.id}
+          title={prompt.title}
+          description={prompt.description}
+          author={prompt.author}
+          category={prompt.category}
+          tags={prompt.tags}
+          stats={{
+            hearts: prompt.hearts,
+            saves: prompt.saveCount,
+            forks: prompt.forkCount,
+          }}
+          createdAt={prompt.createdAt}
+          onClick={() => onPromptClick(prompt.id)}
+        />
+      ))}
     </div>
   )
 }

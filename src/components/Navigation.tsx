@@ -105,7 +105,7 @@ export function Navigation({
                 onClick={() => onExploreClick?.()}
               >
                 <Compass className="h-4 w-4 group-hover:text-accent" />
-                Explore
+                Discover Repos
               </Button>
               {user && (
                 <Button
@@ -114,7 +114,7 @@ export function Navigation({
                   onClick={onReposClick}
                 >
                   <Package className="h-4 w-4 group-hover:text-accent" />
-                  Repos
+                  Explore Prompts
                 </Button>
               )}
             </nav>
@@ -279,7 +279,7 @@ export function Navigation({
                 onClick={() => onExploreClick?.()}
               >
                 <Compass className="mr-2 h-4 w-4 group-hover:text-accent" />
-                Explore
+                Discover Repos
               </Button>
              
             </nav>

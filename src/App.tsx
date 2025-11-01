@@ -305,8 +305,8 @@ console.log("AppContent rendering, state:", state);
          {currentPage.type === "repos" && (
           <ReposPage
             userId={currentPage.userId}
-            onRepoClick={(repoId) => handleRepoClick(repoId, "repos")}
-            onCreateRepo={handleCreateRepo}
+            onPromptClick={handlePromptClick}
+            mode="prompts"
           />
         )}
 
@@ -315,6 +315,7 @@ console.log("AppContent rendering, state:", state);
             userId={currentPage.userId}
             onRepoClick={(repoId) => handleRepoClick(repoId, "my-repo")}
             onCreateRepo={handleCreateRepo}
+            mode="repos"
           />
         )}
 
