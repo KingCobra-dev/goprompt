@@ -234,10 +234,10 @@ export function PromptCard({
         {/* Stats and Actions */}
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-4 text-muted-foreground">
-            <div className="flex items-center gap-1">
+            {/* <div className="flex items-center gap-1">
               <GitFork className="h-3 w-3" />
               {stats?.forks || 0}
-            </div>
+            </div> */}
           </div>
 
           <div className="flex items-center gap-2">

@@ -97,11 +97,10 @@ export function ExplorePage({
     }
     setStarredRepos(newStarred)
   }
- const handleForkRepo = (repoId: string) => {
-    console.log('Forking repo:', repoId)
-    // TODO: Implement fork functionality
- 
-  }
+   // const handleForkRepo = (repoId: string) => {
+  //   console.log('Forking repo:', repoId)
+  //   // TODO: Implement fork functionality
+  // }
 
   // Show loading state
   return (
@@ -219,7 +218,7 @@ export function ExplorePage({
               repo={repo}
               onClick={() => onRepoClick(repo.id)}
               onStar={() => handleStarRepo(repo.id)}
-              onFork={() => handleForkRepo(repo.id)}
+              // onFork={() => handleForkRepo(repo.id)}
               isStarred={starredRepos.has(repo.id)}
             />
           ))}

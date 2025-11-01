@@ -71,14 +71,14 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
     setStarredRepos(newStarred)
   }
 
-  const handleForkRepo = async (repoId: string) => {
-    console.log('Forking repo:', repoId)
-    // TODO: Implement fork functionality
-    // const { data } = await repoSocial.fork(repoId, userId)
-    // if (data) {
-    //   onRepoClick(data.id)
-    // }
-  }
+  // const handleForkRepo = async (repoId: string) => {
+  //   console.log('Forking repo:', repoId)
+  //   // TODO: Implement fork functionality
+  //   // const { data } = await repoSocial.fork(repoId, userId)
+  //   // if (data) {
+  //   //   onRepoClick(data.id)
+  //   // }
+  // }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -130,7 +130,7 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
             starredRepos={starredRepos}
             onRepoClick={onRepoClick}
             onStarRepo={handleStarRepo}
-            onForkRepo={handleForkRepo}
+            // onForkRepo={handleForkRepo}
           />
         </TabsContent>
 
@@ -141,7 +141,7 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
             starredRepos={starredRepos}
             onRepoClick={onRepoClick}
             onStarRepo={handleStarRepo}
-            onForkRepo={handleForkRepo}
+            // onForkRepo={handleForkRepo}
           />
         </TabsContent>
 
@@ -152,7 +152,7 @@ export function ReposPage({ userId, onRepoClick, onCreateRepo }: ReposPageProps)
             starredRepos={starredRepos}
             onRepoClick={onRepoClick}
             onStarRepo={handleStarRepo}
-            onForkRepo={handleForkRepo}
+            // onForkRepo={handleForkRepo}
           />
         </TabsContent>
       </Tabs>
@@ -166,7 +166,7 @@ interface RepoListProps {
   starredRepos: Set<string>
   onRepoClick: (repoId: string) => void
   onStarRepo: (repoId: string) => void
-  onForkRepo: (repoId: string) => void
+  // onForkRepo: (repoId: string) => void
 }
 
 function RepoList({
@@ -175,7 +175,7 @@ function RepoList({
   starredRepos,
   onRepoClick,
   onStarRepo,
-  onForkRepo,
+  // onForkRepo,
 }: RepoListProps) {
   if (loading) {
     return (
@@ -207,7 +207,7 @@ function RepoList({
           repo={repo}
           onClick={() => onRepoClick(repo.id)}
           onStar={() => onStarRepo(repo.id)}
-          onFork={() => onForkRepo(repo.id)}
+          // onFork={() => onForkRepo(repo.id)}
           isStarred={starredRepos.has(repo.id)}
         />
       ))}

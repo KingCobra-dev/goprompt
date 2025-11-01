@@ -185,38 +185,38 @@ console.log("AppContent rendering, state:", state);
     }
   };
 
-  const handleForkPrompt = (originalPrompt: Prompt) => {
-    if (!state.user) return;
+  // const handleForkPrompt = (originalPrompt: Prompt) => {
+  //   if (!state.user) return;
 
-    const forkedPrompt: Prompt = {
-      ...originalPrompt,
-      id: `prompt-${Date.now()}`,
-      userId: state.user.id,
-      title: `Fork of ${originalPrompt.title}`,
-      slug: `fork-of-${originalPrompt.slug}-${Date.now()}`,
-      parentId: originalPrompt.id,
-      version: "1.0.0",
-      viewCount: 0,
-      hearts: 0,
-      saveCount: 0,
-      forkCount: 0,
-      commentCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      author: state.user,
-      isHearted: false,
-      isSaved: false,
-      isForked: false,
-    };
+  //   const forkedPrompt: Prompt = {
+  //     ...originalPrompt,
+  //     id: `prompt-${Date.now()}`,
+  //     userId: state.user.id,
+  //     title: `Fork of ${originalPrompt.title}`,
+  //     slug: `fork-of-${originalPrompt.slug}-${Date.now()}`,
+  //     parentId: originalPrompt.id,
+  //     version: "1.0.0",
+  //     viewCount: 0,
+  //     hearts: 0,
+  //     saveCount: 0,
+  //     forkCount: 0,
+  //     commentCount: 0,
+  //     createdAt: new Date().toISOString(),
+  //     updatedAt: new Date().toISOString(),
+  //     author: state.user,
+  //     isHearted: false,
+  //     isSaved: false,
+  //     isForked: false,
+  //   };
 
-   dispatch({
-      type: "FORK_PROMPT",
-      payload: { originalId: originalPrompt.id, newPrompt: forkedPrompt },
-    });
+  //  dispatch({
+  //     type: "FORK_PROMPT",
+  //     payload: { originalId: originalPrompt.id, newPrompt: forkedPrompt },
+  //   });
     
 
-    setCurrentPage({ type: "create", editingPrompt: forkedPrompt });
-  };
+  //   setCurrentPage({ type: "create", editingPrompt: forkedPrompt });
+  // };
 
   const handleProfileClick = (userId: string, tab?: string) => {
     setCurrentPage({ type: "profile", userId, tab });
@@ -333,7 +333,7 @@ console.log("AppContent rendering, state:", state);
             promptId={currentPage.promptId}
             onBack={handleBack}
             onEdit={handleEditPrompt}
-            onFork={handleForkPrompt}
+            // onFork={handleForkPrompt}
           />
         )}
 

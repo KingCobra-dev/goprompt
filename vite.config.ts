@@ -68,8 +68,10 @@ export default defineConfig({
     ],
   },
   build: {
-    target: 'esnext',
+    // Use a broadly compatible target to avoid syntax unsupported on older browsers
+    target: 'es2019',
     outDir: 'dist',
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks(id) {

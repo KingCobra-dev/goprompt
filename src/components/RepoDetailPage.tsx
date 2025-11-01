@@ -81,10 +81,10 @@ export function RepoDetailPage({
     // TODO: Call API to star/unstar
   }
 
-  const handleFork = async () => {
-    console.log('Forking repo:', repoId)
-    // TODO: Implement fork functionality
-  }
+  // const handleFork = async () => {
+  //   console.log('Forking repo:', repoId)
+  //   // TODO: Implement fork functionality
+  // }
 
   if (loading) {
     return (
@@ -178,10 +178,10 @@ export function RepoDetailPage({
                   <Star className="h-4 w-4" />
                   <span>{repo.starCount} stars</span>
                 </div>
-                <div className="flex items-center gap-1">
+                {/* <div className="flex items-center gap-1">
                   <GitFork className="h-4 w-4" />
                   <span>{repo.forkCount} forks</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-1">
                   <FileText className="h-4 w-4" />
                   <span>{repo.promptCount} prompts</span>
@@ -208,10 +208,10 @@ export function RepoDetailPage({
               />
               {isStarred ? 'Starred' : 'Star'}
             </Button>
-            <Button variant="outline" onClick={handleFork}>
+            {/* <Button variant="outline" onClick={handleFork}>
               <GitFork className="h-4 w-4 mr-2" />
               Fork
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

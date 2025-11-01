@@ -17,7 +17,6 @@ import { PromptSuccessPanel } from './PromptSuccessPanel'
 import {
   ArrowLeft,
   BookmarkPlus,
-  GitFork,
   Share,
   Copy,
   Eye,
@@ -37,14 +36,14 @@ interface PromptDetailPageProps {
   promptId: string
   onBack: () => void
   onEdit: (prompt: Prompt) => void
-  onFork: (prompt: Prompt) => void
+  // onFork: (prompt: Prompt) => void
 }
 
 export function PromptDetailPage({
   promptId,
   onBack,
   onEdit,
-  onFork,
+  // onFork,
 }: PromptDetailPageProps) {
   const { state, dispatch } = useApp()
   const [prompt, setPrompt] = useState<Prompt | null>(null)
@@ -352,21 +351,21 @@ export function PromptDetailPage({
     }
   }
 
-  const handleFork = () => {
-    if (!state.user) return
-    setLimitError('')
+  // const handleFork = () => {
+  //   if (!state.user) return
+  //   setLimitError('')
 
-    // Check fork limit
-    const forksThisMonth = getForksThisMonth(state.prompts, state.user.id)
-    const { allowed, message } = canForkMore(state.user, forksThisMonth)
+  //   // Check fork limit
+  //   const forksThisMonth = getForksThisMonth(state.prompts, state.user.id)
+  //   const { allowed, message } = canForkMore(state.user, forksThisMonth)
 
-    if (!allowed) {
-      setLimitError(message || 'Fork limit reached')
-      return
-    }
+  //   if (!allowed) {
+  //     setLimitError(message || 'Fork limit reached')
+  //     return
+  //   }
 
-    onFork(prompt)
-  }
+  //   onFork(prompt)
+  // }
 
   const handleCopy = async () => {
     try {
@@ -475,12 +474,12 @@ export function PromptDetailPage({
           Back
         </Button>
 
-        {prompt.parentId && (
+        {/* {prompt.parentId && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <GitFork className="h-4 w-4" />
             <span>Forked from original</span>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Limit Error Alert */}
@@ -544,12 +543,12 @@ export function PromptDetailPage({
               </Button>
             )}
 
-            {canFork && (
+            {/* {canFork && (
               <Button variant="outline" onClick={handleFork}>
                 <GitFork className="h-4 w-4 mr-2" />
                 Fork
               </Button>
-            )}
+            )} */}
 
             <Button
               variant="outline"
@@ -624,7 +623,7 @@ export function PromptDetailPage({
                 {prompt.hearts || 0}
               </Button>
               <span>{prompt.saveCount} saves</span>
-              <span>{prompt.forkCount} forks</span>
+              {/* <span>{prompt.forkCount} forks</span> */}
               <span className="flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
                 {prompt.successVotesCount || 0} ratings

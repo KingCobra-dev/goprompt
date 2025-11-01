@@ -91,10 +91,10 @@ export function RepoCard({ repo, onClick, onStar, onFork, isStarred }: RepoCardP
               <Star className="h-4 w-4" />
               <span>{repo.starCount}</span>
             </div>
-            <div className="flex items-center gap-1">
+            {/* <div className="flex items-center gap-1">
               <GitFork className="h-4 w-4" />
               <span>{repo.forkCount}</span>
-            </div>
+            </div> */}
             <div className="flex items-center gap-1">
               <FileText className="h-4 w-4" />
               <span>{repo.promptCount}</span>
