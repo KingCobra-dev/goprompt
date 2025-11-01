@@ -48,6 +48,7 @@ export interface Prompt {
   viewCount: number
   createdAt: string
   updatedAt: string
+  visibility?: 'public' | 'private'
 }
 
 export interface Comment {

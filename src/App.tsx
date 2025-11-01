@@ -23,7 +23,7 @@ type Page =
   | { type: "my-repo"; userId?: string }
   | { type: "repo"; repoId: string; from?: "explore" | "repos" | "my-repo" }
   | { type: "create"; editingPrompt?: Prompt; repoId?: string }
-  | { type: "prompt"; promptId: string }
+  | { type: "prompt"; promptId: string; from?: "home" | "explore" | "repos" | "my-repo" | "repo" | "profile"; repoId?: string }
   | { type: "profile"; userId: string; tab?: string }
   | { type: "settings" }
   | { type: "about" }
@@ -35,6 +35,7 @@ function AppContent() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<Page>({ type: "home" });
   const [isCreateRepoOpen, setIsCreateRepoOpen] = useState(false);
+  const [repoRefreshTrigger, setRepoRefreshTrigger] = useState(0);
  
     /** ---------- Color Contrast Debug ---------- */
   try {
@@ -96,7 +97,9 @@ console.log("AppContent rendering, state:", state);
   };
 
   const handlePromptClick = (promptId: string) => {
-    setCurrentPage({ type: "prompt", promptId });
+    const from = currentPage.type as "home" | "explore" | "repos" | "my-repo" | "repo" | "profile";
+    const repoId = currentPage.type === "repo" ? currentPage.repoId : undefined;
+    setCurrentPage({ type: "prompt", promptId, from, repoId });
   };
 
   const handleEditPrompt = async (prompt: Prompt) => {
@@ -199,12 +202,13 @@ console.log("AppContent rendering, state:", state);
         alert('Failed to delete prompt: ' + ((error as any)?.message || 'Unknown error'))
         return
       }
-      // Refresh the current page or navigate back
+      
+      // Remove the deleted prompt from local state
+      dispatch({ type: 'DELETE_PROMPT', payload: promptId })
+      
+      // Trigger refresh of repo data if we're on a repo page
       if (currentPage.type === 'repo') {
-        // Stay on the repo page, it should refresh automatically
-        window.location.reload()
-      } else {
-        handleBack()
+        setRepoRefreshTrigger(prev => prev + 1)
       }
     } catch (err) {
       alert('Failed to delete prompt')
@@ -226,6 +230,39 @@ console.log("AppContent rendering, state:", state);
   };
 
   const handleBack = () => setCurrentPage({ type: "home" });
+
+  const handlePromptBack = () => {
+    if (currentPage.type === "prompt" && currentPage.from) {
+      switch (currentPage.from) {
+        case "repo":
+          if (currentPage.repoId) {
+            setCurrentPage({ type: "repo", repoId: currentPage.repoId });
+          } else {
+            setCurrentPage({ type: "explore" });
+          }
+          break;
+        case "home":
+          setCurrentPage({ type: "home" });
+          break;
+        case "explore":
+          setCurrentPage({ type: "explore" });
+          break;
+        case "repos":
+          setCurrentPage({ type: "repos", userId: state.user?.id });
+          break;
+        case "my-repo":
+          setCurrentPage({ type: "my-repo", userId: state.user?.id });
+          break;
+        case "profile":
+          setCurrentPage({ type: "profile", userId: state.user?.id || "" });
+          break;
+        default:
+          setCurrentPage({ type: "home" });
+      }
+    } else {
+      setCurrentPage({ type: "home" });
+    }
+  };
 
   const handleReposClick = () => {
     setCurrentPage({ type: "repos", userId: state.user?.id });
@@ -382,7 +419,8 @@ console.log("AppContent rendering, state:", state);
                 alert('Failed to load prompt for editing')
               }
             }}
-            onDeletePrompt={handleDeletePrompt}
+            onDeletePrompt={(promptId) => handleDeletePrompt(promptId)}
+            refreshTrigger={repoRefreshTrigger}
           />
         )}
 
@@ -408,7 +446,7 @@ console.log("AppContent rendering, state:", state);
         {currentPage.type === "prompt" && (
           <PromptDetailPage
             promptId={currentPage.promptId}
-            onBack={handleBack}
+            onBack={handlePromptBack}
             onEdit={handleEditPrompt}
             // onFork={handleForkPrompt}
           />

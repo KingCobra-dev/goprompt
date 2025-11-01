@@ -42,7 +42,7 @@ create table if not exists prompts (
   type text default 'text' check (type in ('text','image','code','conversation','agent','chain')),
   model_compatibility jsonb default '[]',
   tags jsonb default '[]',
-  visibility text default 'public' check (visibility in ('public','private','unlisted')),
+  visibility text default 'public' check (visibility in ('public','private')),
   category text default 'other',
   language text,
   version text default '1.0.0',

@@ -505,7 +505,6 @@ export const prompts = {
             `id, repo_id, title, content, description, type, model_compatibility, tags, visibility, category, language, version, parent_id, view_count, hearts, save_count, fork_count, comment_count, created_at, updated_at,
              repos:repo_id ( id, user_id, users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url ) )`
           )
-          .eq('visibility', 'public') // Only fetch public prompts
           .order('created_at', { ascending: false })
 
         if (filters?.repoId) {
@@ -666,11 +665,12 @@ export const prompts = {
           content: prompt.content || '',
           description: prompt.description || '',
           tags: Array.isArray(prompt.tags) ? prompt.tags : [],
+          visibility: prompt.visibility || 'public',
         }
         const { data, error } = await supabase
           .from('prompts')
           .insert(row)
-          .select('id, repo_id, title, content, description, tags, created_at, updated_at')
+          .select('id, repo_id, title, content, description, tags, visibility, created_at, updated_at')
           .maybeSingle()
         if (error) throw error
 
@@ -693,6 +693,7 @@ export const prompts = {
           forkCount: 0,
           commentCount: 0,
           viewCount: 0,
+          visibility: data!.visibility || 'public',
           createdAt: data!.created_at,
           updatedAt: data!.updated_at,
         }
@@ -722,6 +723,7 @@ export const prompts = {
       forkCount: 0,
       commentCount: 0,
       viewCount: 0,
+      visibility: prompt.visibility || 'public',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -736,12 +738,13 @@ export const prompts = {
         if (typeof updates.content === 'string') row.content = updates.content
         if (typeof updates.description === 'string') row.description = updates.description
         if (Array.isArray(updates.tags)) row.tags = updates.tags
+        if (typeof updates.visibility === 'string') row.visibility = updates.visibility
 
         const { data, error } = await supabase
           .from('prompts')
           .update(row)
           .eq('id', promptId)
-          .select('id, repo_id, title, content, description, tags, created_at, updated_at')
+          .select('id, repo_id, title, content, description, tags, visibility, created_at, updated_at')
           .maybeSingle()
         if (error) throw error
 
@@ -764,6 +767,7 @@ export const prompts = {
           forkCount: 0,
           commentCount: 0,
           viewCount: 0,
+          visibility: data!.visibility || 'public',
           createdAt: data!.created_at,
           updatedAt: data!.updated_at,
         }

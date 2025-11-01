@@ -86,11 +86,6 @@ const visibilityOptions = [
     description: 'Anyone can see and use this prompt',
   },
   {
-    value: 'unlisted',
-    label: 'Unlisted',
-    description: 'Only accessible via direct link',
-  },
-  {
     value: 'private',
     label: 'Private',
     description: 'Only you can see this prompt',
@@ -120,7 +115,7 @@ export function CreatePromptPage({
   const [type, setType] = useState<'text' | 'image' | 'code' | 'agent' | 'chain' | 'conversation'>('text')
   const [category, setCategory] = useState(editingPrompt?.category || '')
   const [visibility, setVisibility] = useState<
-    'public' | 'private' | 'unlisted'
+    'public' | 'private'
   >(editingPrompt?.visibility || 'public')
   const [selectedModels, setSelectedModels] = useState<string[]>(
     editingPrompt?.modelCompatibility || []

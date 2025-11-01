@@ -32,6 +32,7 @@ interface RepoDetailPageProps {
   onCreatePrompt: () => void
   onEditPrompt?: (promptId: string) => void
   onDeletePrompt?: (promptId: string) => void
+  refreshTrigger?: number
 }
 
 export function RepoDetailPage({
@@ -42,6 +43,7 @@ export function RepoDetailPage({
   onCreatePrompt,
   onEditPrompt,
   onDeletePrompt,
+  refreshTrigger = 0,
 }: RepoDetailPageProps) {
   const [repo, setRepo] = useState<Repo | null>(null)
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -58,6 +60,12 @@ export function RepoDetailPage({
   useEffect(() => {
     loadRepoData()
   }, [repoId])
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      loadRepoData()
+    }
+  }, [refreshTrigger])
 
   const loadRepoData = async () => {
     setLoading(true)

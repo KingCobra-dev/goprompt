@@ -74,7 +74,7 @@ export interface Prompt extends Omit<PromptData, 'author' | 'type'> {
   isSaved?: boolean
   isForked?: boolean
   // Additional optional fields referenced in components
-  visibility?: 'public' | 'private' | 'unlisted'
+  visibility?: 'public' | 'private'
   attachments?: any[]
   images?: PromptImage[]
   parentId?: string

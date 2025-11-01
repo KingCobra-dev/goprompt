@@ -16,6 +16,7 @@ import {
   Globe,
   Github,
   Twitter,
+  Lock,
 
 } from 'lucide-react'
 
@@ -269,7 +270,10 @@ export function SettingsPage({
               <Separator />
 
               <div className="space-y-4">
-                <h4 className="font-medium">Social Links</h4>
+                <h4 className="font-medium flex items-center gap-2">
+                  Social Links
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                </h4>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
@@ -279,7 +283,7 @@ export function SettingsPage({
                       onChange={e =>
                         setFormData({ ...formData, website: e.target.value })
                       }
-                      disabled={!isEditing}
+                      disabled={true}
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -290,7 +294,7 @@ export function SettingsPage({
                       onChange={e =>
                         setFormData({ ...formData, github: e.target.value })
                       }
-                      disabled={!isEditing}
+                      disabled={true}
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -301,14 +305,18 @@ export function SettingsPage({
                       onChange={e =>
                         setFormData({ ...formData, twitter: e.target.value })
                       }
-                      disabled={!isEditing}
+                      disabled={true}
                     />
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">Feature coming soon</p>
               </div>
 
               <div>
-                <Label htmlFor="skills">Skills (comma-separated)</Label>
+                <Label htmlFor="skills" className="flex items-center gap-2">
+                  Skills (comma-separated)
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                </Label>
                 <Input
                   id="skills"
                   value={formData.skills}
@@ -316,8 +324,9 @@ export function SettingsPage({
                     setFormData({ ...formData, skills: e.target.value })
                   }
                   placeholder="AI, Machine Learning, Writing..."
-                  disabled={!isEditing}
+                  disabled={true}
                 />
+                <p className="text-xs text-muted-foreground mt-1">Feature coming soon</p>
               </div>
             </CardContent>
           </Card>
