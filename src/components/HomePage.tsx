@@ -4,11 +4,11 @@ import { ArrowRight, GitFork, Star, User, Package, Crown } from 'lucide-react'
 
 interface HomePageProps {
   onGetStarted: () => void
-  onExplore: () => void
+  onExplorePrompts: () => void
   onPromptClick: (promptId: string) => void
 }
 
-export function HomePage({ onGetStarted, onExplore }: HomePageProps) {
+export function HomePage({ onGetStarted, onExplorePrompts }: HomePageProps) {
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Hero Section */}
@@ -28,7 +28,7 @@ export function HomePage({ onGetStarted, onExplore }: HomePageProps) {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-            <Button size="lg" onClick={onExplore} className="text-lg px-8">
+            <Button size="lg" onClick={onExplorePrompts} className="text-lg px-8">
               Explore Prompts
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

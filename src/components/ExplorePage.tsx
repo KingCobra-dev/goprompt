@@ -49,12 +49,13 @@ export function ExplorePage({
     let filtered = [...repos]
   
      // Filter by search query
-    if (searchQuery) {
+    if (searchQuery && typeof searchQuery === 'string') {
+      const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
          (repo) =>
-          repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          repo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          repo.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+          repo.name.toLowerCase().includes(query) ||
+          repo.description.toLowerCase().includes(query) ||
+          repo.tags?.some((tag) => tag.toLowerCase().includes(query))
       )
     }
 

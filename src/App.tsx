@@ -91,6 +91,10 @@ console.log("AppContent rendering, state:", state);
       setCurrentPage({ type: "explore", searchQuery });
   };
 
+  const handleExplorePrompts = () => {
+    setCurrentPage({ type: "repos" });
+  };
+
   const handlePromptClick = (promptId: string) => {
     setCurrentPage({ type: "prompt", promptId });
   };
@@ -288,7 +292,7 @@ console.log("AppContent rendering, state:", state);
          {currentPage.type === "home" && (
           <HomePage
             onGetStarted={handleGetStarted}
-            onExplore={handleExplore}
+            onExplorePrompts={handleExplorePrompts}
             onPromptClick={handlePromptClick}
           />
         )}

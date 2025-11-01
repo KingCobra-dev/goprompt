@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import supabase from '../lib/supabaseClient'
 import { Button } from './ui/button'
-import { Input } from './ui/input'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +13,6 @@ import {
 
 import { ThemeToggle } from './ui/ThemeToggle'
 import {
-  Search,
   Plus,
   Menu,
   User,
@@ -58,7 +56,6 @@ export function Navigation({
 }: NavigationProps) {
   
 
-  const [searchQuery, setSearchQuery] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const getInitials = (name: string) => {
@@ -107,50 +104,15 @@ export function Navigation({
                 <Compass className="h-4 w-4 group-hover:text-accent" />
                 Discover Repos
               </Button>
-              {user && (
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-2 nav-button group"
-                  onClick={onReposClick}
-                >
-                  <Package className="h-4 w-4 group-hover:text-accent" />
-                  Explore Prompts
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 nav-button group"
+                onClick={onReposClick}
+              >
+                <Package className="h-4 w-4 group-hover:text-accent" />
+                Explore Prompts
+              </Button>
             </nav>
-          </div>
-
-          {/* Search Bar */}
-          <div className="flex-1 max-w-md mx-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search prompts, creators, tags..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onKeyPress={e => {
-                  if (e.key === 'Enter') {
-                    // Navigate to explore page when Enter is pressed
-                    onExploreClick?.(searchQuery.trim())
-                  }
-                }}
-                className="pl-10 pr-10"
-              />
-              {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 p-0"
-                  onClick={() => {
-                    if (searchQuery.trim()) {
-                      onExploreClick?.(searchQuery.trim())
-                    }
-                  }}
-                >
-                  <Search className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
           </div>
 
           {/* Actions */}
@@ -280,6 +242,14 @@ export function Navigation({
               >
                 <Compass className="mr-2 h-4 w-4 group-hover:text-accent" />
                 Discover Repos
+              </Button>
+              <Button
+                variant="ghost"
+                className="justify-start nav-button group"
+                onClick={onReposClick}
+              >
+                <Package className="mr-2 h-4 w-4 group-hover:text-accent" />
+                Explore Prompts
               </Button>
              
             </nav>
