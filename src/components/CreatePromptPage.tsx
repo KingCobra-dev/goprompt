@@ -14,9 +14,10 @@ import { Badge } from './ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { useApp } from '../contexts/AppContext'
-import { Prompt, PromptImage, Draft } from '../lib/types'
+import { Prompt, PromptImage, Draft, Repo } from '../lib/types'
 import { ImageUpload } from './ImageUpload'
 import { categories, models } from '../lib/data'
+import { prompts, repos } from '../lib/api'
 
 import {
   ArrowLeft,
@@ -35,12 +36,14 @@ import {
   Hash,
   Cog,
   Share2,
+  Lock,
 } from 'lucide-react'
 
 interface CreatePromptPageProps {
   onBack: () => void
   editingPrompt?: Prompt
   onPublish?: (isNewPrompt: boolean) => void
+  repoId?: string
 }
 
 const promptTypes = [
@@ -98,6 +101,7 @@ export function CreatePromptPage({
   onBack,
   editingPrompt,
   onPublish,
+  repoId,
 }: CreatePromptPageProps) {
   const { state, dispatch } = useApp()
   const [activeTab, setActiveTab] = useState('editor')
@@ -105,6 +109,7 @@ export function CreatePromptPage({
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>(
     'saved'
   )
+  const [repository, setRepository] = useState<Repo | null>(null)
 
   // Form state
   const [title, setTitle] = useState(editingPrompt?.title || '')
@@ -112,9 +117,7 @@ export function CreatePromptPage({
     editingPrompt?.description || ''
   )
   const [content, setContent] = useState(editingPrompt?.content || '')
-  const [type, setType] = useState<
-   'text' | 'image' | 'code' | 'agent' | 'chain' | 'conversation'
-  >(editingPrompt?.type || 'text')
+  const [type, setType] = useState<'text' | 'image' | 'code' | 'agent' | 'chain' | 'conversation'>('text')
   const [category, setCategory] = useState(editingPrompt?.category || '')
   const [visibility, setVisibility] = useState<
     'public' | 'private' | 'unlisted'
@@ -154,6 +157,23 @@ export function CreatePromptPage({
     tags,
     images,
   ])
+
+  // Fetch repository details when repoId is provided
+  useEffect(() => {
+    const fetchRepository = async () => {
+      if (repoId) {
+        try {
+          const { data: repo, error } = await repos.getById(repoId)
+          if (!error && repo) {
+            setRepository(repo)
+          }
+        } catch (err) {
+          console.error('Error fetching repository:', err)
+        }
+      }
+    }
+    fetchRepository()
+  }, [repoId])
 
   // Auto-save functionality
   useEffect(() => {
@@ -253,20 +273,65 @@ export function CreatePromptPage({
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '')
 
-     
-
-      const isNewPrompt = !editingPrompt
-
-      // Try Supabase first, fallback to local state if it fails
       let success = false
-      // let promptId = editingPrompt?.id
+      let promptId = editingPrompt?.id
 
       try {
-       // TODO: Implement prompt creation/update with new database
-        console.warn('Database operations not yet implemented')
-        success = false
+        // Get or create a repository for the user
+        let userRepoId = editingPrompt?.repoId
+
+        if (!userRepoId) {
+          // Check if user has any repos
+          const { data: userRepos, error: reposError } = await repos.getAll(state.user.id)
+          if (reposError) throw reposError
+
+          if (userRepos && userRepos.length > 0) {
+            // Use the first repo
+            userRepoId = userRepos[0].id
+          } else {
+            // Create a default repository
+            const { data: newRepo, error: createRepoError } = await repos.create({
+              userId: state.user.id,
+              name: `${state.user.name || state.user.username}'s Prompts`,
+              description: 'My prompt collection',
+              visibility: 'public'
+            })
+            if (createRepoError) throw createRepoError
+            userRepoId = newRepo?.id
+          }
+        }
+
+        if (!userRepoId) {
+          throw new Error('Could not determine repository for prompt')
+        }
+
+        // Create or update the prompt
+        const promptData = {
+          repoId: userRepoId,
+          title,
+          description,
+          content,
+          type,
+          category,
+          tags,
+          modelCompatibility: selectedModels,
+          visibility,
+        }
+
+        if (editingPrompt) {
+          const { data: updatedPrompt, error: updateError } = await prompts.update(editingPrompt.id, promptData)
+          if (updateError) throw updateError
+          promptId = updatedPrompt?.id
+        } else {
+          const { data: newPrompt, error: createError } = await prompts.create(promptData)
+          if (createError) throw createError
+          promptId = newPrompt?.id
+        }
+
+        success = true
       } catch (apiError) {
         console.warn('Database API not available:', apiError)
+        success = false
       }
 
       // Fallback to local state management if Supabase fails
@@ -316,7 +381,7 @@ export function CreatePromptPage({
       dispatch({ type: 'DELETE_DRAFT', payload: draftId })
 
       if (onPublish) {
-        onPublish(isNewPrompt)
+        onPublish(!editingPrompt)
       } else {
         onBack()
       }
@@ -409,9 +474,14 @@ export function CreatePromptPage({
             Back
           </Button>
           <div>
-            <h1 className="text-3xl">
+            <h1 className="text-1xl">
               {editingPrompt ? 'Edit Prompt' : 'Create New Prompt'}
             </h1>
+            {repository && (
+              <p className="text-3xl text-muted-foreground mt-1">
+                Repository: {repository.name}
+              </p>
+            )}
             <p className="text-muted-foreground">
               {editingPrompt
                 ? 'Update your existing prompt'
@@ -548,13 +618,13 @@ export function CreatePromptPage({
                   <CardTitle className="flex items-center gap-2">
                     <Camera className="h-5 w-5 text-primary" />
                     Images
+                    <Lock className="h-4 w-4 text-muted-foreground" />
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    Add images to showcase your prompt. Recommended size:
-                    1200x630px (for social sharing).
+                    Image upload is currently disabled. This feature will be available soon.
                   </p>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="opacity-50 pointer-events-none">
                   <ImageUpload
                     images={images}
                     onImagesChange={setImages}
@@ -616,24 +686,29 @@ export function CreatePromptPage({
                 <div className="grid grid-cols-1 gap-2">
                   {promptTypes.map(promptType => {
                     const Icon = promptType.icon
+                    const isDisabled = promptType.value !== 'text'
                     return (
                       <div
                         key={promptType.value}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          type === promptType.value
-                            ? 'border-primary bg-primary/5'
-                            : 'hover:border-muted-foreground'
+                        className={`p-3 border rounded-lg transition-colors relative ${
+                          isDisabled 
+                            ? 'border-muted bg-muted/50 cursor-not-allowed opacity-60' 
+                            : type === promptType.value
+                            ? 'border-primary bg-primary/5 cursor-pointer'
+                            : 'hover:border-muted-foreground cursor-pointer'
                         }`}
-                        onClick={() => setType(promptType.value as any)}
+                        onClick={() => !isDisabled && setType(promptType.value as any)}
                       >
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4" />
-                          <div>
-                            <div className="font-medium text-sm">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm flex items-center gap-2">
                               {promptType.label}
+                              {isDisabled && <Lock className="h-3 w-3 text-muted-foreground" />}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {promptType.description}
+                              {isDisabled && ' (Coming soon)'}
                             </div>
                           </div>
                         </div>

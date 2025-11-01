@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
-import { Heart, Share, BookmarkPlus, GitFork } from 'lucide-react'
+import { Heart, Share, BookmarkPlus, GitFork, Edit, Trash2 } from 'lucide-react'
 import { categories } from '../lib/data'
 import { PromptImage } from '../lib/types'
 import { useApp } from '../contexts/AppContext'
@@ -42,7 +42,9 @@ interface PromptCardProps {
   onClick?: () => void
   onHeart?: () => void // Keep for backwards compatibility
   onSave?: () => void // Keep for backwards compatibility
-  onShare?: () => void
+  onEdit?: () => void
+  onDelete?: () => void
+  showManagement?: boolean
 }
 export function PromptCard({
   id: _id,
@@ -61,6 +63,9 @@ export function PromptCard({
   onHeart: _onHeart, // Renamed to indicate it's not used internally
   onSave: _onSave, // Renamed to indicate it's not used internally
   onShare,
+  onEdit,
+  onDelete,
+  showManagement = false,
 }: PromptCardProps) {
   const { state, dispatch } = useApp()
   const [heartAnimating, setHeartAnimating] = useState(false)
@@ -241,6 +246,32 @@ export function PromptCard({
           </div>
 
           <div className="flex items-center gap-2">
+            {showManagement && (
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 px-2"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation()
+                    onEdit?.()
+                  }}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 px-2 text-destructive hover:text-destructive"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation()
+                    onDelete?.()
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </>
+            )}
             <Button
               size="sm"
               variant="ghost"

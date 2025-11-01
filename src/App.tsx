@@ -22,7 +22,7 @@ type Page =
   | { type: "repos"; userId?: string }
   | { type: "my-repo"; userId?: string }
   | { type: "repo"; repoId: string; from?: "explore" | "repos" | "my-repo" }
-  | { type: "create"; editingPrompt?: Prompt }
+  | { type: "create"; editingPrompt?: Prompt; repoId?: string }
   | { type: "prompt"; promptId: string }
   | { type: "profile"; userId: string; tab?: string }
   | { type: "settings" }
@@ -190,38 +190,26 @@ console.log("AppContent rendering, state:", state);
     }
   };
 
-  // const handleForkPrompt = (originalPrompt: Prompt) => {
-  //   if (!state.user) return;
-
-  //   const forkedPrompt: Prompt = {
-  //     ...originalPrompt,
-  //     id: `prompt-${Date.now()}`,
-  //     userId: state.user.id,
-  //     title: `Fork of ${originalPrompt.title}`,
-  //     slug: `fork-of-${originalPrompt.slug}-${Date.now()}`,
-  //     parentId: originalPrompt.id,
-  //     version: "1.0.0",
-  //     viewCount: 0,
-  //     hearts: 0,
-  //     saveCount: 0,
-  //     forkCount: 0,
-  //     commentCount: 0,
-  //     createdAt: new Date().toISOString(),
-  //     updatedAt: new Date().toISOString(),
-  //     author: state.user,
-  //     isHearted: false,
-  //     isSaved: false,
-  //     isForked: false,
-  //   };
-
-  //  dispatch({
-  //     type: "FORK_PROMPT",
-  //     payload: { originalId: originalPrompt.id, newPrompt: forkedPrompt },
-  //   });
+  const handleDeletePrompt = async (promptId: string) => {
+    if (!confirm('Are you sure you want to delete this prompt? This action cannot be undone.')) return
     
-
-  //   setCurrentPage({ type: "create", editingPrompt: forkedPrompt });
-  // };
+    try {
+      const { error } = await promptsApi.delete(promptId)
+      if (error) {
+        alert('Failed to delete prompt: ' + ((error as any)?.message || 'Unknown error'))
+        return
+      }
+      // Refresh the current page or navigate back
+      if (currentPage.type === 'repo') {
+        // Stay on the repo page, it should refresh automatically
+        window.location.reload()
+      } else {
+        handleBack()
+      }
+    } catch (err) {
+      alert('Failed to delete prompt')
+    }
+  }
 
   const handleProfileClick = (userId: string, tab?: string) => {
     setCurrentPage({ type: "profile", userId, tab });
@@ -331,7 +319,70 @@ console.log("AppContent rendering, state:", state);
             userId={state.user?.id}
             onBack={handleRepoBackClick}
             onPromptClick={handlePromptClick}
-            onCreatePrompt={() => setCurrentPage({ type: "create" })}
+            onCreatePrompt={() => setCurrentPage({ type: "create", repoId: currentPage.repoId })}
+            onEditPrompt={async (promptId: string) => {
+              try {
+                const { data, error } = await promptsApi.getById(promptId)
+                if (error || !data) {
+                  alert('Failed to load prompt for editing')
+                  return
+                }
+                // Convert the API response to Prompt type
+                const prompt: Prompt = {
+                  id: data.id,
+                  repoId: (data as any).repo_id || '',
+                  userId: (data as any).user_id,
+                  title: data.title,
+                  slug: data.slug,
+                  description: (data as any).description,
+                  content: (data as any).content,
+                  type: (data as any).type || 'text',
+                  modelCompatibility: (data as any).model_compatibility || [],
+                  tags: (data as any).tags || [],
+                  visibility: (data as any).visibility || 'public',
+                  category: (data as any).category || 'other',
+                  language: (data as any).language,
+                  version: (data as any).version || '1.0.0',
+                  parentId: (data as any).parent_id,
+                  viewCount: (data as any).view_count || 0,
+                  hearts: (data as any).hearts || 0,
+                  saveCount: (data as any).save_count || 0,
+                  forkCount: (data as any).fork_count || 0,
+                  commentCount: (data as any).comment_count || 0,
+                  createdAt: (data as any).created_at,
+                  updatedAt: (data as any).updated_at,
+                  author: (data as any).profiles ? {
+                    id: (data as any).profiles.id,
+                    username: (data as any).profiles.username,
+                    name: (data as any).profiles.full_name || (data as any).profiles.username,
+                    email: (data as any).profiles.email,
+                    role: (data as any).profiles.role as any,
+                    reputation: 0,
+                    createdAt: (data as any).profiles.created_at,
+                    lastLogin: (data as any).profiles.created_at,
+                    subscriptionStatus: 'active',
+                    saveCount: 0,
+                  } : {
+                    id: (data as any).user_id,
+                    username: 'user',
+                    name: 'User',
+                    role: 'general',
+                    reputation: 0,
+                    createdAt: (data as any).created_at,
+                    lastLogin: (data as any).created_at,
+                    subscriptionStatus: 'active',
+                    saveCount: 0,
+                  },
+                  isHearted: false,
+                  isSaved: false,
+                  isForked: false,
+                }
+                await handleEditPrompt(prompt)
+              } catch (err) {
+                alert('Failed to load prompt for editing')
+              }
+            }}
+            onDeletePrompt={handleDeletePrompt}
           />
         )}
 
@@ -339,6 +390,7 @@ console.log("AppContent rendering, state:", state);
           <CreatePromptPage
             onBack={handleBack}
             editingPrompt={currentPage.editingPrompt}
+            repoId={currentPage.repoId}
             onPublish={(isNewPrompt) => {
               if (isNewPrompt && state.user) {
                  setCurrentPage({

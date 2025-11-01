@@ -12,6 +12,7 @@ create table if not exists users (
   bio text,
   avatar_url text,
   role text default 'free' check (role in ('free','pro','admin')),
+  subscription_status text default 'active' check (subscription_status in ('active','cancelled','past_due')),
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -25,6 +26,7 @@ create table if not exists repos (
   visibility text default 'public' check (visibility in ('public','private')),
   star_count int default 0,
   fork_count int default 0,
+  tags jsonb default '[]',
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now(),
   unique(user_id, name)
@@ -37,9 +39,20 @@ create table if not exists prompts (
   title text not null,
   content text not null,
   description text,
-  model_type text,
+  type text default 'text' check (type in ('text','image','code','conversation','agent','chain')),
+  model_compatibility jsonb default '[]',
   tags jsonb default '[]',
-  version int default 1,
+  visibility text default 'public' check (visibility in ('public','private','unlisted')),
+  category text default 'other',
+  language text,
+  version text default '1.0.0',
+  parent_id uuid references prompts(id),
+  view_count int default 0,
+  hearts int default 0,
+  save_count int default 0,
+  fork_count int default 0,
+  comment_count int default 0,
+  template text,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -71,11 +84,18 @@ create table if not exists comments (
   updated_at timestamp with time zone default now()
 );
 
--- Forks
-create table if not exists forks (
+-- Prompt Images
+create table if not exists prompt_images (
   id uuid primary key default gen_random_uuid(),
-  original_repo_id uuid not null references repos(id),
-  forked_repo_id uuid not null references repos(id) on delete cascade,
+  prompt_id uuid not null references prompts(id) on delete cascade,
+  url text not null,
+  alt_text text,
+  caption text,
+  is_primary boolean default false,
+  size int,
+  mime_type text,
+  width int,
+  height int,
   created_at timestamp with time zone default now()
 );
 
@@ -86,7 +106,7 @@ alter table prompts enable row level security;
 alter table stars enable row level security;
 alter table saves enable row level security;
 alter table comments enable row level security;
-alter table forks enable row level security;
+alter table prompt_images enable row level security;
 
 -- Example RLS policies
 create policy if not exists "Users can view public repos" on repos for select using (visibility = 'public' or user_id = auth.uid());
@@ -147,7 +167,41 @@ create policy if not exists "User can unsave" on saves for delete using (user_id
 create policy if not exists "Anyone can read comments" on comments for select using (true);
 create policy if not exists "User can create comments" on comments for insert with check (user_id = auth.uid());
 create policy if not exists "User can update own comments" on comments for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy if not exists "User can delete own comments" on comments for delete using (user_id = auth.uid());
+create policy if not exists "Select prompt images if prompt accessible" on prompt_images
+  for select using (
+    exists(
+      select 1 from prompts p
+      join repos r on r.id = p.repo_id
+      where p.id = prompt_images.prompt_id and (r.visibility = 'public' or r.user_id = auth.uid())
+    )
+  );
+
+create policy if not exists "Insert images into own prompts" on prompt_images
+  for insert with check (
+    exists(
+      select 1 from prompts p
+      join repos r on r.id = p.repo_id
+      where p.id = prompt_id and r.user_id = auth.uid()
+    )
+  );
+
+create policy if not exists "Update images in own prompts" on prompt_images
+  for update using (
+    exists(
+      select 1 from prompts p
+      join repos r on r.id = p.repo_id
+      where p.id = prompt_images.prompt_id and r.user_id = auth.uid()
+    )
+  );
+
+create policy if not exists "Delete images in own prompts" on prompt_images
+  for delete using (
+    exists(
+      select 1 from prompts p
+      join repos r on r.id = p.repo_id
+      where p.id = prompt_images.prompt_id and r.user_id = auth.uid()
+    )
+  );
 
 -- -------------------------------
 -- Auth → Public users sync trigger
@@ -248,6 +302,7 @@ $$;
 create index if not exists idx_repos_user_id on repos(user_id);
 create index if not exists idx_repos_visibility on repos(visibility);
 create index if not exists idx_prompts_repo_id on prompts(repo_id);
+create index if not exists idx_prompt_images_prompt_id on prompt_images(prompt_id);
 create index if not exists idx_stars_user_id on stars(user_id);
 create index if not exists idx_stars_repo_id on stars(repo_id);
 create index if not exists idx_comments_repo_id on comments(repo_id);

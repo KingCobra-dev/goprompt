@@ -9,7 +9,7 @@ import { supabase } from './supabaseClient'
 
 // Determine if Supabase is configured (env vars present)
 const isSupabaseReady = Boolean(
-  (import.meta as any)?.env?.VITE_SUPABASE_URL && (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY
+  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY
 )
 
 // Utility: slugify a string
@@ -497,15 +497,93 @@ export const repoSocial = {
 // ===========================================
 export const prompts = {
   getAll: async (filters?: { repoId?: string; userId?: string }) => {
+    if (isSupabaseReady) {
+      try {
+        let query = supabase
+          .from('prompts')
+          .select(
+            `id, repo_id, title, content, description, type, model_compatibility, tags, visibility, category, language, version, parent_id, view_count, hearts, save_count, fork_count, comment_count, created_at, updated_at,
+             repos:repo_id ( id, user_id, users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url ) )`
+          )
+          .eq('visibility', 'public') // Only fetch public prompts
+          .order('created_at', { ascending: false })
+
+        if (filters?.repoId) {
+          query = query.eq('repo_id', filters.repoId)
+        }
+        // Removed: if (filters?.userId) { query = query.eq('user_id', filters.userId) }
+        // Prompts are owned by repos, not users directly
+
+        const { data, error } = await query
+        if (error) throw error
+
+        const mapped: Prompt[] = (data || []).map((row: any) => {
+          const repoRel = asOne((row as any).repos)
+          const u = asOne(repoRel?.users)
+
+          return {
+            id: row.id,
+            repoId: row.repo_id,
+            userId: repoRel?.user_id || '', // User ID comes from the repo owner
+            title: row.title,
+            slug: toSlug(row.title),
+            description: row.description || '',
+            content: row.content || '',
+            type: row.type || 'text',
+            modelCompatibility: Array.isArray(row.model_compatibility) ? row.model_compatibility : [],
+            tags: Array.isArray(row.tags) ? row.tags : [],
+            visibility: row.visibility || 'public',
+            category: row.category || 'other',
+            language: row.language,
+            version: row.version || '1.0.0',
+            parentId: row.parent_id,
+            viewCount: row.view_count || 0,
+            hearts: row.hearts || 0,
+            saveCount: row.save_count || 0,
+            forkCount: row.fork_count || 0,
+            commentCount: row.comment_count || 0,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+            author: u
+              ? {
+                  id: u.id,
+                  name: u.full_name || u.username || 'User',
+                  username: u.username || 'user',
+                  role: (u.role === 'pro' ? 'pro' : u.role === 'admin' ? 'admin' : 'general') as any,
+                  avatarUrl: u.avatar_url || undefined,
+                  bio: undefined,
+                }
+              : {
+                  id: repoRel?.user_id || '',
+                  name: 'User',
+                  username: 'user',
+                  role: 'general' as any,
+                  reputation: 0,
+                  createdAt: row.created_at,
+                  lastLogin: row.created_at,
+                  subscriptionStatus: 'active',
+                  saveCount: 0,
+                },
+            isHearted: false,
+            isSaved: false,
+            isForked: false,
+          }
+        })
+
+        return { error: null, data: mapped }
+      } catch (err: any) {
+        console.warn('prompts.getAll: falling back to mock data:', err?.message)
+      }
+    }
+
+    // Fallback to mock data
     await delay(100)
     let results = [...mockPrompts]
 
     if (filters?.repoId) {
       results = results.filter(p => p.repoId === filters.repoId)
     }
-     if (filters?.userId) {
-      results = results.filter(p => p.userId === filters.userId)
-    }
+    // Removed userId filter from fallback too
     return {
       error: null,
       data: results

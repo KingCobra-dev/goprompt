@@ -30,6 +30,8 @@ interface RepoDetailPageProps {
   onBack: () => void
   onPromptClick: (promptId: string) => void
   onCreatePrompt: () => void
+  onEditPrompt?: (promptId: string) => void
+  onDeletePrompt?: (promptId: string) => void
 }
 
 export function RepoDetailPage({
@@ -38,6 +40,8 @@ export function RepoDetailPage({
   onBack,
   onPromptClick,
   onCreatePrompt,
+  onEditPrompt,
+  onDeletePrompt,
 }: RepoDetailPageProps) {
   const [repo, setRepo] = useState<Repo | null>(null)
   const [prompts, setPrompts] = useState<Prompt[]>([])
@@ -270,6 +274,9 @@ export function RepoDetailPage({
                   }}
                   createdAt={prompt.createdAt}
                   onClick={() => onPromptClick(prompt.id)}
+                  showManagement={isOwner}
+                  onEdit={() => onEditPrompt?.(prompt.id)}
+                  onDelete={() => onDeletePrompt?.(prompt.id)}
                 />
               ))}
             </div>
