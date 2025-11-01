@@ -3,12 +3,20 @@ import { Badge } from './ui/badge'
 import { ArrowRight, GitFork, Star, User, Package, Crown } from 'lucide-react'
 
 interface HomePageProps {
+  user?: {
+    name: string
+    username: string
+     reputation?: number
+    role?: 'general' | 'pro' | 'admin'
+    subscriptionStatus?: 'active' | 'cancelled' | 'past_due'
+  } | null
   onGetStarted: () => void
+  onCreateRepo: () => void
   onExplorePrompts: () => void
   onPromptClick: (promptId: string) => void
 }
 
-export function HomePage({ onGetStarted, onExplorePrompts }: HomePageProps) {
+export function HomePage({ user, onGetStarted, onCreateRepo, onExplorePrompts }: HomePageProps) {
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Hero Section */}
@@ -35,10 +43,10 @@ export function HomePage({ onGetStarted, onExplorePrompts }: HomePageProps) {
             <Button
               size="lg"
               variant="outline"
-              onClick={onGetStarted}
+              onClick={user ? onCreateRepo : onGetStarted}
               className="text-lg px-8"
             >
-              Create Free Account
+              {user ? 'Create Repo' : 'Create Free Account'}
             </Button>
           </div>
 

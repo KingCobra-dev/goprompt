@@ -279,7 +279,7 @@ console.log("AppContent rendering, state:", state);
         onProfileClick={() =>
           state.user && handleProfileClick(state.user.id)
         }
-        onCreateClick={() => setCurrentPage({ type: "create" })}
+        onCreateClick={handleCreateRepo}
         onExploreClick={handleExplore}
         onReposClick={handleReposClick}
         onMyRepoClick={handleMyRepoClick}
@@ -291,7 +291,9 @@ console.log("AppContent rendering, state:", state);
       <main>
          {currentPage.type === "home" && (
           <HomePage
+            user={state.user}
             onGetStarted={handleGetStarted}
+            onCreateRepo={handleCreateRepo}
             onExplorePrompts={handleExplorePrompts}
             onPromptClick={handlePromptClick}
           />
@@ -365,8 +367,6 @@ console.log("AppContent rendering, state:", state);
             userId={currentPage.userId}
             initialTab={currentPage.tab}
             onBack={handleBack}
-            onPromptClick={handlePromptClick}
-           
           />
           )}
            {currentPage.type === "settings" && (
