@@ -41,6 +41,7 @@ interface NavigationProps {
   onHomeClick?: () => void
   onSavedClick?: () => void
   onSettingsClick?: () => void
+  onMyRepoClick?: () => void
 }
 
 export function Navigation({
@@ -53,6 +54,7 @@ export function Navigation({
   onHomeClick,
   onSavedClick,
   onSettingsClick,
+  onMyRepoClick,
 }: NavigationProps) {
   
 
@@ -210,6 +212,10 @@ export function Navigation({
                     <DropdownMenuItem onClick={onSavedClick}>
                       <BookmarkPlus className="mr-2 h-4 w-4" />
                       Saved Prompts
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onMyRepoClick}>
+                      <Package className="mr-2 h-4 w-4" />
+                      My Repo
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={onSettingsClick}>
                       <Settings className="mr-2 h-4 w-4" />

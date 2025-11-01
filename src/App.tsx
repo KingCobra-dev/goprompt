@@ -20,7 +20,8 @@ type Page =
  | { type: "home" }
   | { type: "explore"; searchQuery?: string }
   | { type: "repos"; userId?: string }
-  | { type: "repo"; repoId: string; from?: "explore" | "repos" }
+  | { type: "my-repo"; userId?: string }
+  | { type: "repo"; repoId: string; from?: "explore" | "repos" | "my-repo" }
   | { type: "create"; editingPrompt?: Prompt }
   | { type: "prompt"; promptId: string }
   | { type: "profile"; userId: string; tab?: string }
@@ -237,14 +238,22 @@ console.log("AppContent rendering, state:", state);
   const handleReposClick = () => {
     setCurrentPage({ type: "repos", userId: state.user?.id });
   };
+
+  const handleMyRepoClick = () => {
+    setCurrentPage({ type: "my-repo", userId: state.user?.id });
+  };
  
-   const handleRepoClick = (repoId: string, from?: "explore" | "repos") => {
+   const handleRepoClick = (repoId: string, from?: "explore" | "repos" | "my-repo") => {
     setCurrentPage({ type: "repo", repoId, from });
   };
 
    const handleRepoBackClick = () => {
-    // Go back to explore page when coming from repo detail
-    setCurrentPage({ type: "explore" });
+    // Go back to the appropriate page based on where we came from
+    if (currentPage.type === "repo" && currentPage.from === "my-repo") {
+      setCurrentPage({ type: "my-repo", userId: state.user?.id });
+    } else {
+      setCurrentPage({ type: "explore" });
+    }
   };
 
   const handleCreateRepo = () => {
@@ -269,6 +278,7 @@ console.log("AppContent rendering, state:", state);
         onCreateClick={() => setCurrentPage({ type: "create" })}
         onExploreClick={handleExplore}
         onReposClick={handleReposClick}
+        onMyRepoClick={handleMyRepoClick}
          onHomeClick={() => setCurrentPage({ type: "home" })}
         onSavedClick={handleSavedClick}
         onSettingsClick={handleSettingsClick}
@@ -296,6 +306,14 @@ console.log("AppContent rendering, state:", state);
           <ReposPage
             userId={currentPage.userId}
             onRepoClick={(repoId) => handleRepoClick(repoId, "repos")}
+            onCreateRepo={handleCreateRepo}
+          />
+        )}
+
+        {currentPage.type === "my-repo" && (
+          <ReposPage
+            userId={currentPage.userId}
+            onRepoClick={(repoId) => handleRepoClick(repoId, "my-repo")}
             onCreateRepo={handleCreateRepo}
           />
         )}
