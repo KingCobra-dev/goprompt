@@ -39,7 +39,7 @@ export const repos = {
       let query = supabase
       .from('repos')
         .select(
-          `id, user_id, name, description, visibility, star_count, fork_count, created_at, updated_at,
+          `id, user_id, name, description, visibility, star_count, fork_count, tags, created_at, updated_at,
              users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url )`
         )
  if (userId) query = query.eq('user_id', userId)
@@ -69,7 +69,7 @@ export const repos = {
           },
           createdAt: row.created_at,
           updatedAt: row.updated_at,
-          tags: [],
+          tags: Array.isArray(row.tags) ? row.tags : [],
         })
       })
        return { error: null, data: mapped }
@@ -88,7 +88,7 @@ export const repos = {
       const { data, error } = await supabase
         .from('repos')
         .select(
-          `id, user_id, name, description, visibility, star_count, fork_count, created_at, updated_at,
+          `id, user_id, name, description, visibility, star_count, fork_count, tags, created_at, updated_at,
              users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url )`
         )
         .eq('id', repoId)
@@ -117,7 +117,7 @@ export const repos = {
         },
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        tags: [],
+        tags: Array.isArray(data.tags) ? data.tags : [],
       }
        return { error: null, data: mapped }
     } catch (err: any) {
@@ -136,7 +136,7 @@ export const repos = {
       const { data, error } = await supabase
        .from('repos')
         .select(
-          `id, user_id, name, description, visibility, star_count, fork_count, created_at, updated_at,
+          `id, user_id, name, description, visibility, star_count, fork_count, tags, created_at, updated_at,
              users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url )`
         )
         .ilike('name', slug.replace(/-/g, ' '))
@@ -165,7 +165,7 @@ export const repos = {
         },
         createdAt: data.created_at,
         updatedAt: data.updated_at,
-        tags: [],
+        tags: Array.isArray(data.tags) ? data.tags : [],
       }
 
       return { error: null, data: mapped }
@@ -189,13 +189,14 @@ export const repos = {
         name: data.name || 'Untitled Repository',
         description: data.description || '',
         visibility: data.visibility || 'public',
+        tags: Array.isArray((data as any).tags) ? (data as any).tags : [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
       const { data: inserted, error } = await supabase
         .from('repos')
         .insert(row)
-        .select('id, user_id, name, description, visibility, star_count, fork_count, created_at, updated_at')
+        .select('id, user_id, name, description, visibility, star_count, fork_count, tags, created_at, updated_at')
         .maybeSingle()
       if (error) throw error
 
@@ -212,7 +213,7 @@ export const repos = {
         author: mockUsers[0],
         createdAt: inserted!.created_at,
         updatedAt: inserted!.updated_at,
-        tags: [],
+        tags: Array.isArray(inserted!.tags) ? inserted!.tags : [],
       }
       return { error: null, data: mapped }
     } catch (err: any) {
@@ -246,12 +247,13 @@ export const repos = {
       if (typeof updates.name === 'string') row.name = updates.name
       if (typeof updates.description === 'string') row.description = updates.description
       if (typeof (updates as any).visibility === 'string') row.visibility = (updates as any).visibility
+      if (Array.isArray(updates.tags)) row.tags = updates.tags
       row.updated_at = new Date().toISOString()
       const { data, error } = await supabase
         .from('repos')
         .update(row)
         .eq('id', repoId)
-        .select('id, user_id, name, description, visibility, star_count, fork_count, created_at, updated_at')
+        .select('id, user_id, name, description, visibility, star_count, fork_count, tags, created_at, updated_at')
         .maybeSingle()
       if (error) throw error
 
@@ -268,7 +270,7 @@ export const repos = {
         author: mockUsers[0],
         createdAt: data!.created_at,
         updatedAt: data!.updated_at,
-        tags: [],
+        tags: Array.isArray(data!.tags) ? data!.tags : [],
       }
       return { error: null, data: mapped }
     } catch (err: any) {

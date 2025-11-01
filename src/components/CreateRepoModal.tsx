@@ -5,6 +5,8 @@ import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
 import { Label } from './ui/label'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/select'
+import { Badge } from './ui/badge'
+import { X, Plus } from 'lucide-react'
 import { repos as reposApi } from '../lib/api'
 
 interface CreateRepoModalProps {
@@ -18,13 +20,28 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<'public' | 'private'>('public')
+  const [tags, setTags] = useState<string[]>([])
+  const [newTag, setNewTag] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const addTag = () => {
+    if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 10) {
+      setTags([...tags, newTag.trim()])
+      setNewTag('')
+    }
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove))
+  }
 
   const reset = () => {
     setName('')
     setDescription('')
     setVisibility('public')
+    setTags([])
+    setNewTag('')
     setError(null)
   }
 
@@ -46,6 +63,7 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
         name: n,
         description: description.trim(),
         visibility,
+        tags,
       } as any)
       if (error || !data) {
         const msg = (error as any)?.message || 'Failed to create repository'
@@ -90,6 +108,46 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
                 <SelectItem value="private">Private</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div>
+            <Label>Tags (Optional)</Label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  placeholder="Add a tag..."
+                  onKeyPress={(e) => e.key === 'Enter' && addTag()}
+                />
+                <Button
+                  type="button"
+                  onClick={addTag}
+                  disabled={tags.length >= 10}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    {tag}
+                    <X
+                      className="h-3 w-3 cursor-pointer"
+                      onClick={() => removeTag(tag)}
+                    />
+                  </Badge>
+                ))}
+              </div>
+              {tags.length >= 10 && (
+                <p className="text-sm text-muted-foreground">Maximum 10 tags</p>
+              )}
+            </div>
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
