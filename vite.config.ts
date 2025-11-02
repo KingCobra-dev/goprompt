@@ -72,21 +72,9 @@ export default defineConfig({
     target: 'es2019',
     outDir: 'dist',
     sourcemap: true,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id) return
-          if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'vendor_react'
-            if (id.includes('lucide-react')) return 'vendor_icons'
-            if (id.includes('@radix-ui')) return 'vendor_radix'
-            if (id.includes('sonner')) return 'vendor_sonner'
-            if (id.includes('recharts')) return 'vendor_recharts'
-            return 'vendor_misc'
-          }
-        },
-      },
-    },
+    // IMPORTANT: Let Rollup decide optimal chunking to avoid circular imports between custom vendor chunks.
+    // The previous manualChunks split caused a cycle between vendor_react <-> vendor_misc leading to
+    // React being undefined at module init time (e.g., useMergeRef/useLayoutEffect crash). Removing it fixes that.
     // Raise warning limit slightly to avoid noisy warnings while keeping an eye on large chunks
     chunkSizeWarningLimit: 800,
   },
