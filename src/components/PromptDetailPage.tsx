@@ -30,6 +30,7 @@ import {
   CheckCircle,
   MessageCircle,
   Heart,
+  Lock,
 } from 'lucide-react'
 
 interface PromptDetailPageProps {
@@ -702,7 +703,10 @@ export function PromptDetailPage({
             <FileText className="h-4 w-4 mr-2" />
             Template
           </TabsTrigger>
-          <TabsTrigger value="discussion">Discussion</TabsTrigger>
+          <TabsTrigger value="discussion" disabled className="opacity-60">
+            <Lock className="h-4 w-4 mr-2" />
+            Discussion
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="content" className="space-y-6">
@@ -780,174 +784,16 @@ export function PromptDetailPage({
         </TabsContent>
 
         <TabsContent value="discussion" className="space-y-6">
-          {/* Prompt Success Panel - Consolidated Feedback System */}
-          <PromptSuccessPanel
-            averageRating={prompt.successRate || 0}
-            totalVotes={prompt.successVotesCount || 0}
-            successRate={prompt.successRate || 0}
-            commonUseCases={[
-              'Business communication and email writing',
-              'Professional correspondence',
-              'Client outreach and networking',
-            ]}
-            improvementSuggestions={[
-              'Add more tone customization options',
-              'Include industry-specific templates',
-              'Support for multiple languages',
-            ]}
-            promptId={promptId}
-          />
-
-          {/* Comments Section */}
+          {/* Discussion Feature - Coming Soon */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                Comments ({prompt.commentCount || 0})
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Join the discussion and share your experience with this prompt
-              </p>
-            </CardHeader>
-            <CardContent>
-              {state.comments.filter(comment => comment.promptId === promptId)
-                .length > 0 ? (
-                <div className="space-y-4">
-                  {state.comments
-                    .filter(comment => comment.promptId === promptId)
-                    .sort(
-                      (a, b) =>
-                        new Date(b.createdAt).getTime() -
-                        new Date(a.createdAt).getTime()
-                    )
-                    .map(comment => (
-                      <div key={comment.id} className="border rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs">
-                            {comment.author?.name?.charAt(0).toUpperCase() ||
-                              'U'}
-                          </div>
-
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm">
-                                {comment.author?.name || 'Anonymous'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                @{comment.author?.username || 'user'}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(
-                                  comment.createdAt
-                                ).toLocaleDateString()}
-                              </span>
-                            </div>
-
-                            <p className="text-sm mb-2">{comment.content}</p>
-
-                            <div className="flex items-center gap-2">
-                              <Button variant="ghost" size="sm">
-                                <Heart className="h-3 w-3 mr-1" />
-                                {comment.hearts || 0}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  if (replyingTo === comment.id) {
-                                    setReplyingTo(null)
-                                    setReplyText('')
-                                  } else {
-                                    setReplyingTo(comment.id)
-                                    setReplyText('')
-                                  }
-                                }}
-                              >
-                                Reply
-                              </Button>
-                            </div>
-
-                            {/* Reply Form */}
-                            {replyingTo === comment.id && state.user && (
-                              <div className="mt-3 ml-8">
-                                <div className="flex gap-3">
-                                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs">
-                                    {state.user.name?.charAt(0).toUpperCase() ||
-                                      'U'}
-                                  </div>
-                                  <div className="flex-1">
-                                    <textarea
-                                      value={replyText}
-                                      onChange={e =>
-                                        setReplyText(e.target.value)
-                                      }
-                                      placeholder={`Reply to ${comment.author?.name || 'Anonymous'}...`}
-                                      className="w-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                                      rows={2}
-                                    />
-                                    <div className="flex justify-end gap-2 mt-2">
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => {
-                                          setReplyingTo(null)
-                                          setReplyText('')
-                                        }}
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => handleReply(comment.id)}
-                                        disabled={!replyText.trim()}
-                                      >
-                                        Reply
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No comments yet. Be the first to share your thoughts!</p>
-                </div>
-              )}
-
-              {/* Add Comment Form */}
-              {state.user && (
-                <div className="mt-6 pt-4 border-t">
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs">
-                      {state.user.name?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div className="flex-1">
-                      <textarea
-                        value={newComment}
-                        onChange={e => setNewComment(e.target.value)}
-                        placeholder="Share your experience with this prompt..."
-                        className="w-full p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        rows={3}
-                      />
-                      <div className="flex justify-end mt-2">
-                        <Button
-                          size="sm"
-                          onClick={handlePostComment}
-                          disabled={!newComment.trim() || postingComment}
-                        >
-                          {postingComment ? 'Posting...' : 'Post Comment'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-center text-muted-foreground">
+                <Lock className="h-8 w-8 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">Discussion Locked</h3>
+                <p className="text-sm">
+                  We're working on an enhanced discussion feature that will allow you to share experiences, ask questions, and connect with other prompt users. Stay tuned for updates!
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
