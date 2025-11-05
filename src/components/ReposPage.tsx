@@ -15,7 +15,7 @@ interface ReposPageProps {
   onPromptClick?: (promptId: string) => void
   onCreateRepo?: () => void
   onCreatePrompt?: () => void
-  mode: 'repos' | 'prompts'
+  mode: 'repos' | 'prompts' | 'my-prompts'
 }
 
 export function ReposPage({ 
@@ -67,8 +67,26 @@ export function ReposPage({
 
   const loadPrompts = async () => {
     setLoading(true)
-    const { data } = await promptsApi.getAll()
-    setPrompts(data || [])
+    if (mode === 'my-prompts' && userId) {
+      // For my-prompts mode, load user's repos first, then get prompts from those repos
+      const { data: reposData } = await reposApi.getAll(userId)
+      const allPrompts: Prompt[] = []
+      if (reposData) {
+        for (const repo of reposData) {
+          const { data: repoPrompts } = await promptsApi.getAll({ repoId: repo.id })
+          if (repoPrompts) {
+            allPrompts.push(...repoPrompts)
+          }
+        }
+      }
+      // Sort by creation date, most recent first
+      allPrompts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      setPrompts(allPrompts)
+    } else {
+      // For regular prompts mode, load all prompts
+      const { data } = await promptsApi.getAll()
+      setPrompts(data || [])
+    }
     setLoading(false)
   }
 
@@ -145,11 +163,13 @@ export function ReposPage({
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">
-            {mode === 'repos' ? 'My Repositories' : 'Explore Prompts'}
+            {mode === 'repos' ? 'My Repositories' : mode === 'my-prompts' ? 'My Prompts' : 'Explore Prompts'}
           </h1>
           <p className="text-muted-foreground">
             {mode === 'repos' 
               ? 'Manage your prompt repositories' 
+              : mode === 'my-prompts'
+              ? 'Manage your created prompts'
               : 'Discover and explore amazing prompts from the community'
             }
           </p>

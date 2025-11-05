@@ -21,9 +21,10 @@ type Page =
   | { type: "explore"; searchQuery?: string }
   | { type: "repos"; userId?: string }
   | { type: "my-repo"; userId?: string }
+  | { type: "my-prompts"; userId?: string }
   | { type: "repo"; repoId: string; from?: "explore" | "repos" | "my-repo" }
   | { type: "create"; editingPrompt?: Prompt; repoId?: string }
-  | { type: "prompt"; promptId: string; from?: "home" | "explore" | "repos" | "my-repo" | "repo" | "profile"; repoId?: string }
+  | { type: "prompt"; promptId: string; from?: "home" | "explore" | "repos" | "my-repo" | "my-prompts" | "repo" | "profile"; repoId?: string }
   | { type: "profile"; userId: string; tab?: string }
   | { type: "settings" }
   | { type: "about" }
@@ -218,9 +219,9 @@ console.log("AppContent rendering, state:", state);
   const handleProfileClick = (userId: string, tab?: string) => {
     setCurrentPage({ type: "profile", userId, tab });
   };
-  const handleSavedClick = () => {
+  const handleMyPromptsClick = () => {
     if (state.user) {
-      setCurrentPage({ type: "profile", userId: state.user.id, tab: "saved" });
+      setCurrentPage({ type: "my-prompts", userId: state.user.id });
     }
   };
 
@@ -252,6 +253,9 @@ console.log("AppContent rendering, state:", state);
           break;
         case "my-repo":
           setCurrentPage({ type: "my-repo", userId: state.user?.id });
+          break;
+        case "my-prompts":
+          setCurrentPage({ type: "my-prompts", userId: state.user?.id });
           break;
         case "profile":
           setCurrentPage({ type: "profile", userId: state.user?.id || "" });
@@ -309,7 +313,7 @@ console.log("AppContent rendering, state:", state);
         onReposClick={handleReposClick}
         onMyRepoClick={handleMyRepoClick}
          onHomeClick={() => setCurrentPage({ type: "home" })}
-        onSavedClick={handleSavedClick}
+        onMyPromptsClick={handleMyPromptsClick}
         onSettingsClick={handleSettingsClick}
       />
       
@@ -347,6 +351,14 @@ console.log("AppContent rendering, state:", state);
             onRepoClick={(repoId) => handleRepoClick(repoId, "my-repo")}
             onCreateRepo={handleCreateRepo}
             mode="repos"
+          />
+        )}
+
+        {currentPage.type === "my-prompts" && (
+          <ReposPage
+            userId={currentPage.userId}
+            onPromptClick={handlePromptClick}
+            mode="my-prompts"
           />
         )}
 

@@ -5,17 +5,9 @@ import { Badge } from './ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { Separator } from './ui/separator'
-import { Skeleton } from './ui/skeleton'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Textarea } from './ui/textarea'
-import { Edit, Calendar, GitFork, Heart, Bookmark, FileText } from 'lucide-react'
+import { Calendar, GitFork, Heart, Bookmark, FileText } from 'lucide-react'
 import { profiles as profilesApi, repos as reposApi, prompts as promptsApi } from '../lib/api'
-import { useApp } from '../contexts/AppContext'
 import type { User, Repo, Prompt } from '../lib/types'
-import { PromptCard } from './PromptCard'
-import { RepoCard } from './RepoCard'
 import { getInitials } from '../lib/utils/string'
 import { getRelativeTime } from '../lib/utils/date'
 
@@ -26,22 +18,11 @@ interface UserProfilePageProps {
 }
 
 export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
-  const { state } = useApp()
-  const currentUser = state.user
   const [user, setUser] = useState<User | null>(null)
   const [userRepos, setUserRepos] = useState<Repo[]>([])
   const [userPrompts, setUserPrompts] = useState<Prompt[]>([])
   const [loading, setLoading] = useState(true)
-  const [reposLoading, setReposLoading] = useState(false)
-  const [promptsLoading, setPromptsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [editForm, setEditForm] = useState({
-    full_name: '',
-    bio: '',
-    avatar_url: ''
-  })
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     loadUser()
@@ -83,15 +64,12 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
     if (!user) return
 
     // Load repositories
-    setReposLoading(true)
     const { data: reposData } = await reposApi.getAll(user.id)
     if (reposData) {
       setUserRepos(reposData)
     }
-    setReposLoading(false)
 
     // Load prompts from user's repositories
-    setPromptsLoading(true)
     const allPrompts: Prompt[] = []
     for (const repo of reposData || []) {
       const { data: repoPrompts } = await promptsApi.getAll({ repoId: repo.id })
@@ -102,31 +80,6 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
     // Sort by creation date, most recent first
     allPrompts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     setUserPrompts(allPrompts.slice(0, 20)) // Limit to 20 most recent
-    setPromptsLoading(false)
-  }
-
-  const isOwnProfile = currentUser?.id === userId
-
-  const handleEditProfile = () => {
-    if (!user) return
-    setEditForm({
-      full_name: user.name || '',
-      bio: user.bio || '',
-      avatar_url: user.avatarUrl || ''
-    })
-    setEditDialogOpen(true)
-  }
-
-  const handleSaveProfile = async () => {
-    if (!user) return
-    setSaving(true)
-    const { error } = await profilesApi.updateProfile(user.id, editForm)
-    if (!error) {
-      // Reload user data
-      await loadUser()
-      setEditDialogOpen(false)
-    }
-    setSaving(false)
   }
 
   if (loading) {
@@ -168,59 +121,6 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
-              {isOwnProfile && (
-                <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" onClick={handleEditProfile}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Edit Profile</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="full_name">Full Name</Label>
-                        <Input
-                          id="full_name"
-                          value={editForm.full_name}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, full_name: e.target.value }))}
-                          placeholder="Enter your full name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="bio">Bio</Label>
-                        <Textarea
-                          id="bio"
-                          value={editForm.bio}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
-                          placeholder="Tell us about yourself"
-                          rows={3}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="avatar_url">Avatar URL</Label>
-                        <Input
-                          id="avatar_url"
-                          value={editForm.avatar_url}
-                          onChange={(e) => setEditForm(prev => ({ ...prev, avatar_url: e.target.value }))}
-                          placeholder="https://example.com/avatar.jpg"
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2">
-                        <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleSaveProfile} disabled={saving}>
-                          {saving ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
             </div>
 
             <div className="flex-1">
@@ -273,29 +173,31 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="prompts">Prompts ({userPrompts.length})</TabsTrigger>
-          <TabsTrigger value="repositories">Repositories ({userRepos.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Detailed Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Activity Stats */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <FileText className="h-5 w-5 mr-2" />
-                  Activity Stats
+                  Content Stats
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Repositories</span>
+                  <span className="font-semibold">{userRepos.length}</span>
+                </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm">Total Prompts</span>
                   <span className="font-semibold">{userPrompts.length}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm">Total Hearts</span>
+                  <span className="text-sm">Total Hearts Received</span>
                   <span className="font-semibold">{totalHearts}</span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -316,15 +218,69 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
               </CardContent>
             </Card>
 
+            {/* Engagement Analytics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Heart className="h-5 w-5 mr-2" />
+                  Engagement Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Average Hearts per Prompt</span>
+                  <span className="font-semibold">
+                    {userPrompts.length > 0 ? (totalHearts / userPrompts.length).toFixed(1) : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Average Saves per Prompt</span>
+                  <span className="font-semibold">
+                    {userPrompts.length > 0 ? (totalSaves / userPrompts.length).toFixed(1) : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Most Popular Category</span>
+                  <span className="font-semibold">
+                    {userPrompts.length > 0
+                      ? Object.entries(
+                          userPrompts.reduce((acc, prompt) => {
+                            acc[prompt.category] = (acc[prompt.category] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>)
+                        ).reduce((a, b) => a[1] > b[1] ? a : b)?.[0] || 'N/A'
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Content Visibility</span>
+                  <span className="font-semibold">
+                    {userPrompts.filter(p => p.visibility === 'public').length} Public / {userPrompts.filter(p => p.visibility === 'private').length} Private
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Views</span>
+                  <span className="font-semibold">
+                    {userPrompts.reduce((sum, prompt) => sum + (prompt.viewCount || 0), 0)}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Recent Activity */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle className="flex items-center">
+                  <Calendar className="h-5 w-5 mr-2" />
+                  Recent Activity
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {userPrompts.length > 0 ? (
                   <div className="space-y-3">
-                    {userPrompts.slice(0, 5).map((prompt) => (
+                    {userPrompts.slice(0, 8).map((prompt) => (
                       <div key={prompt.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{prompt.title}</p>
@@ -351,89 +307,91 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
 
-        <TabsContent value="prompts" className="mt-6">
-          {promptsLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <Skeleton className="h-4 w-3/4 mb-2" />
-                    <Skeleton className="h-3 w-full mb-2" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : userPrompts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {userPrompts.map((prompt) => (
-                <PromptCard
-                  key={prompt.id}
-                  id={prompt.id}
-                  title={prompt.title}
-                  description={prompt.description}
-                  author={prompt.author}
-                  category={prompt.category}
-                  tags={prompt.tags}
-                  stats={{
-                    hearts: prompt.hearts,
-                    saves: prompt.saveCount,
-                    forks: prompt.forkCount,
-                  }}
-                  createdAt={prompt.createdAt}
-                  onClick={() => {/* Navigate to prompt detail */}}
-                />
-              ))}
-            </div>
-          ) : (
+          {/* Additional Analytics Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Repository Analytics */}
             <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No prompts yet</h3>
-                <p className="text-muted-foreground">
-                  {isOwnProfile ? 'Create your first prompt to get started!' : 'This user hasn\'t created any prompts yet.'}
-                </p>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <GitFork className="h-5 w-5 mr-2" />
+                  Repository Analytics
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Repositories</span>
+                  <span className="font-semibold">{userRepos.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Public Repositories</span>
+                  <span className="font-semibold">{userRepos.filter(r => r.visibility === 'public').length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Private Repositories</span>
+                  <span className="font-semibold">{userRepos.filter(r => r.visibility === 'private').length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Stars Received</span>
+                  <span className="font-semibold">{userRepos.reduce((sum, repo) => sum + (repo.starCount || 0), 0)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Forks Received</span>
+                  <span className="font-semibold">{userRepos.reduce((sum, repo) => sum + (repo.forkCount || 0), 0)}</span>
+                </div>
               </CardContent>
             </Card>
-          )}
-        </TabsContent>
 
-        <TabsContent value="repositories" className="mt-6">
-          {reposLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <Skeleton className="h-4 w-3/4 mb-2" />
-                    <Skeleton className="h-3 w-full mb-2" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : userRepos.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {userRepos.map((repo) => (
-                <RepoCard
-                  key={repo.id}
-                  repo={repo}
-                  onClick={() => {/* Navigate to repo detail */}}
-                />
-              ))}
-            </div>
-          ) : (
+            {/* Growth Trends */}
             <Card>
-              <CardContent className="py-12 text-center">
-                <GitFork className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No repositories yet</h3>
-                <p className="text-muted-foreground">
-                  {isOwnProfile ? 'Create your first repository to get started!' : 'This user hasn\'t created any repositories yet.'}
-                </p>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bookmark className="h-5 w-5 mr-2" />
+                  Growth Trends
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Prompts This Month</span>
+                  <span className="font-semibold">
+                    {userPrompts.filter(p => {
+                      const created = new Date(p.createdAt);
+                      const now = new Date();
+                      return created.getMonth() === now.getMonth() && created.getFullYear() === now.getFullYear();
+                    }).length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Prompts Last Month</span>
+                  <span className="font-semibold">
+                    {userPrompts.filter(p => {
+                      const created = new Date(p.createdAt);
+                      const now = new Date();
+                      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+                      return created.getMonth() === lastMonth.getMonth() && created.getFullYear() === lastMonth.getFullYear();
+                    }).length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Average Prompts per Repository</span>
+                  <span className="font-semibold">
+                    {userRepos.length > 0 ? (userPrompts.length / userRepos.length).toFixed(1) : '0'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Most Active Repository</span>
+                  <span className="font-semibold">
+                    {userRepos.length > 0
+                      ? userRepos.reduce((max, repo) =>
+                          (repo.promptCount || 0) > (max.promptCount || 0) ? repo : max
+                        ).name
+                      : 'N/A'
+                    }
+                  </span>
+                </div>
               </CardContent>
             </Card>
-          )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

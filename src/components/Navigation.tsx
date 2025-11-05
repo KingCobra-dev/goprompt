@@ -19,8 +19,8 @@ import {
   Settings,
   Home,
   Compass,
-  BookmarkPlus,
   Package,
+  FileText,
 } from 'lucide-react'
 
 interface NavigationProps {
@@ -37,7 +37,7 @@ interface NavigationProps {
   onExploreClick?: (searchQuery?: string) => void
   onReposClick?: () => void
   onHomeClick?: () => void
-  onSavedClick?: () => void
+  onMyPromptsClick?: () => void
   onSettingsClick?: () => void
   onMyRepoClick?: () => void
 }
@@ -50,7 +50,7 @@ export function Navigation({
   onExploreClick,
   onReposClick,
   onHomeClick,
-  onSavedClick,
+  onMyPromptsClick,
   onSettingsClick,
   onMyRepoClick,
 }: NavigationProps) {
@@ -171,9 +171,9 @@ export function Navigation({
                       <User className="mr-2 h-4 w-4" />
                       Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onSavedClick}>
-                      <BookmarkPlus className="mr-2 h-4 w-4" />
-                      Saved Prompts
+                    <DropdownMenuItem onClick={onMyPromptsClick}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      My Prompts
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={onMyRepoClick}>
                       <Package className="mr-2 h-4 w-4" />
