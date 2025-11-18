@@ -39,6 +39,7 @@ export function ResultCard({
           src={imageUrl}
           alt={title}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+          sizes="(max-width: 640px) 100vw, 33vw"
         />
         {discount > 0 && (
           <Badge className="absolute top-2 left-2 bg-destructive text-destructive-foreground">

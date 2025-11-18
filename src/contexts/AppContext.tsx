@@ -16,6 +16,7 @@ import {
 
 } from '../lib/types'
 import { prompts, comments, promptFeedbacks } from '../lib/data'
+import { hearts, saves } from '../lib/api'
 import supabase from '../lib/supabaseClient'
 
 interface AppState {
@@ -142,7 +143,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
 
       const updatedPrompts = state.prompts.map(p =>
-      p.id === promptId ? { ...p, hearts: p.hearts + 1, isHearted: true } : p 
+      p.id === promptId ? { ...p, hearts: (p.hearts || 0) + 1, isHearted: true } : p 
       )
 
        return { ...state, hearts: [...state.hearts, newHeart], prompts: updatedPrompts }
@@ -157,7 +158,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       )
 
       const updatedPrompts = state.prompts.map(p =>
-      p.id === promptId ? { ...p, hearts: Math.max(0, p.hearts - 1), isHearted: false } : p 
+      p.id === promptId ? { ...p, hearts: Math.max(0, (p.hearts || 0) - 1), isHearted: false } : p 
       )
 
        return { ...state, hearts: updatedHearts, prompts: updatedPrompts }
@@ -179,7 +180,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       }
 
       const updatedPrompts = state.prompts.map(p =>
-        p.id === promptId ? { ...p, saveCount: p.saveCount + 1, isSaved: true } : p  
+        p.id === promptId ? { ...p, saveCount: (p.saveCount || 0) + 1, isSaved: true } : p  
       )
 
       // Create notification for prompt author if they're not the one saving
@@ -221,7 +222,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const updatedSaves = state.saves.filter(s => !(s.userId === state.user!.id && s.promptId === promptId))
 
       const updatedPrompts = state.prompts.map(p =>
-            p.id === promptId ? { ...p, saveCount: Math.max(0, p.saveCount - 1), isSaved: false } : p
+            p.id === promptId ? { ...p, saveCount: Math.max(0, (p.saveCount || 0) - 1), isSaved: false } : p
       )
 
        return { ...state, saves: updatedSaves, prompts: updatedPrompts }
@@ -231,7 +232,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
       const { originalId, newPrompt } = action.payload
 
       const updatedPrompts = state.prompts.map(p =>
-        p.id === originalId ? { ...p, forkCount: p.forkCount + 1 } : p
+        p.id === originalId ? { ...p, forkCount: (p.forkCount || 0) + 1 } : p
       )
 
       // Create notification for original prompt author if they're not the one forking
@@ -266,7 +267,7 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         comments: [...state.comments, action.payload],
         prompts: state.prompts.map(p =>
-           p.id === action.payload.promptId ? { ...p, commentCount: p.commentCount + 1 } : p
+           p.id === action.payload.promptId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p
         ),
       }
     case 'UPDATE_COMMENT':
@@ -455,7 +456,41 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
    // TODO: Re-implement real-time subscriptions (hearts, saves, prompts) and dispatch actions accordingly.
   useEffect(() => {
     if (!state.user) return
-   console.log('Real-time subscriptions removed - re-add subscriptions when DB is available')
+
+    // Load user's hearts and saves
+    const loadUserInteractions = async () => {
+      if (!state.user) return
+
+      try {
+        // Load hearts
+        const heartsResult = await hearts.getForUser(state.user.id)
+        if (heartsResult.error) {
+          console.warn('Failed to load user hearts:', heartsResult.error)
+        } else {
+          // Update state with user's hearts
+          heartsResult.data.forEach((heart: Heart) => {
+            dispatch({ type: 'HEART_PROMPT', payload: { promptId: heart.promptId } })
+          })
+        }
+
+        // Load saves
+        const savesResult = await saves.getForUser(state.user.id)
+        if (savesResult.error) {
+          console.warn('Failed to load user saves:', savesResult.error)
+        } else {
+          // Update state with user's saves
+          savesResult.data.forEach((save: Save) => {
+            dispatch({ type: 'SAVE_PROMPT', payload: { promptId: save.promptId } })
+          })
+        }
+      } catch (error) {
+        console.warn('Failed to load user interactions:', error)
+      }
+    }
+
+    loadUserInteractions()
+
+    console.log('Real-time subscriptions removed - re-add subscriptions when DB is available')
     // Return cleanup function if you subscribe
     return () => {}
   }, [state.user])

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../contexts/AppContext'
-// Note: Adjust import path based on where api is actually located
-// import { hearts, saves } from '../api'
+import { hearts, saves } from '../lib/api'
 
 /**
  * Custom hook for managing prompt heart and save actions
@@ -44,9 +43,8 @@ export function usePromptActions(promptId: string) {
       isHearted
     )
     try {
-      // TODO: Uncomment when api module is available
-      // const result = await hearts.toggle(promptId)
-      const result = { error: null, data: { action: 'added' } }
+      const result = await hearts.toggle(promptId)
+      // const result = { error: null, data: { action: 'added' } }
 
       console.log('Heart result:', result)
 
@@ -84,9 +82,8 @@ export function usePromptActions(promptId: string) {
       isActuallySaved
     )
     try {
-      // TODO: Uncomment when api module is available
-      // const result = await saves.toggle(promptId)
-      const result = { error: null, data: { action: 'added' } }
+      const result = await saves.toggle(promptId)
+      // const result = { error: null, data: { action: 'added' } }
 
       console.log('Save result:', result)
 

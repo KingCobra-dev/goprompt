@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import * as RechartsPrimitive from 'recharts'
+// Recharts can be large — dynamically import on demand to reduce initial bundle size for mobile
+let RechartsPrimitive: typeof import('recharts') | null = null
 
 import { cn } from './utils'
 
@@ -43,11 +44,27 @@ function ChartContainer({
 }: React.ComponentProps<'div'> & {
   config: ChartConfig
   children: React.ComponentProps<
-    typeof RechartsPrimitive.ResponsiveContainer
+    // children of ResponsiveContainer (dynamically loaded)
+    any
   >['children']
 }) {
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, '')}`
+  const [rechartsLoaded, setRechartsLoaded] = React.useState(RechartsPrimitive !== null)
+
+  React.useEffect(() => {
+    let mounted = true
+    if (!RechartsPrimitive) {
+      import('recharts').then(mod => {
+        if (!mounted) return
+        RechartsPrimitive = mod
+        setRechartsLoaded(true)
+      }).catch(() => {
+        // ignore failures; the chart will not render and fallback UI will remain
+      })
+    }
+    return () => { mounted = false }
+  }, [])
 
   return (
     <ChartContext.Provider value={{ config }}>
@@ -61,9 +78,15 @@ function ChartContainer({
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        {/* Dynamically render Recharts.ResponsiveContainer when available */}
+        {rechartsLoaded && RechartsPrimitive ? (
+          <RechartsPrimitive.ResponsiveContainer>
+            {children}
+          </RechartsPrimitive.ResponsiveContainer>
+        ) : (
+          // If Recharts hasn't loaded yet, render gap so layout is preserved; then load dynamic import
+          <div className="w-full h-full" />
+        )}
       </div>
     </ChartContext.Provider>
   )
@@ -102,7 +125,11 @@ ${colorConfig
   )
 }
 
-const ChartTooltip = RechartsPrimitive.Tooltip
+const ChartTooltip = (props: any) => {
+  if (!RechartsPrimitive) return null
+  const C = RechartsPrimitive.Tooltip as any
+  return <C {...props} />
+}
 
 function ChartTooltipContent({
   active,
@@ -248,7 +275,11 @@ function ChartTooltipContent({
   )
 }
 
-const ChartLegend = RechartsPrimitive.Legend
+const ChartLegend = (props: any) => {
+  if (!RechartsPrimitive) return null
+  const C = RechartsPrimitive.Legend as any
+  return <C {...props} />
+}
 
 function ChartLegendContent({
   className,

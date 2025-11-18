@@ -19,7 +19,6 @@ import {
   BookmarkPlus,
   Share,
   Copy,
-  Eye,
   Calendar,
   Edit,
   AlertCircle,
@@ -95,42 +94,42 @@ export function PromptDetailPage({
             attachments: [],
             author: fullPromptData.profiles
               ? {
-                  id: fullPromptData.profiles.id,
-                  username: fullPromptData.profiles.username,
-                  email: fullPromptData.profiles.email || '',
-                  name: fullPromptData.profiles.name,
-                  bio: fullPromptData.profiles.bio || undefined,
-                  website: fullPromptData.profiles.website || undefined,
-                  github: fullPromptData.profiles.github || undefined,
-                  twitter: fullPromptData.profiles.twitter || undefined,
-                  reputation: 0,
-                  createdAt:
-                    fullPromptData.profiles.created_at ||
-                    fullPromptData.created_at,
-                  lastLogin:
-                    fullPromptData.profiles.created_at ||
-                    fullPromptData.created_at,
-                  badges: [],
-                  skills: [],
-                  role: fullPromptData.profiles.role || 'general',
-                  subscriptionStatus:
-                    fullPromptData.profiles.subscription_status || 'active',
-                  saveCount: 0,
-                }
+                id: fullPromptData.profiles.id,
+                username: fullPromptData.profiles.username,
+                email: fullPromptData.profiles.email || '',
+                name: fullPromptData.profiles.name,
+                bio: fullPromptData.profiles.bio || undefined,
+                website: fullPromptData.profiles.website || undefined,
+                github: fullPromptData.profiles.github || undefined,
+                twitter: fullPromptData.profiles.twitter || undefined,
+                reputation: 0,
+                createdAt:
+                  fullPromptData.profiles.created_at ||
+                  fullPromptData.created_at,
+                lastLogin:
+                  fullPromptData.profiles.created_at ||
+                  fullPromptData.created_at,
+                badges: [],
+                skills: [],
+                role: fullPromptData.profiles.role || 'general',
+                subscriptionStatus:
+                  fullPromptData.profiles.subscription_status || 'active',
+                saveCount: 0,
+              }
               : {
-                  id: fullPromptData.user_id,
-                  username: 'user',
-                  email: '',
-                  name: 'User',
-                  reputation: 0,
-                  createdAt: fullPromptData.created_at,
-                  lastLogin: fullPromptData.created_at,
-                  badges: [],
-                  skills: [],
-                  role: 'general',
-                  subscriptionStatus: 'active',
-                  saveCount: 0,
-                },
+                id: fullPromptData.user_id,
+                username: 'user',
+                email: '',
+                name: 'User',
+                reputation: 0,
+                createdAt: fullPromptData.created_at,
+                lastLogin: fullPromptData.created_at,
+                badges: [],
+                skills: [],
+                role: 'general',
+                subscriptionStatus: 'active',
+                saveCount: 0,
+              },
             images:
               fullPromptData.prompt_images?.map((img: any) => ({
                 id: img.id,
@@ -156,6 +155,25 @@ export function PromptDetailPage({
             promptId
           )
           setPrompt(fullPrompt)
+          // Ensure the prompt is in global state for consistent heart counting
+          const existingPrompt = state.prompts.find(p => p.id === fullPrompt.id)
+          if (existingPrompt) {
+            dispatch({
+              type: 'UPDATE_PROMPT',
+              payload: {
+                id: fullPrompt.id,
+                updates: {
+                  hearts: fullPrompt.hearts,
+                  saveCount: fullPrompt.saveCount,
+                  commentCount: fullPrompt.commentCount,
+                  viewCount: fullPrompt.viewCount,
+                },
+              },
+            })
+          } else {
+            // Add the prompt to global state if not present
+            dispatch({ type: 'ADD_PROMPT', payload: fullPrompt })
+          }
         } else {
           // Fallback to local state data
           const foundPrompt = state.prompts.find(p => p.id === promptId)
@@ -379,7 +397,7 @@ export function PromptDetailPage({
   }
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/prompts/${prompt.slug}`
+    const url = `${window.location.origin}/prompts/${encodeURIComponent(prompt.slug)}`
 
     if (navigator.share) {
       try {
@@ -457,6 +475,9 @@ export function PromptDetailPage({
     h => h.userId === state.user?.id && h.promptId === promptId
   )
 
+  // Use authoritative hearts count from global state
+  const heartsCount = state.prompts.find(p => p.id === promptId)?.hearts ?? prompt?.hearts ?? 0
+
   const isOwner = state.user?.id === prompt.userId
 
   // Packs feature not implemented in AppState yet; default to not a pack prompt
@@ -505,21 +526,21 @@ export function PromptDetailPage({
 
       {/* Prompt Header */}
       <div className="mb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
+        <div className="flex flex-col items-start justify-between mb-4">
+          <div className="flex items-center w-full justify-between">
+           
             <div className="flex items-center gap-2 mb-2">
               <Badge
-                className={`${
-                  prompt.type === 'text'
-                    ? 'bg-blue-100 text-blue-800'
-                    : prompt.type === 'image'
-                      ? 'bg-purple-100 text-purple-800'
-                      : prompt.type === 'code'
-                        ? 'bg-green-100 text-green-800'
-                        : prompt.type === 'agent'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-gray-100 text-gray-800'
-                }`}
+                className={`${prompt.type === 'text'
+                  ? 'bg-blue-100 text-blue-800'
+                  : prompt.type === 'image'
+                    ? 'bg-purple-100 text-purple-800'
+                    : prompt.type === 'code'
+                      ? 'bg-green-100 text-green-800'
+                      : prompt.type === 'agent'
+                        ? 'bg-orange-100 text-orange-800'
+                        : 'bg-gray-100 text-gray-800'
+                  }`}
               >
                 {prompt.type.charAt(0).toUpperCase() + prompt.type.slice(1)}
               </Badge>
@@ -528,45 +549,64 @@ export function PromptDetailPage({
                 <Badge variant="secondary">{prompt.visibility}</Badge>
               )}
             </div>
+            <div className="flex items-center gap-2 ml-4">
+              {canEdit && (
+                <Button variant="outline" onClick={() => onEdit(prompt)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              )}
 
-            <h1 className="text-3xl mb-2">{prompt.title}</h1>
-            <p className="text-muted-foreground text-lg">
-              {prompt.description}
-            </p>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 ml-4">
-            {canEdit && (
-              <Button variant="outline" onClick={() => onEdit(prompt)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
-            )}
-
-            {/* {canFork && (
+              {/* {canFork && (
               <Button variant="outline" onClick={handleFork}>
                 <GitFork className="h-4 w-4 mr-2" />
                 Fork
               </Button>
             )} */}
 
-            <Button
-              variant="outline"
-              onClick={handleSave}
-              className={isSaved ? 'bg-primary/10 text-primary' : ''}
-            >
-              <BookmarkPlus
-                className={`h-4 w-4 mr-2 ${isSaved ? 'fill-current' : ''}`}
-              />
-              {isSaved ? 'Saved' : 'Save'}
-            </Button>
+              <Button
+                variant="outline"
+                onClick={handleSave}
+                className={isSaved ? 'bg-primary/10 text-primary' : ''}
+              >
+                <BookmarkPlus
+                  className={`h-4 w-4 mr-2 ${isSaved ? 'fill-current' : ''}`}
+                />
+                {isSaved ? 'Saved' : 'Save'}
+              </Button>
 
-            <Button variant="outline" onClick={handleShare}>
-              <Share className="h-4 w-4 mr-2" />
-              Share
-            </Button>
+              <Button variant="outline" onClick={handleShare}>
+                <Share className="h-4 w-4 mr-2" />
+                Share
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handleHeart}
+                className={`flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground ${isHearted ? 'text-red-500' : ''}`}
+              >
+                <Heart
+                  className={`h-3 w-3 transition-all duration-300 ease-out ${isHearted ? 'fill-current scale-110' : 'scale-100'
+                    } ${heartAnimating ? 'animate-bounce scale-125' : ''}`}
+                  style={{
+                    transform: heartAnimating
+                      ? 'scale(1.2) rotate(-5deg)'
+                      : undefined,
+                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                  }}
+                />
+                {heartsCount}
+              </Button>
+            </div>
+</div>
+
+          <div className="flex-1 mt-4 px-4">
+            <h1 className="text-3xl mb-2">{prompt.title}</h1>
+            <p className="text-muted-foreground text-lg">
+              {prompt.description}
+            </p>
           </div>
+
         </div>
 
         {/* Author Info */}
@@ -591,54 +631,8 @@ export function PromptDetailPage({
               {new Date(prompt.createdAt).toLocaleDateString()}
             </div>
             <div className="flex items-center gap-1">
-              <Eye className="h-4 w-4" />
-              {prompt.viewCount} views
-            </div>
-            <div className="flex items-center gap-1">
               <span>v{prompt.version}</span>
             </div>
-          </div>
-        </div>
-
-        {/* Stats and Model Compatibility */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleHeart}
-                className={`flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground ${isHearted ? 'text-red-500' : ''}`}
-              >
-                <Heart
-                  className={`h-3 w-3 transition-all duration-300 ease-out ${
-                    isHearted ? 'fill-current scale-110' : 'scale-100'
-                  } ${heartAnimating ? 'animate-bounce scale-125' : ''}`}
-                  style={{
-                    transform: heartAnimating
-                      ? 'scale(1.2) rotate(-5deg)'
-                      : undefined,
-                    transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                  }}
-                />
-                {prompt.hearts || 0}
-              </Button>
-              <span>{prompt.saveCount} saves</span>
-              {/* <span>{prompt.forkCount} forks</span> */}
-              <span className="flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                {prompt.successVotesCount || 0} ratings
-              </span>
-            </div>
-          </div>
-
-          {/* Model Compatibility */}
-          <div className="flex items-center gap-1">
-            {prompt.modelCompatibility.map(model => (
-              <Badge key={model} variant="outline" className="text-xs">
-                {model}
-              </Badge>
-            ))}
           </div>
         </div>
       </div>
@@ -662,6 +656,9 @@ export function PromptDetailPage({
                         src={image.url}
                         alt={image.altText}
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                        width={image.width}
+                        height={image.height}
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     </div>
                     <div className="space-y-1">
@@ -775,8 +772,11 @@ export function PromptDetailPage({
             <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center text-muted-foreground">
-                  <FileText className="h-8 w-8 mx-auto mb-2" />
-                  <p>No template provided for this prompt.</p>
+                  <Lock className="h-8 w-8 mx-auto mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">Template Locked</h3>
+                  <p className="text-sm">
+                    We're working on an enhanced template feature that will allow you to view and customize prompt templates. Stay tuned for updates!
+                  </p>
                 </div>
               </CardContent>
             </Card>

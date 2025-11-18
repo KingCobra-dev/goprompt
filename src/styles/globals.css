@@ -255,6 +255,8 @@
     font-size: 0.875rem; /* 14px */
     font-weight: 500;
     line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   input,
@@ -262,6 +264,7 @@
     font-size: 0.875rem; /* 14px */
     font-weight: 400;
     line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .text-small {
@@ -277,6 +280,19 @@
 
 html {
   font-size: var(--font-size);
+}
+
+/* Ensure images don't overflow on mobile and are responsive */
+img { max-width: 100%; height: auto; display:block; }
+
+@media (max-width: 767px) {
+  /* Slightly tighter default spacing to fit mobile screens */
+  :root {
+    --font-size: 15px;
+  }
+  .container { padding-left: 0.75rem; padding-right: 0.75rem }
+  .card { padding: 0.75rem }
+  [data-slot="card-content"] { padding: 0.75rem }
 }
 
 /* Interaction styles */
@@ -302,4 +318,5 @@ html {
 
 .nav-button {
   @apply hover:bg-accent/10 hover:text-accent active:bg-primary/10 active:text-primary focus:ring-primary;
+  -webkit-tap-highlight-color: transparent;
 }

@@ -10,6 +10,7 @@ import { profiles as profilesApi, repos as reposApi, prompts as promptsApi } fro
 import type { User, Repo, Prompt } from '../lib/types'
 import { getInitials } from '../lib/utils/string'
 import { getRelativeTime } from '../lib/utils/date'
+import { useApp } from '../contexts/AppContext'
 
 interface UserProfilePageProps {
   userId: string
@@ -18,6 +19,7 @@ interface UserProfilePageProps {
 }
 
 export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
+  const { dispatch } = useApp()
   const [user, setUser] = useState<User | null>(null)
   const [userRepos, setUserRepos] = useState<Repo[]>([])
   const [userPrompts, setUserPrompts] = useState<Prompt[]>([])
@@ -80,6 +82,7 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
     // Sort by creation date, most recent first
     allPrompts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     setUserPrompts(allPrompts.slice(0, 20)) // Limit to 20 most recent
+    dispatch({ type: 'SET_PROMPTS', payload: allPrompts.slice(0, 20) })
   }
 
   if (loading) {

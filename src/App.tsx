@@ -1,35 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect, Suspense, lazy } from "react";
 import { AppProvider, useApp } from "./contexts/AppContext";
 import { Navigation } from "./components/Navigation";
-import { HomePage } from "./components/HomePage";
-import { ExplorePage } from "./components/ExplorePage";
-import { CreatePromptPage } from "./components/CreatePromptPage";
-import { PromptDetailPage } from "./components/PromptDetailPage";
-import { UserProfilePage } from "./components/UserProfilePage";
-import { SettingsPage } from "./components/SettingsPage";
-import { ReposPage } from "./components/ReposPage";
-import { RepoDetailPage } from "./components/RepoDetailPage";
-import AboutPage from "./components/AboutPage";
-import { AuthModal } from "./components/AuthModal";
+const HomePage = lazy(() => import("./components/HomePage").then(m => ({ default: m.HomePage })));
+const ExplorePage = lazy(() => import("./components/ExplorePage").then(m => ({ default: m.ExplorePage })));
+const CreatePromptPage = lazy(() => import("./components/CreatePromptPage").then(m => ({ default: m.CreatePromptPage })));
+const PromptDetailPage = lazy(() => import("./components/PromptDetailPage").then(m => ({ default: m.PromptDetailPage })));
+const UserProfilePage = lazy(() => import("./components/UserProfilePage").then(m => ({ default: m.UserProfilePage })));
+const SettingsPage = lazy(() => import("./components/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const ReposPage = lazy(() => import("./components/ReposPage").then(m => ({ default: m.ReposPage })));
+const RepoDetailPage = lazy(() => import("./components/RepoDetailPage").then(m => ({ default: m.RepoDetailPage })));
+const AboutPage = lazy(() => import("./components/AboutPage").then(m => ({ default: m.default || m }))); // support both default & named
+const AuthModal = lazy(() => import("./components/AuthModal").then(m => ({ default: m.AuthModal })));
 import { Footer } from "./components/Footer";
 import { Prompt } from "./lib/types";
-import CreateRepoModal from "./components/CreateRepoModal";
+const CreateRepoModal = lazy(() => import("./components/CreateRepoModal").then(m => ({ default: m.default || m })));
 import { prompts as promptsApi } from "./lib/api";
-
-type Page =
- | { type: "home" }
-  | { type: "explore"; searchQuery?: string }
-  | { type: "repos"; userId?: string }
-  | { type: "my-repo"; userId?: string }
-  | { type: "my-prompts"; userId?: string }
-  | { type: "repo"; repoId: string; from?: "explore" | "repos" | "my-repo" }
-  | { type: "create"; editingPrompt?: Prompt; repoId?: string }
-  | { type: "prompt"; promptId: string; from?: "home" | "explore" | "repos" | "my-repo" | "my-prompts" | "repo" | "profile"; repoId?: string }
-  | { type: "profile"; userId: string; tab?: string }
-  | { type: "settings" }
-  | { type: "about" }
-  | { type: "terms" }
-  | { type: "privacy" };
+import { updateUrl, getCurrentPageFromUrl, Page } from "./lib/routing";
 
 function AppContent() {
   const { state, dispatch } = useApp();
@@ -37,6 +23,28 @@ function AppContent() {
   const [currentPage, setCurrentPage] = useState<Page>({ type: "home" });
   const [isCreateRepoOpen, setIsCreateRepoOpen] = useState(false);
   const [repoRefreshTrigger, setRepoRefreshTrigger] = useState(0);
+
+  // Initialize page from URL on mount
+  useEffect(() => {
+    const pageFromUrl = getCurrentPageFromUrl();
+    setCurrentPage(pageFromUrl);
+  }, []);
+
+  // Update URL when page changes
+  useEffect(() => {
+    updateUrl(currentPage);
+  }, [currentPage]);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const pageFromUrl = getCurrentPageFromUrl();
+      setCurrentPage(pageFromUrl);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
  
     /** ---------- Color Contrast Debug ---------- */
   try {
@@ -318,6 +326,7 @@ console.log("AppContent rendering, state:", state);
       />
       
       <main>
+        <Suspense fallback={<div className="min-h-[40vh] flex items-center justify-center">Loading...</div>}>
          {currentPage.type === "home" && (
           <HomePage
             user={state.user}
@@ -331,7 +340,7 @@ console.log("AppContent rendering, state:", state);
         {currentPage.type === "explore" && (
           <ExplorePage
             onBack={handleBack}
-             onRepoClick={(repoId) => handleRepoClick(repoId, "explore")}
+             onRepoClick={(repoId: string) => handleRepoClick(repoId, "explore")}
             onPromptClick={handlePromptClick}
             initialSearchQuery={currentPage.searchQuery}
           />
@@ -348,7 +357,7 @@ console.log("AppContent rendering, state:", state);
         {currentPage.type === "my-repo" && (
           <ReposPage
             userId={currentPage.userId}
-            onRepoClick={(repoId) => handleRepoClick(repoId, "my-repo")}
+            onRepoClick={(repoId: string) => handleRepoClick(repoId, "my-repo")}
             onCreateRepo={handleCreateRepo}
             mode="repos"
           />
@@ -431,7 +440,7 @@ console.log("AppContent rendering, state:", state);
                 alert('Failed to load prompt for editing')
               }
             }}
-            onDeletePrompt={(promptId) => handleDeletePrompt(promptId)}
+            onDeletePrompt={(promptId: string) => handleDeletePrompt(promptId)}
             refreshTrigger={repoRefreshTrigger}
           />
         )}
@@ -441,7 +450,7 @@ console.log("AppContent rendering, state:", state);
             onBack={handleBack}
             editingPrompt={currentPage.editingPrompt}
             repoId={currentPage.repoId}
-            onPublish={(isNewPrompt) => {
+            onPublish={(isNewPrompt: boolean) => {
               if (isNewPrompt && state.user) {
                  setCurrentPage({
                   type: "profile",
@@ -477,6 +486,7 @@ console.log("AppContent rendering, state:", state);
         )}
 
         {currentPage.type === "about" && <AboutPage onBack={handleBack} />}
+        </Suspense>
       </main>
 
       <Footer
@@ -486,25 +496,29 @@ console.log("AppContent rendering, state:", state);
         onNavigateToPrivacy={() => setCurrentPage({ type: "privacy" })}
       />
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+        />
+      </Suspense>
    
 
   
 
      
 
-    <CreateRepoModal
-    isOpen={isCreateRepoOpen}
-        onClose={() => setIsCreateRepoOpen(false)}
-        userId={state.user?.id}
-        onCreated={(repoId) => {
-          setIsCreateRepoOpen(false);
-          setCurrentPage({ type: "repo", repoId, from: "repos" });
-        }}
-      />
+      <Suspense fallback={null}>
+        <CreateRepoModal
+          isOpen={isCreateRepoOpen}
+          onClose={() => setIsCreateRepoOpen(false)}
+          userId={state.user?.id}
+          onCreated={(repoId) => {
+            setIsCreateRepoOpen(false);
+            setCurrentPage({ type: "repo", repoId, from: "repos" });
+          }}
+        />
+      </Suspense>
     </div>
   )
 }

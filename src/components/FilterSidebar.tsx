@@ -43,6 +43,7 @@ export function FilterSidebar({ isOpen, onClose }: FilterSidebarProps) {
             size="sm"
             onClick={onClose}
             className="lg:hidden h-8 w-8 p-0"
+            aria-label="Close filters"
           >
             <X className="h-4 w-4" />
           </Button>

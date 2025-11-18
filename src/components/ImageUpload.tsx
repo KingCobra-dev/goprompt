@@ -197,6 +197,9 @@ export function ImageUpload({
                   src={image.url}
                   alt={image.altText || ''}
                   className="w-full h-full object-cover"
+                  width={image.width}
+                  height={image.height}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
                 <div className="absolute top-2 right-2 flex gap-1">
                   {allowPrimarySelection && (

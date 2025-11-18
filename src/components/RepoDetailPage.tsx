@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import { getInitials } from '../lib/utils/string'
 import { getRelativeTime } from '../lib/utils/date'
-import { repos as reposApi } from '../lib/api'
+import { repos as reposApi, repoSocial } from '../lib/api'
 import type { Repo, Prompt } from '../lib/data'
 
 interface RepoDetailPageProps {
@@ -85,12 +85,59 @@ export function RepoDetailPage({
       setPrompts(promptsResponse.data)
     }
 
+    // Check if repo is starred by current user
+    if (userId) {
+      const { data: starredRepos } = await repoSocial.getStarredRepos(userId)
+      if (starredRepos) {
+        setIsStarred(starredRepos.includes(repoId))
+      }
+    }
+
     setLoading(false)
   }
 
-  const handleStar = () => {
-    setIsStarred(!isStarred)
-    // TODO: Call API to star/unstar
+  const handleStar = async () => {
+    if (!userId) {
+      alert('Please log in to star repositories')
+      return
+    }
+    
+    const wasStarred = isStarred
+    const newStarred = !isStarred
+    
+    // Optimistically update UI
+    setIsStarred(newStarred)
+    
+    // Optimistically update star count
+    if (repo) {
+      setRepo(prevRepo => 
+        prevRepo ? { 
+          ...prevRepo, 
+          starCount: wasStarred ? Math.max(0, prevRepo.starCount - 1) : prevRepo.starCount + 1 
+        } : null
+      )
+    }
+    
+    try {
+      if (wasStarred) {
+        await repoSocial.unstar(repoId, userId)
+      } else {
+        await repoSocial.star(repoId, userId)
+      }
+    } catch (error) {
+      // Revert optimistic updates on error
+      setIsStarred(wasStarred)
+      
+      if (repo) {
+        setRepo(prevRepo => 
+          prevRepo ? { 
+            ...prevRepo, 
+            starCount: wasStarred ? prevRepo.starCount + 1 : Math.max(0, prevRepo.starCount - 1) 
+          } : null
+        )
+      }
+      console.error('Failed to star/unstar repo:', error)
+    }
   }
 
   // const handleFork = async () => {
@@ -348,11 +395,11 @@ export function RepoDetailPage({
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="edit-repo-name">Name</Label>
+                <Label htmlFor="edit-repo-name">Name *</Label>
                 <Input id="edit-repo-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="edit-repo-description">Description</Label>
+                <Label htmlFor="edit-repo-description">Description *</Label>
                 <Textarea id="edit-repo-description" value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={3} />
               </div>
               <div>
@@ -400,12 +447,14 @@ export function RepoDetailPage({
                   if (!repo) return
                   const n = editName.trim()
                   if (n.length < 3) { setSaveError('Name must be at least 3 characters.'); return }
+                  const d = editDescription.trim()
+                  if (d.length === 0) { setSaveError('Description is required.'); return }
                   try {
                     setSaving(true)
                     setSaveError(null)
                     const { data, error } = await reposApi.update(repo.id, {
                       name: n,
-                      description: editDescription.trim(),
+                      description: d,
                       visibility: editVisibility,
                     } as any)
                     if (error || !data) {

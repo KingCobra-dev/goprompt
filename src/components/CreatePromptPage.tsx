@@ -112,7 +112,7 @@ export function CreatePromptPage({
     editingPrompt?.description || ''
   )
   const [content, setContent] = useState(editingPrompt?.content || '')
-  const [type, setType] = useState<'text' | 'image' | 'code' | 'agent' | 'chain' | 'conversation'>('text')
+  const [type, setType] = useState<'text' | 'image' | 'code' | 'conversation'>('text')
   const [category, setCategory] = useState(editingPrompt?.category || '')
   const [visibility, setVisibility] = useState<
     'public' | 'private'
@@ -388,8 +388,13 @@ export function CreatePromptPage({
 
     // Image updates will be handled when backend is wired
   const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 10) {
-      setTags([...tags, newTag.trim()])
+    const trimmedTag = newTag.trim().replace(/\s+/g, ' ')
+    if (
+      trimmedTag &&
+      !tags.some(tag => tag.toLowerCase() === trimmedTag.toLowerCase()) &&
+      tags.length < 10
+    ) {
+      setTags([...tags, trimmedTag])
       setNewTag('')
     }
   }
@@ -723,7 +728,7 @@ export function CreatePromptPage({
                   </SelectTrigger>
                   <SelectContent>
                        {categories.map((cat: any) => (
-                      <SelectItem key={cat.id} value={cat.name}>
+                      <SelectItem key={cat.id} value={cat.id}>
                         <div className="flex items-center gap-2">
                           <span>{cat.icon}</span>
                           {cat.name}
@@ -852,7 +857,12 @@ export function CreatePromptPage({
                   value={newTag}
                   onChange={e => setNewTag(e.target.value)}
                   placeholder="Add a tag..."
-                  onKeyPress={e => e.key === 'Enter' && addTag()}
+                  onKeyPress={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addTag()
+                    }
+                  }}
                 />
                 <Button
                   type="button"

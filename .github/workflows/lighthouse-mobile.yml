@@ -1,0 +1,42 @@
+name: Lighthouse Mobile Audit
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  lighthouse-mobile:
+    name: Lighthouse (Mobile) Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Lighthouse CI (mobile preset)
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          url: 'http://127.0.0.1:5173'
+          numberOfRuns: 1
+          preset: 'mobile'
+          chromeFlags: '--headless --no-sandbox --disable-gpu'
+          startServerCommand: 'npm run start -- --port 5173'
+          output: 'html'
+          outputPath: './lighthouse'
+          verbose: true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN || '' }}

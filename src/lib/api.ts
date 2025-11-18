@@ -13,11 +13,7 @@ const isSupabaseReady = Boolean(
 )
 
 // Utility: slugify a string
-const toSlug = (str: string) =>
-  (str || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+const toSlug = (str: string) => str || ''
 
 // Utility: handle 1-1 relation shape that may come as an array
 const asOne = (u: any) => (Array.isArray(u) ? u[0] : u)
@@ -139,7 +135,7 @@ export const repos = {
           `id, user_id, name, description, visibility, star_count, fork_count, tags, created_at, updated_at,
              users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url )`
         )
-        .ilike('name', slug.replace(/-/g, ' '))
+        .ilike('name', slug)
         .maybeSingle()
       if (error) throw error
       if (!data) return { error: { message: 'Repository not found' }, data: null }
@@ -419,13 +415,67 @@ export const repoSocial = {
   },
 
   /**
+   * Get starred repos for a user
+   */
+  getStarredRepos: async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('stars')
+        .select('repo_id')
+        .eq('user_id', userId)
+      
+      if (error) throw error
+      
+      const starredRepoIds = (data || []).map(row => row.repo_id)
+      return { error: null, data: starredRepoIds }
+    } catch (err: any) {
+      console.warn('repoSocial.getStarredRepos: falling back to mock:', err?.message)
+      await delay(100)
+      return { error: null, data: [] }
+    }
+  },
+
+  /**
    * Star a repository
    */
   star: async (repoId: string, userId: string) => {
-    await delay(100)
-    return {
-      error: null,
-      data: { action: 'starred', repoId, userId }
+    try {
+      // Insert into stars table
+      const { error: insertError } = await supabase
+        .from('stars')
+        .insert({ repo_id: repoId, user_id: userId })
+      
+      if (insertError) {
+        // If already starred, that's fine
+        if (insertError.code === '23505') { // unique constraint violation
+          return { error: null, data: { action: 'already_starred', repoId, userId } }
+        }
+        throw insertError
+      }
+
+      // Update star count on repo
+      const { data: repoData } = await supabase
+        .from('repos')
+        .select('star_count')
+        .eq('id', repoId)
+        .single()
+      
+      if (repoData) {
+        const { error: updateError } = await supabase
+          .from('repos')
+          .update({ star_count: (repoData.star_count || 0) + 1 })
+          .eq('id', repoId)
+        
+        if (updateError) {
+          console.warn('Failed to update star count:', updateError)
+        }
+      }
+
+      return { error: null, data: { action: 'starred', repoId, userId } }
+    } catch (err: any) {
+      console.warn('repoSocial.star: falling back to mock:', err?.message)
+      await delay(100)
+      return { error: null, data: { action: 'starred', repoId, userId } }
     }
   },
 
@@ -433,10 +483,39 @@ export const repoSocial = {
    * Unstar a repository
    */
   unstar: async (repoId: string, userId: string) => {
-    await delay(100)
-    return {
-      error: null,
-      data: { action: 'unstarred', repoId, userId }
+    try {
+      // Delete from stars table
+      const { error: deleteError } = await supabase
+        .from('stars')
+        .delete()
+        .eq('repo_id', repoId)
+        .eq('user_id', userId)
+      
+      if (deleteError) throw deleteError
+
+      // Update star count on repo
+      const { data: repoData } = await supabase
+        .from('repos')
+        .select('star_count')
+        .eq('id', repoId)
+        .single()
+      
+      if (repoData) {
+        const { error: updateError } = await supabase
+          .from('repos')
+          .update({ star_count: Math.max(0, (repoData.star_count || 0) - 1) })
+          .eq('id', repoId)
+        
+        if (updateError) {
+          console.warn('Failed to update star count:', updateError)
+        }
+      }
+
+      return { error: null, data: { action: 'unstarred', repoId, userId } }
+    } catch (err: any) {
+      console.warn('repoSocial.unstar: falling back to mock:', err?.message)
+      await delay(100)
+      return { error: null, data: { action: 'unstarred', repoId, userId } }
     }
   },
 
@@ -595,7 +674,7 @@ export const prompts = {
         const { data, error } = await supabase
           .from('prompts')
           .select(
-            `id, repo_id, title, content, description, tags, created_at, updated_at,
+            `id, repo_id, title, content, description, tags, created_at, updated_at, hearts,
              repos:repo_id ( id, user_id, users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url ) )`
           )
           .eq('id', promptId)
@@ -623,7 +702,7 @@ export const prompts = {
           version: '1.0.0',
           parent_id: null,
           view_count: 0,
-          hearts: 0,
+          hearts: data.hearts || 0,
           save_count: 0,
           fork_count: 0,
           comment_count: 0,
@@ -800,13 +879,123 @@ export const prompts = {
 }
 export const hearts = {
   toggle: async (promptId: string) => {
+    if (isSupabaseReady) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          return { error: { message: 'User not authenticated' }, data: null }
+        }
+
+        // Check if already hearted
+        const { data: existingHeart, error: checkError } = await supabase
+          .from('hearts')
+          .select('user_id, prompt_id')
+          .eq('user_id', user.id)
+          .eq('prompt_id', promptId)
+          .maybeSingle()
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+          throw checkError
+        }
+
+        let action: 'added' | 'removed'
+        let result
+
+        if (existingHeart) {
+          // Remove heart
+          const { error: deleteError } = await supabase
+            .from('hearts')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('prompt_id', promptId)
+
+          if (deleteError) throw deleteError
+
+          action = 'removed'
+          result = { action, promptId, userId: user.id }
+        } else {
+          // Add heart
+          const { error: insertError } = await supabase
+            .from('hearts')
+            .insert({ user_id: user.id, prompt_id: promptId })
+
+          if (insertError) {
+            // If already exists (race condition), treat as already hearted
+            if (insertError.code === '23505') {
+              return { error: null, data: { action: 'already_hearted', promptId, userId: user.id } }
+            }
+            throw insertError
+          }
+
+          action = 'added'
+          result = { action, promptId, userId: user.id }
+        }
+
+        return { error: null, data: result }
+      } catch (err: any) {
+        console.warn('hearts.toggle: falling back to mock:', err?.message)
+      }
+    }
+
+    // Fallback to mock data
     await delay(50)
     return {
       error: null,
       data: { action: 'added', promptId }
     }
   },
-   getForPrompt: async (_promptId: string) => {
+   getForPrompt: async (promptId: string) => {
+    if (isSupabaseReady) {
+      try {
+        const { data, error } = await supabase
+          .from('hearts')
+          .select('user_id, prompt_id, created_at')
+          .eq('prompt_id', promptId)
+
+        if (error) throw error
+
+        const mapped = (data || []).map(row => ({
+          userId: row.user_id,
+          promptId: row.prompt_id,
+          createdAt: row.created_at,
+        }))
+
+        return { error: null, data: mapped }
+      } catch (err: any) {
+        console.warn('hearts.getForPrompt: falling back to mock:', err?.message)
+      }
+    }
+
+    // Fallback to mock data
+    await delay(50)
+    return {
+      error: null,
+      data: []
+    }
+   },
+   getForUser: async (userId: string) => {
+    if (isSupabaseReady) {
+      try {
+        const { data, error } = await supabase
+          .from('hearts')
+          .select('user_id, prompt_id, created_at')
+          .eq('user_id', userId)
+
+        if (error) throw error
+
+        const mapped = (data || []).map(row => ({
+          userId: row.user_id,
+          promptId: row.prompt_id,
+          createdAt: row.created_at,
+        }))
+
+        return { error: null, data: mapped }
+      } catch (err: any) {
+        console.warn('hearts.getForUser: falling back to mock:', err?.message)
+      }
+    }
+
+    // Fallback to mock data
     await delay(50)
     return {
       error: null,
@@ -816,19 +1005,100 @@ export const hearts = {
 }
 export const saves = {
   toggle: async (promptId: string) => {
+    if (isSupabaseReady) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          return { error: { message: 'User not authenticated' }, data: null }
+        }
+
+        // Check if already saved
+        const { data: existingSave, error: checkError } = await supabase
+          .from('saves')
+          .select('user_id, prompt_id')
+          .eq('user_id', user.id)
+          .eq('prompt_id', promptId)
+          .maybeSingle()
+
+        if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "not found"
+          throw checkError
+        }
+
+        let action: 'added' | 'removed'
+        let result
+
+        if (existingSave) {
+          // Remove save
+          const { error: deleteError } = await supabase
+            .from('saves')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('prompt_id', promptId)
+
+          if (deleteError) throw deleteError
+
+          action = 'removed'
+          result = { action, promptId, userId: user.id }
+        } else {
+          // Add save
+          const { error: insertError } = await supabase
+            .from('saves')
+            .insert({ user_id: user.id, prompt_id: promptId })
+
+          if (insertError) {
+            // If already exists (race condition), treat as already saved
+            if (insertError.code === '23505') {
+              return { error: null, data: { action: 'already_saved', promptId, userId: user.id } }
+            }
+            throw insertError
+          }
+
+          action = 'added'
+          result = { action, promptId, userId: user.id }
+        }
+
+        return { error: null, data: result }
+      } catch (err: any) {
+        console.warn('saves.toggle: falling back to mock:', err?.message)
+      }
+    }
+
+    // Fallback to mock data
     await delay(50)
     return {
       error: null,
       data: { action: 'added', promptId }
-     }
+    }
   },
-  getForUser: async (_userId: string) => {
+  getForUser: async (userId: string) => {
+    if (isSupabaseReady) {
+      try {
+        const { data, error } = await supabase
+          .from('saves')
+          .select('user_id, prompt_id, created_at')
+          .eq('user_id', userId)
+
+        if (error) throw error
+
+        const mapped = (data || []).map(row => ({
+          userId: row.user_id,
+          promptId: row.prompt_id,
+          createdAt: row.created_at,
+        }))
+
+        return { error: null, data: mapped }
+      } catch (err: any) {
+        console.warn('saves.getForUser: falling back to mock:', err?.message)
+      }
+    }
+
+    // Fallback to mock data
     await delay(50)
     return {
       error: null,
       data: []
     }
-    }
+  }
 }
 // ============================================
 // COMMENTS API

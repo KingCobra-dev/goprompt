@@ -67,6 +67,11 @@ export function Navigation({
       .slice(0, 2)
   }
 
+  const mobileMunuWrapper = (fn?: () => void) => () => {
+    fn?.()
+    setIsMobileMenuOpen(false)
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
@@ -211,8 +216,11 @@ export function Navigation({
             <Button
               variant="ghost"
               size="sm"
-              className="md:hidden"
+              className="md:hidden p-2"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-navigation-menu"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               <Menu className="h-4 w-4" />
             </Button>
@@ -221,7 +229,7 @@ export function Navigation({
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t py-4">
+          <div id="mobile-navigation-menu" className="md:hidden border-t py-4">
             <nav className="flex flex-col gap-2">
               <div className="flex items-center justify-between px-2 py-1">
                 <span className="text-sm font-medium">Theme</span>
@@ -230,7 +238,7 @@ export function Navigation({
               <Button
                 variant="ghost"
                 className="justify-start nav-button group"
-                onClick={onHomeClick}
+                onClick={mobileMunuWrapper(onHomeClick)}
               >
                 <Home className="mr-2 h-4 w-4 group-hover:text-accent" />
                 Home
@@ -238,7 +246,7 @@ export function Navigation({
               <Button
                 variant="ghost"
                 className="justify-start nav-button group"
-                onClick={() => onExploreClick?.()}
+                onClick={mobileMunuWrapper(onExploreClick)}
               >
                 <Compass className="mr-2 h-4 w-4 group-hover:text-accent" />
                 Discover Repos
@@ -246,7 +254,7 @@ export function Navigation({
               <Button
                 variant="ghost"
                 className="justify-start nav-button group"
-                onClick={onReposClick}
+                onClick={mobileMunuWrapper(onReposClick)}
               >
                 <Package className="mr-2 h-4 w-4 group-hover:text-accent" />
                 Explore Prompts

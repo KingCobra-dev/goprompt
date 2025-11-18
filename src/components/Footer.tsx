@@ -3,14 +3,12 @@ interface FooterProps {
   onNavigateToAbout?: () => void
   onNavigateToTerms?: () => void
   onNavigateToPrivacy?: () => void
-  onNavigateToTeam?: () => void
 }
 
 export function Footer({
   onNavigateToAbout,
   onNavigateToTerms,
   onNavigateToPrivacy,
-  onNavigateToTeam,
 }: FooterProps) {
   return (
     <footer className="bg-slate-50 dark:bg-slate-900/50 py-16 mt-12 mb-[20px]">
@@ -37,7 +35,7 @@ export function Footer({
           </div>
 
           {/* Right Side - Links */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-8 text-sm">
             {/* Company */}
             <div>
               <h3 className="font-semibold mb-3">Company</h3>
@@ -51,12 +49,12 @@ export function Footer({
                   </button>
                 </li>
                 <li>
-                  <button
-                    onClick={onNavigateToTeam}
+                  <a
+                    href="#"
                     className="hover:text-accent active:text-accent transition-colors"
                   >
-                    Our Team
-                  </button>
+                    Blog
+                  </a>
                 </li>
                 <li>
                   <a
@@ -103,37 +101,6 @@ export function Footer({
                     className="hover:text-accent active:text-accent transition-colors"
                   >
                     Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Resources */}
-            <div>
-              <h3 className="font-semibold mb-3">Resources</h3>
-              <ul className="space-y-2 text-muted-foreground">
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent active:text-accent transition-colors"
-                  >
-                    Documentation
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent active:text-accent transition-colors"
-                  >
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="hover:text-accent active:text-accent transition-colors"
-                  >
-                    Help Center
                   </a>
                 </li>
               </ul>

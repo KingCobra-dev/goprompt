@@ -68,9 +68,17 @@ create table if not exists stars (
 -- Saves
 create table if not exists saves (
   user_id uuid not null references users(id) on delete cascade,
-  repo_id uuid not null references repos(id) on delete cascade,
+  prompt_id uuid not null references prompts(id) on delete cascade,
   created_at timestamp with time zone default now(),
-  primary key (user_id, repo_id)
+  primary key (user_id, prompt_id)
+);
+
+-- Hearts
+create table if not exists hearts (
+  user_id uuid not null references users(id) on delete cascade,
+  prompt_id uuid not null references prompts(id) on delete cascade,
+  created_at timestamp with time zone default now(),
+  primary key (user_id, prompt_id)
 );
 
 -- Comments
@@ -105,6 +113,7 @@ alter table repos enable row level security;
 alter table prompts enable row level security;
 alter table stars enable row level security;
 alter table saves enable row level security;
+alter table hearts enable row level security;
 alter table comments enable row level security;
 alter table prompt_images enable row level security;
 
@@ -160,8 +169,13 @@ create policy if not exists "User can star repos" on stars for insert with check
 create policy if not exists "User can unstar" on stars for delete using (user_id = auth.uid());
 
 create policy if not exists "User can read own saves" on saves for select using (user_id = auth.uid());
-create policy if not exists "User can save repos" on saves for insert with check (user_id = auth.uid());
+create policy if not exists "User can save prompts" on saves for insert with check (user_id = auth.uid());
 create policy if not exists "User can unsave" on saves for delete using (user_id = auth.uid());
+
+-- Hearts: users can manage their own heart rows
+create policy if not exists "User can read own hearts" on hearts for select using (user_id = auth.uid());
+create policy if not exists "User can heart prompts" on hearts for insert with check (user_id = auth.uid());
+create policy if not exists "User can unheart" on hearts for delete using (user_id = auth.uid());
 
 -- Comments: allow reading; write restricted to owner
 create policy if not exists "Anyone can read comments" on comments for select using (true);
@@ -298,6 +312,27 @@ begin
 end;
 $$;
 
+-- Trigger to update save_count
+create or replace function update_prompt_save_count()
+returns trigger
+language plpgsql
+as $$
+begin
+  if TG_OP = 'INSERT' then
+    update prompts set save_count = save_count + 1 where id = NEW.prompt_id;
+    return NEW;
+  elsif TG_OP = 'DELETE' then
+    update prompts set save_count = greatest(0, save_count - 1) where id = OLD.prompt_id;
+    return OLD;
+  end if;
+  return null;
+end;
+$$;
+
+create trigger save_count_trigger
+  after insert or delete on saves
+  for each row execute function update_prompt_save_count();
+
 -- Indexes
 create index if not exists idx_repos_user_id on repos(user_id);
 create index if not exists idx_repos_visibility on repos(visibility);
@@ -305,5 +340,9 @@ create index if not exists idx_prompts_repo_id on prompts(repo_id);
 create index if not exists idx_prompt_images_prompt_id on prompt_images(prompt_id);
 create index if not exists idx_stars_user_id on stars(user_id);
 create index if not exists idx_stars_repo_id on stars(repo_id);
+create index if not exists idx_hearts_user_id on hearts(user_id);
+create index if not exists idx_hearts_prompt_id on hearts(prompt_id);
+create index if not exists idx_saves_user_id on saves(user_id);
+create index if not exists idx_saves_prompt_id on saves(prompt_id);
 create index if not exists idx_comments_repo_id on comments(repo_id);
 create index if not exists idx_comments_user_id on comments(user_id);

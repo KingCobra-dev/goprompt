@@ -107,7 +107,7 @@ export function SavedPromptsPage({
               }
             }}
             onShare={async () => {
-              const url = `${window.location.origin}/prompts/${prompt.slug}`
+              const url = `${window.location.origin}/prompts/${encodeURIComponent(prompt.slug)}`
               try {
                 if (navigator.share) {
                   await navigator.share({

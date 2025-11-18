@@ -1,0 +1,40 @@
+import { useEffect, useState } from "react"
+
+const DESKTOP_MIN_WIDTH = 1024
+
+export function useIsDesktop(): boolean {
+	const [isDesktop, setIsDesktop] = useState(() => {
+		if (typeof window === "undefined") return true
+		return window.innerWidth >= DESKTOP_MIN_WIDTH
+	})
+
+	useEffect(() => {
+		if (typeof window === "undefined") return
+
+		const handleResize = () => {
+			setIsDesktop(window.innerWidth >= DESKTOP_MIN_WIDTH)
+		}
+
+		handleResize()
+		window.addEventListener("resize", handleResize)
+		return () => window.removeEventListener("resize", handleResize)
+	}, [])
+
+	return isDesktop
+}
+
+export function useResponsivePadding() {
+	const isDesktop = useIsDesktop()
+
+	// Desktop keeps existing spacing; mobile gets tighter padding.
+	const containerPaddingX = isDesktop ? "px-4" : "px-3"
+	const containerPaddingY = isDesktop ? "py-6" : "py-4"
+	const sectionTopPadding = isDesktop ? "py-12 md:py-16" : "pt-8 pb-10"
+
+	return {
+		isDesktop,
+		containerPadding: `${containerPaddingX} ${containerPaddingY}`,
+		sectionTopPadding,
+	}
+}
+

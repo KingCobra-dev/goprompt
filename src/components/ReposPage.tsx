@@ -5,9 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { RepoCard } from './RepoCard'
 import { PromptCard } from './PromptCard'
 import { Plus, Search, Package, Grid3X3, List } from 'lucide-react'
-import { repos as reposApi, prompts as promptsApi } from '../lib/api'
+import { repos as reposApi, prompts as promptsApi, repoSocial } from '../lib/api'
 import type { Repo } from '../lib/data'
 import type { Prompt } from '../lib/types'
+import { useApp } from '../contexts/AppContext'
+import { useResponsivePadding } from '@/hooks/src/hooks/useIsDesktop'
 
 interface ReposPageProps {
   userId?: string
@@ -23,9 +25,9 @@ export function ReposPage({
   onRepoClick, 
   onPromptClick, 
   onCreateRepo, 
-  onCreatePrompt,
   mode 
 }: ReposPageProps) {
+  const { dispatch, state } = useApp()
   const [repos, setRepos] = useState<Repo[]>([])
   const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
   const [starredRepos, setStarredRepos] = useState<Set<string>>(new Set())
@@ -38,7 +40,8 @@ export function ReposPage({
   // Common state
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'all' | 'public' | 'private' | 'trending' | 'recent'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'public' | 'private' | 'trending' | 'recent' | 'saved'>('all')
+  const { containerPadding } = useResponsivePadding()
 
   // Load data based on mode
   useEffect(() => {
@@ -56,12 +59,21 @@ export function ReposPage({
     } else {
       filterPrompts()
     }
-  }, [mode === 'repos' ? repos : prompts, searchQuery, activeTab])
+  }, [mode === 'repos' ? repos : prompts, searchQuery, activeTab, state.saves])
 
   const loadRepos = async () => {
     setLoading(true)
     const { data } = await reposApi.getAll(userId)
     setRepos(data || [])
+    
+    // Load starred repos if user is logged in
+    if (userId) {
+      const { data: starredData } = await repoSocial.getStarredRepos(userId)
+      if (starredData) {
+        setStarredRepos(new Set(starredData))
+      }
+    }
+    
     setLoading(false)
   }
 
@@ -82,10 +94,12 @@ export function ReposPage({
       // Sort by creation date, most recent first
       allPrompts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       setPrompts(allPrompts)
+      dispatch({ type: 'SET_PROMPTS', payload: allPrompts })
     } else {
       // For regular prompts mode, load all prompts
       const { data } = await promptsApi.getAll()
       setPrompts(data || [])
+      dispatch({ type: 'SET_PROMPTS', payload: data || [] })
     }
     setLoading(false)
   }
@@ -126,26 +140,77 @@ export function ReposPage({
       )
     }
 
-    // Filter by tab
-    if (activeTab === 'trending') {
-      filtered = filtered.sort((a, b) => (b.hearts || 0) - (a.hearts || 0))
-    } else if (activeTab === 'recent') {
-      filtered = filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    // Sort/Filter by tab
+    switch (activeTab) {
+      case 'trending':
+        filtered.sort((a, b) => (b.hearts || 0) - (a.hearts || 0))
+        break
+      case 'recent':
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        break
+      case 'saved':
+        // Filter to only show saved prompts
+        const savedPromptIds = new Set(state.saves.map(save => save.promptId))
+        filtered = filtered.filter(prompt => savedPromptIds.has(prompt.id))
+        break
+      case 'all':
+      default:
+        // For 'all', sort by creation date (most recent first) as default
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        break
     }
 
     setFilteredPrompts(filtered)
   }
 
   const handleStarRepo = async (repoId: string) => {
+    if (!userId) return // Can't star without being logged in
+    
+    const wasStarred = starredRepos.has(repoId)
     const newStarred = new Set(starredRepos)
-    if (newStarred.has(repoId)) {
+    
+    // Optimistically update UI
+    if (wasStarred) {
       newStarred.delete(repoId)
-      // await repoSocial.unstar(repoId, userId)
     } else {
       newStarred.add(repoId)
-      // await repoSocial.star(repoId, userId)
     }
     setStarredRepos(newStarred)
+    
+    // Optimistically update star count
+    setRepos(prevRepos => 
+      prevRepos.map(repo => 
+        repo.id === repoId 
+          ? { ...repo, starCount: wasStarred ? Math.max(0, repo.starCount - 1) : repo.starCount + 1 }
+          : repo
+      )
+    )
+    
+    try {
+      if (wasStarred) {
+        await repoSocial.unstar(repoId, userId)
+      } else {
+        await repoSocial.star(repoId, userId)
+      }
+    } catch (error) {
+      // Revert optimistic updates on error
+      const revertStarred = new Set(starredRepos)
+      if (wasStarred) {
+        revertStarred.add(repoId)
+      } else {
+        revertStarred.delete(repoId)
+      }
+      setStarredRepos(revertStarred)
+      
+      setRepos(prevRepos => 
+        prevRepos.map(repo => 
+          repo.id === repoId 
+            ? { ...repo, starCount: wasStarred ? repo.starCount + 1 : Math.max(0, repo.starCount - 1) }
+            : repo
+        )
+      )
+      console.error('Failed to star/unstar repo:', error)
+    }
   }
 
   // const handleForkRepo = async (repoId: string) => {
@@ -158,7 +223,7 @@ export function ReposPage({
   // }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className={`container mx-auto ${containerPadding}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -241,6 +306,9 @@ export function ReposPage({
               <TabsTrigger value="recent">
                 Recent
               </TabsTrigger>
+              <TabsTrigger value="saved">
+                Saved
+              </TabsTrigger>
             </>
           )}
         </TabsList>
@@ -298,6 +366,15 @@ export function ReposPage({
             </TabsContent>
 
             <TabsContent value="recent" className="mt-0">
+              <PromptList
+                prompts={filteredPrompts}
+                loading={loading}
+                onPromptClick={onPromptClick!}
+                viewMode={viewMode}
+              />
+            </TabsContent>
+
+            <TabsContent value="saved" className="mt-0">
               <PromptList
                 prompts={filteredPrompts}
                 loading={loading}

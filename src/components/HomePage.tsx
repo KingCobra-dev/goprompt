@@ -1,6 +1,7 @@
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { ArrowRight, GitFork, Star, User, Package, Crown } from 'lucide-react'
+import { useResponsivePadding } from '@/hooks/src/hooks/useIsDesktop'
 
 interface HomePageProps {
   user?: {
@@ -17,22 +18,25 @@ interface HomePageProps {
 }
 
 export function HomePage({ user, onGetStarted, onCreateRepo, onExplorePrompts }: HomePageProps) {
+  const { containerPadding, sectionTopPadding } = useResponsivePadding()
+
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className={`container mx-auto ${containerPadding}`}>
       {/* Hero Section */}
-      <section className="relative py-12 md:py-16">
+      <section className={`relative ${sectionTopPadding}`}>
         <div className="text-center max-w-4xl mx-auto">
           <div className="flex items-center justify-center gap-2 mb-6"></div>
 
-          <h1 className="text-5xl lg:text-6xl mb-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Share, Discover, and Showcase the Best AI Prompts
-          </h1>
-
+          
+ <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight max-w-4xl mx-auto leading-[1.05]">
+                GitHub for Your
+                <br />
+                <span className="text-primary">
+                  AI Prompts
+                </span>
+              </h1>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            PromptsGo is the professional home for prompt engineers,
-            freelancers, and AI enthusiasts. Organize your prompts, collaborate
-            with the community, and showcase your expertise in client-ready
-            portfolios.
+            Stop losing your best prompts. Organize, version, and collaborate on AI prompts across ChatGPT, Claude, Grok, and more.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
@@ -56,6 +60,12 @@ export function HomePage({ user, onGetStarted, onCreateRepo, onExplorePrompts }:
           </p>
         </div>
       </section>
+
+
+
+
+
+
 
       {/* Features */}
       <section className="pt-0 pb-12 md:pb-16 ">

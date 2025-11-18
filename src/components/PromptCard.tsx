@@ -42,6 +42,7 @@ interface PromptCardProps {
   onClick?: () => void
   onHeart?: () => void // Keep for backwards compatibility
   onSave?: () => void // Keep for backwards compatibility
+  onShare?: () => void
   onEdit?: () => void
   onDelete?: () => void
   showManagement?: boolean
@@ -81,6 +82,11 @@ export function PromptCard({
   // Calculate the actual save state from context
   const isActuallySaved = state.saves.some(
     s => s.userId === state.user?.id && s.promptId === _id
+  )
+
+  // Prefer authoritative count from global prompts state when available
+  const heartsCount = (
+    state.prompts.find(p => p.id === _id)?.hearts ?? stats?.hearts ?? 0
   )
 
   const handleHeart = async () => {
@@ -211,7 +217,7 @@ export function PromptCard({
 
         {/* Category Badge and Success Badge */}
         <div className="flex items-center gap-2">
-          {categoryData ? (
+          {categoryData && categoryData.id !== 'other' ? (
             <Badge
               variant="outline"
               className="text-xs"
@@ -223,7 +229,7 @@ export function PromptCard({
             >
               {categoryData.label}
             </Badge>
-          ) : category ? (
+          ) : category && category !== 'other' ? (
             <Badge variant="outline" className="text-xs">
               {category}
             </Badge>
@@ -235,6 +241,40 @@ export function PromptCard({
             </Badge>
           )}
         </div>
+
+        {/* Tags */}
+        {_tags && _tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {_tags.slice(0, 3).map((tag: string) => (
+              <Badge
+                key={tag}
+                variant="outline"
+                className="text-xs px-2 py-0.5 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+                style={{
+                  borderColor: '#3B82F6' + '30',
+                  color: '#3B82F6',
+                  backgroundColor: '#3B82F6' + '08',
+                }}
+              >
+                <span className="text-primary/60 mr-1">#</span>
+                {tag}
+              </Badge>
+            ))}
+            {_tags.length > 3 && (
+              <Badge
+                variant="outline"
+                className="text-xs px-2 py-0.5 border-primary/20 bg-primary/5"
+                style={{
+                  borderColor: '#3B82F6' + '30',
+                  color: '#3B82F6',
+                  backgroundColor: '#3B82F6' + '08',
+                }}
+              >
+                +{_tags.length - 3} more
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Stats and Actions */}
         <div className="flex items-center justify-between text-xs">
@@ -292,7 +332,7 @@ export function PromptCard({
                   transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               />
-              {stats?.hearts || 0}
+              {heartsCount}
             </Button>
 
             <Button
@@ -319,13 +359,6 @@ export function PromptCard({
                   transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 }}
               />
-              <span
-                className={`transition-colors duration-300 ${
-                  isActuallySaved ? 'text-primary' : ''
-                } ${saveAnimating ? 'animate-pulse' : ''}`}
-              >
-                {stats?.saves || 0}
-              </span>
             </Button>
 
             <Button

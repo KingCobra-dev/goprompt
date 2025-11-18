@@ -24,10 +24,19 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
   const [newTag, setNewTag] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const getWordCount = (text: string) => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length
+  }
 
   const addTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim()) && tags.length < 10) {
-      setTags([...tags, newTag.trim()])
+    const inputTags = newTag.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+    const remainingSlots = 10 - tags.length
+    const validTags = inputTags
+      .filter(tag => !tags.includes(tag))
+      .slice(0, remainingSlots)
+    
+    if (validTags.length > 0) {
+      setTags([...tags, ...validTags])
       setNewTag('')
     }
   }
@@ -56,12 +65,26 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
       setError('Repository name must be at least 3 characters.')
       return
     }
+    const d = description.trim()
+    const wordCount = getWordCount(d)
+    if (wordCount < 10) {
+      setError('Repository description must be at least 10 words.')
+      return
+    }
+    if (wordCount > 50) {
+      setError('Repository description must not exceed 50 words.')
+      return
+    }
+    if (tags.length === 0) {
+      setError('At least one tag is required.')
+      return
+    }
     try {
       setSubmitting(true)
       const { data, error } = await reposApi.create({
         userId,
         name: n,
-        description: description.trim(),
+        description: d,
         visibility,
         tags,
       } as any)
@@ -90,12 +113,42 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="repo-name">Name</Label>
+            <Label htmlFor="repo-name">Name *</Label>
             <Input id="repo-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. My Prompt Collection" />
           </div>
           <div>
-            <Label htmlFor="repo-description">Description</Label>
+            <Label htmlFor="repo-description">Description *</Label>
             <Textarea id="repo-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What is this repository about?" rows={3} />
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className={`font-medium ${
+                  getWordCount(description) < 10 ? 'text-red-500' :
+                  getWordCount(description) > 50 ? 'text-orange-500' :
+                  'text-green-600'
+                }`}>
+                  {getWordCount(description)} words
+                </span>
+                <span className="text-muted-foreground">10-50 required</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    getWordCount(description) < 10 ? 'bg-red-500' :
+                    getWordCount(description) > 50 ? 'bg-orange-500' :
+                    'bg-green-600'
+                  }`}
+                  style={{
+                    width: `${Math.min(Math.max((getWordCount(description) / 50) * 100, 0), 100)}%`
+                  }}
+                ></div>
+              </div>
+              {getWordCount(description) < 10 && (
+                <p className="text-xs text-red-500">Add {10 - getWordCount(description)} more words</p>
+              )}
+              {getWordCount(description) > 50 && (
+                <p className="text-xs text-orange-500">Remove {getWordCount(description) - 50} words</p>
+              )}
+            </div>
           </div>
           <div>
             <Label>Visibility</Label>
@@ -111,13 +164,13 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
           </div>
 
           <div>
-            <Label>Tags (Optional)</Label>
+            <Label>Tags *</Label>
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input
                   value={newTag}
                   onChange={(e) => setNewTag(e.target.value)}
-                  placeholder="Add a tag..."
+                  placeholder="Add tags (comma-separated)..."
                   onKeyPress={(e) => e.key === 'Enter' && addTag()}
                 />
                 <Button
@@ -134,13 +187,21 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
                   <Badge
                     key={tag}
                     variant="secondary"
-                    className="flex items-center gap-1"
+                    className="flex items-center gap-1 pr-1"
                   >
                     {tag}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => removeTag(tag)}
-                    />
+                    <button
+                      type="button"
+                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        removeTag(tag)
+                      }}
+                      aria-label={`Remove ${tag} tag`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
               </div>

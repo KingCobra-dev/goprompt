@@ -5,9 +5,11 @@ import { Tabs, TabsList, TabsTrigger } from './ui/tabs'
 import { RepoCard } from './RepoCard'
 import { Badge } from './ui/badge'
 import { Grid3X3, List, Search, TrendingUp, Clock, Star } from 'lucide-react'
-import { repos as reposApi } from '../lib/api'
+import { repos as reposApi, repoSocial } from '../lib/api'
 import type { Repo } from '../lib/data'
 import { categories } from '../lib/data'
+import { useApp } from '../contexts/AppContext'
+import { useResponsivePadding } from '@/hooks/src/hooks/useIsDesktop'
 interface ExplorePageProps {
   onBack: () => void
   onRepoClick: (repoId: string) => void
@@ -20,6 +22,8 @@ export function ExplorePage({
   onRepoClick, 
   initialSearchQuery 
 }: ExplorePageProps) {
+  const { state } = useApp()
+  const user = state.user
  
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [repos, setRepos] = useState<Repo[]>([])
@@ -29,6 +33,7 @@ export function ExplorePage({
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'trending' | 'recent' | 'stars'>('trending')
   const [starredRepos, setStarredRepos] = useState<Set<string>>(new Set())
+  const { containerPadding } = useResponsivePadding()
  
   useEffect(() => {
      loadRepos()
@@ -42,6 +47,15 @@ export function ExplorePage({
     setLoading(true)
     const { data } = await reposApi.getAll()
     setRepos(data || [])
+    
+    // Load starred repos if user is logged in
+    if (user?.id) {
+      const { data: starredData } = await repoSocial.getStarredRepos(user.id)
+      if (starredData) {
+        setStarredRepos(new Set(starredData))
+      }
+    }
+    
     setLoading(false)
   }
    
@@ -89,14 +103,58 @@ export function ExplorePage({
   }
 
 
-  const handleStarRepo = (repoId: string) => {
+  const handleStarRepo = async (repoId: string) => {
+    if (!user?.id) {
+      // TODO: Show login prompt or redirect to auth
+      alert('Please log in to star repositories')
+      return
+    }
+    
+    const wasStarred = starredRepos.has(repoId)
     const newStarred = new Set(starredRepos)
-    if (newStarred.has(repoId)) {
+    
+    // Optimistically update UI
+    if (wasStarred) {
       newStarred.delete(repoId)
     } else {
       newStarred.add(repoId)
     }
     setStarredRepos(newStarred)
+    
+    // Optimistically update star count
+    setRepos(prevRepos => 
+      prevRepos.map(repo => 
+        repo.id === repoId 
+          ? { ...repo, starCount: wasStarred ? Math.max(0, repo.starCount - 1) : repo.starCount + 1 }
+          : repo
+      )
+    )
+    
+    try {
+      if (wasStarred) {
+        await repoSocial.unstar(repoId, user.id)
+      } else {
+        await repoSocial.star(repoId, user.id)
+      }
+    } catch (error) {
+      // Revert optimistic updates on error
+      const revertStarred = new Set(starredRepos)
+      if (wasStarred) {
+        revertStarred.add(repoId)
+      } else {
+        revertStarred.delete(repoId)
+      }
+      setStarredRepos(revertStarred)
+      
+      setRepos(prevRepos => 
+        prevRepos.map(repo => 
+          repo.id === repoId 
+            ? { ...repo, starCount: wasStarred ? repo.starCount + 1 : Math.max(0, repo.starCount - 1) }
+            : repo
+        )
+      )
+      console.error('Failed to star/unstar repo:', error)
+    }
   }
    // const handleForkRepo = (repoId: string) => {
   //   console.log('Forking repo:', repoId)
@@ -105,7 +163,7 @@ export function ExplorePage({
 
   // Show loading state
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className={`container mx-auto ${containerPadding}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
