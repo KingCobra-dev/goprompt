@@ -10,6 +10,8 @@ const SettingsPage = lazy(() => import("./components/SettingsPage").then(m => ({
 const ReposPage = lazy(() => import("./components/ReposPage").then(m => ({ default: m.ReposPage })));
 const RepoDetailPage = lazy(() => import("./components/RepoDetailPage").then(m => ({ default: m.RepoDetailPage })));
 const AboutPage = lazy(() => import("./components/AboutPage").then(m => ({ default: m.default || m }))); // support both default & named
+const PrivacyPage = lazy(() => import("./components/PrivacyPage").then(m => ({ default: m.default || m }))); // support both default & named
+const TermsPage = lazy(() => import("./components/TermsPage").then(m => ({ default: m.default || m }))); // support both default & named
 const AuthModal = lazy(() => import("./components/AuthModal").then(m => ({ default: m.AuthModal })));
 import { Footer } from "./components/Footer";
 import { Prompt } from "./lib/types";
@@ -241,6 +243,17 @@ console.log("AppContent rendering, state:", state);
   const handleBack = () => setCurrentPage({ type: "home" });
 
   const handlePromptBack = () => {
+    // First, check if the current prompt belongs to a repo
+    if (currentPage.type === "prompt") {
+      const currentPrompt = state.prompts.find(p => p.id === currentPage.promptId)
+      if (currentPrompt?.repoId) {
+        // If prompt belongs to a repo, go back to that repo
+        setCurrentPage({ type: "repo", repoId: currentPrompt.repoId });
+        return;
+      }
+    }
+
+    // Fallback to original logic if no repoId or prompt not found
     if (currentPage.type === "prompt" && currentPage.from) {
       switch (currentPage.from) {
         case "repo":
@@ -267,6 +280,9 @@ console.log("AppContent rendering, state:", state);
           break;
         case "profile":
           setCurrentPage({ type: "profile", userId: state.user?.id || "" });
+          break;
+        case "create":
+          setCurrentPage({ type: "home" }); // Go to home after creating a prompt
           break;
         default:
           setCurrentPage({ type: "home" });
@@ -447,16 +463,19 @@ console.log("AppContent rendering, state:", state);
 
         {currentPage.type === "create" && (
           <CreatePromptPage
-            onBack={handleBack}
+            onBack={currentPage.editingPrompt ? () => setCurrentPage({ type: "prompt", promptId: currentPage.editingPrompt!.id, from: "create" }) : handleBack}
             editingPrompt={currentPage.editingPrompt}
             repoId={currentPage.repoId}
-            onPublish={(isNewPrompt: boolean) => {
-              if (isNewPrompt && state.user) {
+            onPublish={(isNewPrompt: boolean, promptId?: string) => {
+              if (isNewPrompt && promptId) {
                  setCurrentPage({
-                  type: "profile",
-                  userId: state.user.id,
-                  tab: "created",
+                  type: "prompt",
+                  promptId,
+                  from: "create",
                 });
+              } else if (currentPage.editingPrompt) {
+                // After editing, go back to the prompt detail page
+                setCurrentPage({ type: "prompt", promptId: currentPage.editingPrompt.id, from: "create" });
               } else {
                 handleBack();
               }
@@ -486,6 +505,8 @@ console.log("AppContent rendering, state:", state);
         )}
 
         {currentPage.type === "about" && <AboutPage onBack={handleBack} />}
+        {currentPage.type === "privacy" && <PrivacyPage onBack={handleBack} />}
+        {currentPage.type === "terms" && <TermsPage onBack={handleBack} />}
         </Suspense>
       </main>
 

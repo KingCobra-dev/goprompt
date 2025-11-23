@@ -74,6 +74,7 @@ export function SavedPromptsPage({
               saves: prompt.saveCount,
               forks: prompt.forkCount,
             }}
+            visibility={prompt.visibility}
             isSaved={prompt.isSaved}
             isHearted={prompt.isHearted}
             createdAt={prompt.createdAt}

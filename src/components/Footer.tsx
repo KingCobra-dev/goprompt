@@ -48,17 +48,10 @@ export function Footer({
                     About
                   </button>
                 </li>
+          
                 <li>
                   <a
-                    href="#"
-                    className="hover:text-accent active:text-accent transition-colors"
-                  >
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
+                    href="https://www.linkedin.com/company/promptsgo"
                     className="hover:text-accent active:text-accent transition-colors"
                   >
                     LinkedIn
@@ -66,7 +59,7 @@ export function Footer({
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href="https://twitter.com/promptsgo"
                     className="hover:text-accent active:text-accent transition-colors"
                   >
                     Twitter
@@ -97,7 +90,7 @@ export function Footer({
                 </li>
                 <li>
                   <a
-                    href="mailto:support@promptsgo.com"
+                    href="mailto:contact@promptsgo.com"
                     className="hover:text-accent active:text-accent transition-colors"
                   >
                     Contact

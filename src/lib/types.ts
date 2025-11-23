@@ -105,26 +105,3 @@ export interface SearchFilters {
   categories: string[]
   sortBy: 'trending' | 'recent' | 'stars' | string
 }
-// Draft types for create/edit forms
-export interface Draft {
-  id: string
-  userId: string
-  title: string
-  description: string
-  content: string
-  category: string
-  tags: string[]
-  type: 'text' | 'image' | 'code' | 'agent' | 'chain' | 'conversation'
-  modelCompatibility: string[]
-  visibility?: 'public' | 'private' | 'unlisted'
-  images?: PromptImage[]
-  metadata?: {
-    category?: string
-    visibility?: 'public' | 'private' | 'unlisted'
-    selectedModels?: string[]
-    tags?: string[]
-    images?: PromptImage[]
-    metaDescription?: string
-  }
-  lastSaved?: string
-}

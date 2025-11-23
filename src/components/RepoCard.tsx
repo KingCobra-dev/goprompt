@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Star, GitFork, FileText, Eye, Lock } from 'lucide-react'
+import { Star, GitFork, FileText, Eye, Lock, NotebookPen } from 'lucide-react'
 import { getInitials } from '../lib/utils/string'
 import { getRelativeTime } from '../lib/utils/date'
 import type { Repo } from '../lib/data'
@@ -96,7 +96,7 @@ export function RepoCard({ repo, onClick, onStar, onFork, isStarred }: RepoCardP
               <span>{repo.forkCount}</span>
             </div> */}
             <div className="flex items-center gap-1">
-              <FileText className="h-4 w-4" />
+              <NotebookPen className="h-4 w-4" />
               <span>{repo.promptCount}</span>
             </div>
           </div>

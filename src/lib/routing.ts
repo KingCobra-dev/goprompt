@@ -12,7 +12,7 @@ export type Page =
   | { type: "my-prompts"; userId?: string }
   | { type: "repo"; repoId: string; from?: "explore" | "repos" | "my-repo" }
   | { type: "create"; editingPrompt?: Prompt; repoId?: string }
-  | { type: "prompt"; promptId: string; from?: "home" | "explore" | "repos" | "my-repo" | "my-prompts" | "repo" | "profile"; repoId?: string }
+  | { type: "prompt"; promptId: string; from?: "home" | "explore" | "repos" | "my-repo" | "my-prompts" | "repo" | "profile" | "create"; repoId?: string }
   | { type: "profile"; userId: string; tab?: string }
   | { type: "settings" }
   | { type: "about" }
@@ -158,7 +158,7 @@ export function urlToPage(pathname: string, searchParams: URLSearchParams): Page
         return {
           type: "prompt",
           promptId: secondSegment,
-          from: (searchParams.get("from") as "home" | "explore" | "repos" | "my-repo" | "my-prompts" | "repo" | "profile") || undefined,
+          from: (searchParams.get("from") as "home" | "explore" | "repos" | "my-repo" | "my-prompts" | "repo" | "profile" | "create") || undefined,
           repoId: searchParams.get("repoId") || undefined
         };
       }

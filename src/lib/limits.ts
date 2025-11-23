@@ -1,24 +1,33 @@
 /**
  * Check if user can save more prompts
- * @param userId - The user ID
+ * @param user - The user object
  * @param currentSaveCount - Current number of saved prompts
- * @returns True if user can save more, false otherwise
+ * @returns Object with allowed status and message
  */
-export function canSaveMore(_userId: string, currentSaveCount: number): boolean {
-  // Default limit: 1000 saves per user
-  const SAVE_LIMIT = 1000
-  return currentSaveCount < SAVE_LIMIT
+export function canSaveMore(user: any, currentSaveCount: number): { allowed: boolean; message: string } {
+  // Temporarily removed save limits
+  return { allowed: true, message: '' }
 }
 /**
  * Check if user can fork more prompts
- * @param userId - The user ID
+ * @param user - The user object
  * @param currentForkCount - Current number of forked prompts this month
- * @returns True if user can fork more, false otherwise
+ * @returns Object with allowed status and message
  */
-export function canForkMore(_userId: string, currentForkCount: number): boolean {
-  // Default limit: 100 forks per user per month
-  const FORK_LIMIT = 100
-  return currentForkCount < FORK_LIMIT
+export function canForkMore(user: any, currentForkCount: number): { allowed: boolean; message: string } {
+  // Pro users have higher limits
+  const isPro = user?.role === 'pro' || user?.subscriptionStatus === 'active'
+  const FORK_LIMIT = isPro ? 500 : 100
+
+  if (currentForkCount >= FORK_LIMIT) {
+    const limitText = isPro ? '500' : '100'
+    return {
+      allowed: false,
+      message: `Fork limit reached (${limitText} forks per month). ${!isPro ? 'Upgrade to Pro for higher limits!' : ''}`
+    }
+  }
+
+  return { allowed: true, message: '' }
 }
 
 /**

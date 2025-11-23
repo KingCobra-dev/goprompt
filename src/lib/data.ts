@@ -70,21 +70,95 @@ export interface PromptFeedback {
 // Category data
 export const categories = [
   { id: 'writing', name: 'Writing', label: 'Writing', color: '#3B82F6' },
+  { id: 'creative-writing', name: 'Creative Writing', label: 'Creative Writing', color: '#8B5CF6' },
+  { id: 'content-creation', name: 'Content Creation', label: 'Content Creation', color: '#EC4899' },
   { id: 'coding', name: 'Coding', label: 'Coding', color: '#10B981' },
+  { id: 'data-analysis', name: 'Data Analysis', label: 'Data Analysis', color: '#06B6D4' },
   { id: 'business', name: 'Business', label: 'Business', color: '#F59E0B' },
-  { id: 'marketing', name: 'Marketing', label: 'Marketing', color: '#EC4899' },
-  { id: 'research', name: 'Research', label: 'Research', color: '#8B5CF6' },
-  { id: 'education', name: 'Education', label: 'Education', color: '#14B8A6' },
+  { id: 'marketing', name: 'Marketing', label: 'Marketing', color: '#EF4444' },
+  { id: 'seo', name: 'SEO', label: 'SEO', color: '#84CC16' },
+  { id: 'social-media', name: 'Social Media', label: 'Social Media', color: '#F97316' },
+  { id: 'sales', name: 'Sales', label: 'Sales', color: '#6366F1' },
+  { id: 'customer-service', name: 'Customer Service', label: 'Customer Service', color: '#14B8A6' },
+  { id: 'research', name: 'Research', label: 'Research', color: '#8B5A2B' },
+  { id: 'education', name: 'Education', label: 'Education', color: '#7C3AED' },
+  { id: 'teaching', name: 'Teaching', label: 'Teaching', color: '#DC2626' },
+  { id: 'learning', name: 'Learning', label: 'Learning', color: '#059669' },
+  { id: 'design', name: 'Design', label: 'Design', color: '#DB2777' },
+  { id: 'art', name: 'Art', label: 'Art', color: '#EA580C' },
+  { id: 'photography', name: 'Photography', label: 'Photography', color: '#7C2D12' },
+  { id: 'video', name: 'Video', label: 'Video', color: '#C2410C' },
+  { id: 'music', name: 'Music', label: 'Music', color: '#7C3AED' },
+  { id: 'gaming', name: 'Gaming', label: 'Gaming', color: '#2563EB' },
+  { id: 'entertainment', name: 'Entertainment', label: 'Entertainment', color: '#DC2626' },
+  { id: 'health-fitness', name: 'Health & Fitness', label: 'Health & Fitness', color: '#16A34A' },
+  { id: 'cooking', name: 'Cooking', label: 'Cooking', color: '#EA580C' },
+  { id: 'travel', name: 'Travel', label: 'Travel', color: '#0891B2' },
+  { id: 'finance', name: 'Finance', label: 'Finance', color: '#15803D' },
+  { id: 'legal', name: 'Legal', label: 'Legal', color: '#1E40AF' },
+  { id: 'medical', name: 'Medical', label: 'Medical', color: '#BE123C' },
+  { id: 'hr', name: 'HR', label: 'HR', color: '#7C2D12' },
+  { id: 'productivity', name: 'Productivity', label: 'Productivity', color: '#0D9488' },
+  { id: 'personal-development', name: 'Personal Development', label: 'Personal Development', color: '#7C3AED' },
+  { id: 'psychology', name: 'Psychology', label: 'Psychology', color: '#9333EA' },
+  { id: 'science', name: 'Science', label: 'Science', color: '#0F766E' },
+  { id: 'technology', name: 'Technology', label: 'Technology', color: '#374151' },
+  { id: 'engineering', name: 'Engineering', label: 'Engineering', color: '#1F2937' },
+  { id: 'mathematics', name: 'Mathematics', label: 'Mathematics', color: '#4B5563' },
+  { id: 'history', name: 'History', label: 'History', color: '#6B7280' },
+  { id: 'literature', name: 'Literature', label: 'Literature', color: '#9CA3AF' },
+  { id: 'language-learning', name: 'Language Learning', label: 'Language Learning', color: '#D1D5DB' },
+  { id: 'translation', name: 'Translation', label: 'Translation', color: '#F3F4F6' },
   { id: 'other', name: 'Other', label: 'Other', color: '#6B7280' },
 ]
 
 // AI Models
 export const models = [
-  { id: 'gpt4', name: 'GPT-4', description: 'OpenAI GPT-4' },
-  { id: 'gpt35', name: 'GPT-3.5', description: 'OpenAI GPT-3.5 Turbo' },
-  { id: 'claude3', name: 'Claude 3.5 Sonnet', description: 'Anthropic Claude' },
-  { id: 'gemini', name: 'Gemini Pro', description: 'Google Gemini' },
-  { id: 'mistral', name: 'Mistral', description: 'Mistral AI' },
+  // OpenAI Models
+  { id: 'gpt-4o', name: 'GPT-4o', description: 'OpenAI GPT-4o - Latest multimodal model', provider: 'OpenAI' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: 'OpenAI GPT-4o Mini - Fast and efficient', provider: 'OpenAI' },
+  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: 'OpenAI GPT-4 Turbo with enhanced capabilities', provider: 'OpenAI' },
+  { id: 'gpt-4', name: 'GPT-4', description: 'OpenAI GPT-4 - Advanced reasoning model', provider: 'OpenAI' },
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'OpenAI GPT-3.5 Turbo - Fast and reliable', provider: 'OpenAI' },
+
+  // Anthropic Models
+  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', description: 'Anthropic Claude 3.5 Sonnet - Most intelligent model', provider: 'Anthropic' },
+  { id: 'claude-3-5-haiku', name: 'Claude 3.5 Haiku', description: 'Anthropic Claude 3.5 Haiku - Fast and capable', provider: 'Anthropic' },
+  { id: 'claude-3-opus', name: 'Claude 3 Opus', description: 'Anthropic Claude 3 Opus - Powerful analysis model', provider: 'Anthropic' },
+  { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', description: 'Anthropic Claude 3 Sonnet - Balanced performance', provider: 'Anthropic' },
+  { id: 'claude-3-haiku', name: 'Claude 3 Haiku', description: 'Anthropic Claude 3 Haiku - Quick responses', provider: 'Anthropic' },
+
+  // Google Models
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Google Gemini 1.5 Pro - Advanced multimodal', provider: 'Google' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: 'Google Gemini 1.5 Flash - Fast and efficient', provider: 'Google' },
+  { id: 'gemini-1.0-pro', name: 'Gemini 1.0 Pro', description: 'Google Gemini 1.0 Pro - Powerful text generation', provider: 'Google' },
+  { id: 'gemini-ultra', name: 'Gemini Ultra', description: 'Google Gemini Ultra - Most capable model', provider: 'Google' },
+
+  // Meta Models
+  { id: 'llama-3.2-90b', name: 'Llama 3.2 90B', description: 'Meta Llama 3.2 - 90 billion parameters', provider: 'Meta' },
+  { id: 'llama-3.2-11b', name: 'Llama 3.2 11B', description: 'Meta Llama 3.2 - 11 billion parameters', provider: 'Meta' },
+  { id: 'llama-3.1-405b', name: 'Llama 3.1 405B', description: 'Meta Llama 3.1 - 405 billion parameters', provider: 'Meta' },
+  { id: 'llama-3.1-70b', name: 'Llama 3.1 70B', description: 'Meta Llama 3.1 - 70 billion parameters', provider: 'Meta' },
+  { id: 'llama-3.1-8b', name: 'Llama 3.1 8B', description: 'Meta Llama 3.1 - 8 billion parameters', provider: 'Meta' },
+
+  // Mistral Models
+  { id: 'mistral-large', name: 'Mistral Large', description: 'Mistral Large - Advanced reasoning capabilities', provider: 'Mistral' },
+  { id: 'mistral-medium', name: 'Mistral Medium', description: 'Mistral Medium - Balanced performance', provider: 'Mistral' },
+  { id: 'mistral-small', name: 'Mistral Small', description: 'Mistral Small - Fast and efficient', provider: 'Mistral' },
+  { id: 'mixtral-8x7b', name: 'Mixtral 8x7B', description: 'Mistral Mixtral - Mixture of experts model', provider: 'Mistral' },
+
+  // Other Providers
+  { id: 'groq-mixtral', name: 'Groq Mixtral', description: 'Groq-hosted Mixtral - Ultra-fast inference', provider: 'Groq' },
+  { id: 'together-llama', name: 'Together Llama', description: 'Together.ai hosted Llama models', provider: 'Together' },
+  { id: 'replicate-flux', name: 'Replicate Flux', description: 'Replicate-hosted Flux image models', provider: 'Replicate' },
+  { id: 'huggingface-zephyr', name: 'HuggingFace Zephyr', description: 'HuggingFace Zephyr - Open-source chat model', provider: 'HuggingFace' },
+
+  // Image Generation Models
+  { id: 'dall-e-3', name: 'DALL-E 3', description: 'OpenAI DALL-E 3 - Advanced image generation', provider: 'OpenAI' },
+  { id: 'dall-e-2', name: 'DALL-E 2', description: 'OpenAI DALL-E 2 - High-quality images', provider: 'OpenAI' },
+  { id: 'midjourney-v6', name: 'Midjourney V6', description: 'Midjourney V6 - Artistic image generation', provider: 'Midjourney' },
+  { id: 'stable-diffusion-xl', name: 'Stable Diffusion XL', description: 'Stability AI SDXL - Open-source image generation', provider: 'Stability AI' },
+  { id: 'flux-dev', name: 'Flux Dev', description: 'Black Forest Labs Flux - Advanced image generation', provider: 'Black Forest Labs' },
 ]
 
 // Prompt types

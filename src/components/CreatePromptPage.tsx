@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -11,17 +11,16 @@ import {
   SelectValue,
 } from './ui/select'
 import { Badge } from './ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Card, CardContent, CardTitle } from './ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { useApp } from '../contexts/AppContext'
-import { Prompt, PromptImage, Draft, Repo } from '../lib/types'
+import { Prompt, PromptImage, Repo } from '../lib/types'
 import { ImageUpload } from './ImageUpload'
 import { categories, models } from '../lib/data'
 import { prompts, repos } from '../lib/api'
 
 import {
   ArrowLeft,
-  Save,
   Eye,
   FileText,
   Image,
@@ -35,14 +34,15 @@ import {
   Camera,
   Hash,
   Cog,
-  Share2,
   Lock,
+  Save,
+  Loader2,
 } from 'lucide-react'
 
 interface CreatePromptPageProps {
   onBack: () => void
   editingPrompt?: Prompt
-  onPublish?: (isNewPrompt: boolean) => void
+  onPublish?: (isNewPrompt: boolean, promptId?: string) => void
   repoId?: string
 }
 
@@ -100,11 +100,12 @@ export function CreatePromptPage({
 }: CreatePromptPageProps) {
   const { state, dispatch } = useApp()
   const [activeTab, setActiveTab] = useState('editor')
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>(
     'saved'
   )
+  const [isPublishing, setIsPublishing] = useState(false)
   const [repository, setRepository] = useState<Repo | null>(null)
+  const hasLoadedRef = useRef(false)
 
   // Form state
   const [title, setTitle] = useState(editingPrompt?.title || '')
@@ -130,17 +131,13 @@ export function CreatePromptPage({
   // Meta description state
   const [metaDescription, setMetaDescription] = useState('')
 
-  // Custom model state
-  const [customModel, setCustomModel] = useState('')
-
   // Validation
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Track changes for auto-save status
   useEffect(() => {
-    if (lastSaved) {
-      setSaveStatus('unsaved')
-    }
+    if (!hasLoadedRef.current) return // Don't mark as unsaved while loading
+    setSaveStatus('unsaved')
   }, [
     title,
     description,
@@ -153,30 +150,13 @@ export function CreatePromptPage({
     images,
   ])
 
-  // Fetch repository details when repoId is provided
-  useEffect(() => {
-    const fetchRepository = async () => {
-      if (repoId) {
-        try {
-          const { data: repo, error } = await repos.getById(repoId)
-          if (!error && repo) {
-            setRepository(repo)
-          }
-        } catch (err) {
-          console.error('Error fetching repository:', err)
-        }
-      }
-    }
-    fetchRepository()
-  }, [repoId])
-
-  // Auto-save functionality
+  // Auto-save functionality to localStorage
   useEffect(() => {
     if (!state.user || (!title && !content) || saveStatus === 'saved') return
 
     const saveTimer = setTimeout(() => {
-      saveDraft()
-    }, 30000) // Auto-save every 30 seconds
+      saveToLocalStorage()
+    }, 10000) // Auto-save every 10 seconds
 
     return () => clearTimeout(saveTimer)
   }, [
@@ -192,41 +172,97 @@ export function CreatePromptPage({
     saveStatus,
   ])
 
-  const saveDraft = async () => {
+  // Load from localStorage on mount
+  useEffect(() => {
+    if (editingPrompt || !state.user || hasLoadedRef.current) return // Don't load from localStorage when editing existing prompt, no user, or already loaded
+
+    const savedData = loadFromLocalStorage()
+    if (savedData) {
+      console.log('Restoring from localStorage:', savedData)
+      setTitle(savedData.title || '')
+      setDescription(savedData.description || '')
+      setContent(savedData.content || '')
+      setType(savedData.type || 'text')
+      setCategory(savedData.category || '')
+      setVisibility(savedData.visibility || 'public')
+      setSelectedModels(savedData.selectedModels || [])
+      setTags(savedData.tags || [])
+      setImages(savedData.images || [])
+      setMetaDescription(savedData.metaDescription || '')
+      setSaveStatus('saved')
+    } else {
+      console.log('No saved data found in localStorage')
+    }
+    
+    hasLoadedRef.current = true
+  }, [state.user?.id, editingPrompt]) // Use state.user?.id to be more specific
+
+  const saveToLocalStorage = () => {
     if (!state.user) return
 
     try {
       setSaveStatus('saving')
 
-      const draft: Draft = {
-        id: editingPrompt?.id || `draft-${Date.now()}`,
-        userId: state.user.id,
+      const dataToSave = {
         title,
         description,
         content,
         type,
         category,
+        visibility,
+        selectedModels,
         tags,
-        modelCompatibility: selectedModels,
-        metadata: {
-          category,
-          visibility,
-          selectedModels,
-          tags,
-          images,
-          metaDescription,
-        },
+        images,
+        metaDescription,
         lastSaved: new Date().toISOString(),
       }
 
-      dispatch({ type: 'SAVE_DRAFT', payload: draft })
-      setLastSaved(new Date())
+      const key = `prompt-draft-${state.user.id}`
+      localStorage.setItem(key, JSON.stringify(dataToSave))
+      console.log('Saved to localStorage:', key, dataToSave)
       setSaveStatus('saved')
     } catch (error) {
-      console.error('Error saving draft:', error)
+      console.error('Error saving to localStorage:', error)
       setSaveStatus('unsaved')
     }
   }
+
+  const loadFromLocalStorage = () => {
+    if (!state.user) return null
+
+    try {
+      const key = `prompt-draft-${state.user.id}`
+      const saved = localStorage.getItem(key)
+      console.log('Loading from localStorage:', key, saved ? JSON.parse(saved) : null)
+      if (saved) {
+        return JSON.parse(saved)
+      }
+    } catch (error) {
+      console.error('Error loading from localStorage:', error)
+    }
+    return null
+  }
+
+  // Fetch repository details when repoId is provided
+  useEffect(() => {
+    const fetchRepository = async () => {
+      if (repoId) {
+        try {
+          const { data: repo, error } = await repos.getById(repoId)
+          if (!error && repo) {
+            setRepository(repo)
+            // If creating a new prompt in a private repo, default to private visibility
+            if (!editingPrompt && repo.visibility === 'private') {
+              setVisibility('private')
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching repository:', err)
+        }
+      }
+    }
+    fetchRepository()
+  }, [repoId, editingPrompt])
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
@@ -262,6 +298,9 @@ export function CreatePromptPage({
   const handlePublish = async () => {
     if (!validateForm() || !state.user) return
 
+    setIsPublishing(true)
+    let createdPromptId: string | undefined
+
     try {
       const slug = title
         .toLowerCase()
@@ -269,11 +308,10 @@ export function CreatePromptPage({
         .replace(/(^-|-$)/g, '')
 
       let success = false
-      let promptId = editingPrompt?.id
 
       try {
         // Get or create a repository for the user
-        let userRepoId = editingPrompt?.repoId
+        let userRepoId = editingPrompt?.repoId || repoId
 
         if (!userRepoId) {
           // Check if user has any repos
@@ -310,17 +348,16 @@ export function CreatePromptPage({
           category,
           tags,
           modelCompatibility: selectedModels,
-          visibility,
+          visibility: repository?.visibility === 'private' ? 'private' : visibility,
         }
 
         if (editingPrompt) {
-          const { data: updatedPrompt, error: updateError } = await prompts.update(editingPrompt.id, promptData)
+          const { error: updateError } = await prompts.update(editingPrompt.id, promptData)
           if (updateError) throw updateError
-          promptId = updatedPrompt?.id
         } else {
-          const { data: newPrompt, error: createError } = await prompts.create(promptData)
+          const { data: createdPrompt, error: createError } = await prompts.create(promptData)
           if (createError) throw createError
-          promptId = newPrompt?.id
+          createdPromptId = createdPrompt?.id
         }
 
         success = true
@@ -332,7 +369,7 @@ export function CreatePromptPage({
       // Fallback to local state management if Supabase fails
       if (!success) {
         const newPrompt: Prompt = {
-          repoId: editingPrompt?.repoId || '',
+          repoId: editingPrompt?.repoId || repoId || '',
           id: editingPrompt?.id || `prompt-${Date.now()}`,
           userId: state.user.id,
           title,
@@ -342,7 +379,7 @@ export function CreatePromptPage({
           type,
           modelCompatibility: selectedModels,
           tags,
-          visibility,
+          visibility: repository?.visibility === 'private' ? 'private' : visibility,
           attachments: [],
           images,
           category,
@@ -371,18 +408,22 @@ export function CreatePromptPage({
         }
       }
 
-      // Delete draft if it exists
-      const draftId = editingPrompt?.id || `draft-${Date.now()}`
-      dispatch({ type: 'DELETE_DRAFT', payload: draftId })
-
       if (onPublish) {
-        onPublish(!editingPrompt)
+        onPublish(!editingPrompt, createdPromptId)
       } else {
         onBack()
+      }
+
+      // Clear auto-saved data from localStorage after successful publish
+      if (state.user) {
+        const key = `prompt-draft-${state.user.id}`
+        localStorage.removeItem(key)
       }
     } catch (err) {
       console.error('Error publishing prompt:', err)
       setErrors({ submit: 'An unexpected error occurred. Please try again.' })
+    } finally {
+      setIsPublishing(false)
     }
   }
 
@@ -403,66 +444,12 @@ export function CreatePromptPage({
     setTags(tags.filter(tag => tag !== tagToRemove))
   }
 
-  const addModel = () => {
-    if (
-      customModel.trim() &&
-      !selectedModels.includes(customModel.trim()) &&
-      selectedModels.length < 10
-    ) {
-      setSelectedModels([...selectedModels, customModel.trim()])
-      setCustomModel('')
-    }
-  }
-
   const removeModel = (modelToRemove: string) => {
     setSelectedModels(selectedModels.filter(model => model !== modelToRemove))
   }
 
   const wordCount = content.trim().split(/\s+/).length
   const charCount = content.length
-
-  const getSaveStatusText = () => {
-    if (saveStatus === 'saving') return 'Saving...'
-    if (saveStatus === 'unsaved') return 'Unsaved changes'
-    if (lastSaved) {
-      const secondsAgo = Math.floor((Date.now() - lastSaved.getTime()) / 1000)
-      if (secondsAgo < 60) return `Saved ${secondsAgo}s ago`
-      const minutesAgo = Math.floor(secondsAgo / 60)
-      if (minutesAgo < 60) return `Saved ${minutesAgo}m ago`
-      const hoursAgo = Math.floor(minutesAgo / 60)
-      return `Saved ${hoursAgo}h ago`
-    }
-    return ''
-  }
-
-  const handleShare = async () => {
-    const draftId = editingPrompt?.id || `draft-${Date.now()}`
-    const shareUrl = `${window.location.origin}/drafts/${draftId}`
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title || 'Draft Prompt',
-          text: description || 'Check out this prompt draft',
-          url: shareUrl,
-        })
-      } catch (err) {
-        // User cancelled sharing, fallback to clipboard
-        copyToClipboard(shareUrl)
-      }
-    } else {
-      copyToClipboard(shareUrl)
-    }
-  }
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      // Could show a toast notification here
-    } catch (err) {
-      console.error('Failed to copy to clipboard:', err)
-    }
-  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-6xl">
@@ -491,25 +478,23 @@ export function CreatePromptPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <span
-            className={`text-sm ${saveStatus === 'unsaved' ? 'text-orange-600' : saveStatus === 'saving' ? 'text-blue-600' : 'text-muted-foreground'}`}
-          >
-            {getSaveStatusText()}
-          </span>
-          <Button
-            variant="outline"
-            onClick={saveDraft}
-            disabled={saveStatus === 'saving'}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            Save Draft
-          </Button>
-          <Button variant="outline" onClick={handleShare}>
-            <Share2 className="h-4 w-4 mr-2" />
-            Share
-          </Button>
-          <Button onClick={handlePublish}>
-            {editingPrompt ? 'Update' : 'Publish'}
+          {saveStatus !== 'saved' && (
+            <div className="flex items-center gap-1">
+              <Save className={`h-4 w-4 ${saveStatus === 'saving' ? 'animate-pulse text-blue-600' : 'text-orange-600'}`} />
+              <span className={`text-sm ${saveStatus === 'saving' ? 'text-blue-600' : 'text-orange-600'}`}>
+                {saveStatus === 'saving' ? 'Saving...' : 'Unsaved changes'}
+              </span>
+            </div>
+          )}
+          <Button onClick={handlePublish} disabled={isPublishing}>
+            {isPublishing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {editingPrompt ? 'Updating...' : 'Publishing...'}
+              </>
+            ) : (
+              editingPrompt ? 'Update' : 'Publish'
+            )}
           </Button>
         </div>
       </div>
@@ -526,16 +511,14 @@ export function CreatePromptPage({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="editor" className="space-y-6">
+            <TabsContent value="editor" className="space-y-4">
               {/* Basic Info */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                <CardContent className="space-y-3">
+                  <CardTitle className="flex items-center gap-2 mb-3">
                     <PenTool className="h-5 w-5 text-primary" />
                     Basic Information
                   </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Title *</Label>
                     <Input
@@ -580,13 +563,11 @@ export function CreatePromptPage({
 
               {/* Prompt Content */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                <CardContent className="space-y-3">
+                  <CardTitle className="flex items-center gap-2 mb-3">
                     <FileText className="h-5 w-5 text-primary" />
                     Prompt Content
                   </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="content">Prompt Content *</Label>
                     <Textarea
@@ -614,8 +595,8 @@ export function CreatePromptPage({
 
               {/* Images */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                <CardContent className="space-y-3">
+                  <CardTitle className="flex items-center gap-2 mb-3">
                     <Camera className="h-5 w-5 text-primary" />
                     Images
                     <Lock className="h-4 w-4 text-muted-foreground" />
@@ -623,8 +604,6 @@ export function CreatePromptPage({
                   <p className="text-sm text-muted-foreground">
                     Image upload is currently disabled. This feature will be available soon.
                   </p>
-                </CardHeader>
-                <CardContent className="opacity-50 pointer-events-none">
                   <ImageUpload
                     images={images}
                     onImagesChange={setImages}
@@ -645,10 +624,8 @@ export function CreatePromptPage({
 
             <TabsContent value="preview">
               <Card>
-                <CardHeader>
-                  <CardTitle>Preview</CardTitle>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+                  <CardTitle className="mb-3">Preview</CardTitle>
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-xl mb-2">
@@ -671,16 +648,14 @@ export function CreatePromptPage({
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Type & Category */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardContent className="space-y-3">
+              <CardTitle className="flex items-center gap-2 mb-3">
                 <Settings className="h-5 w-5 text-primary" />
                 Type & Category
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label>Prompt Type *</Label>
                 <div className="grid grid-cols-1 gap-2">
@@ -746,74 +721,44 @@ export function CreatePromptPage({
 
           {/* Model Compatibility */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardContent className="space-y-3">
+              <CardTitle className="flex items-center gap-2 mb-3">
                 <Bot className="h-5 w-5 text-primary" />
                 Model Compatibility
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Select AI models that work well with this prompt. Start typing
-                to see suggestions.
+                Select AI models that work well with this prompt. You can select multiple models.
               </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex gap-2">
-                <Input
-                  value={customModel}
-                  onChange={e => setCustomModel(e.target.value)}
-                  placeholder="Type model name (e.g., GPT-4o, Claude-3.5-Sonnet)..."
-                  onKeyPress={e => e.key === 'Enter' && addModel()}
-                  className="text-sm"
-                />
-                <Button
-                  type="button"
-                  onClick={addModel}
-                  disabled={selectedModels.length >= 10}
+              <div className="space-y-2">
+                <Label>AI Models *</Label>
+                <Select
+                  value=""
+                  onValueChange={(modelId) => {
+                    const model = models.find(m => m.id === modelId)
+                    if (model && !selectedModels.includes(model.name) && selectedModels.length < 5) {
+                      setSelectedModels([...selectedModels, model.name])
+                    }
+                  }}
                 >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Model Suggestions */}
-              {customModel.trim() && (
-                <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
-                  <div className="text-xs text-muted-foreground mb-1">
-                    Suggestions:
-                  </div>
-                  {models
-                    .filter(
-                    (model: any) =>
-                        model.name
-                          .toLowerCase()
-                          .includes(customModel.toLowerCase()) &&
-                        !selectedModels.includes(model.name)
-                    )
-                    .slice(0, 5)
-                     .map((model: any) => (
-                      <div
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select AI models..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((model: any) => (
+                      <SelectItem
                         key={model.id}
-                        className="px-2 py-1 text-sm hover:bg-muted cursor-pointer rounded"
-                        onClick={() => {
-                          setSelectedModels([...selectedModels, model.name])
-                          setCustomModel('')
-                        }}
+                        value={model.id}
+                        disabled={selectedModels.includes(model.name)}
                       >
-                        {model.name}
-                      </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{model.name}</span>
+                          <span className="text-xs text-muted-foreground">{model.description}</span>
+                        </div>
+                      </SelectItem>
                     ))}
-                  {models.filter(
-                    (model: any) =>
-                      model.name
-                        .toLowerCase()
-                        .includes(customModel.toLowerCase()) &&
-                      !selectedModels.includes(model.name)
-                  ).length === 0 && (
-                    <div className="px-2 py-1 text-sm text-muted-foreground">
-                      No suggestions found. Press Enter to add custom model.
-                    </div>
-                  )}
-                </div>
-              )}
+                  </SelectContent>
+                </Select>
+              </div>
 
               <div className="flex flex-wrap gap-1">
                 {selectedModels.map(model => (
@@ -823,17 +768,24 @@ export function CreatePromptPage({
                     className="flex items-center gap-1"
                   >
                     {model}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => removeModel(model)}
-                    />
+                    <button
+                      type="button"
+                      className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        removeModel(model)
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
               </div>
 
-              {selectedModels.length >= 10 && (
+              {selectedModels.length >= 5 && (
                 <p className="text-sm text-muted-foreground">
-                  Maximum 10 models
+                  Maximum 5 models selected
                 </p>
               )}
 
@@ -845,13 +797,11 @@ export function CreatePromptPage({
 
           {/* Tags */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardContent className="space-y-3">
+              <CardTitle className="flex items-center gap-2 mb-3">
                 <Hash className="h-5 w-5 text-primary" />
                 Tags
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
                   value={newTag}
@@ -880,10 +830,17 @@ export function CreatePromptPage({
                     className="flex items-center gap-1"
                   >
                     {tag}
-                    <X
-                      className="h-3 w-3 cursor-pointer"
-                      onClick={() => removeTag(tag)}
-                    />
+                    <button
+                      type="button"
+                      className="ml-1 hover:bg-muted-foreground/20 rounded-full p-0.5"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        removeTag(tag)
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </Badge>
                 ))}
               </div>
@@ -898,40 +855,16 @@ export function CreatePromptPage({
 
           {/* Settings */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+            <CardContent className="space-y-2">
+              <CardTitle className="flex items-center gap-2 mb-3">
                 <Cog className="h-5 w-5 text-primary" />
                 Settings
               </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="metaDescription">
-                  Meta Description (Optional)
-                </Label>
-                <Textarea
-                  id="metaDescription"
-                  value={metaDescription}
-                  onChange={e => setMetaDescription(e.target.value)}
-                  placeholder="Write a short description to help this prompt appear in search engines and within PromptsGo search."
-                  rows={2}
-                  className="text-sm"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Helps with discoverability</span>
-                  <span
-                    className={
-                      metaDescription.length > 160 ? 'text-orange-600' : ''
-                    }
-                  >
-                    {metaDescription.length}/160
-                  </span>
-                </div>
-              </div>
-
               <div className="space-y-3">
                 <Label>Visibility</Label>
-                {visibilityOptions.map(option => (
+                {visibilityOptions
+                  .filter(option => repository?.visibility !== 'private' || option.value === 'private')
+                  .map(option => (
                   <div
                     key={option.value}
                     className={`p-3 border rounded-lg cursor-pointer transition-colors ${

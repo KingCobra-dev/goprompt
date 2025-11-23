@@ -9,7 +9,6 @@ import {
   Follow,
   Collection,
   Notification,
-  Draft,
   SearchFilters,
   
   PromptFeedback,
@@ -28,7 +27,6 @@ interface AppState {
   follows: Follow[]
   collections: Collection[]
   notifications: Notification[]
-  drafts: Draft[]
   searchFilters: SearchFilters
   
   promptFeedbacks: PromptFeedback[]
@@ -61,8 +59,6 @@ type AppAction =
   | { type: 'ADD_NOTIFICATION'; payload: Notification }
   | { type: 'MARK_NOTIFICATION_READ'; payload: string }
   | { type: 'CLEAR_NOTIFICATIONS' }
-  | { type: 'SAVE_DRAFT'; payload: Draft }
-  | { type: 'DELETE_DRAFT'; payload: string }
   | { type: 'SET_SEARCH_FILTERS'; payload: Partial<SearchFilters> }
   | { type: 'SET_THEME'; payload: 'light' | 'dark' }
   | { type: 'SET_LOADING'; payload: boolean }
@@ -79,7 +75,6 @@ const initialState: AppState = {
   follows: [],
   collections: [],
   notifications: [],
-  drafts: [],
   searchFilters: {
     query: '',
     types: [],
@@ -318,17 +313,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'DELETE_COLLECTION':
       return { ...state, collections: state.collections.filter(c => c.id !== action.payload) }
-
-    case 'SAVE_DRAFT': {
-      const existingDraftIndex = state.drafts.findIndex(d => d.id === action.payload.id)
-      const updatedDrafts =
-        existingDraftIndex >= 0 ? state.drafts.map((d, i) => (i === existingDraftIndex ? action.payload : d)) : [...state.drafts, action.payload]
-      return { ...state, drafts: updatedDrafts }
-    }
-
-    case 'DELETE_DRAFT':
-      
-      return { ...state, drafts: state.drafts.filter(d => d.id !== action.payload) }
 
     case 'SET_SEARCH_FILTERS': {
       // Ensure query is always a string

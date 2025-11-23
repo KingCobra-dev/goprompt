@@ -140,6 +140,11 @@ export function ReposPage({
       )
     }
 
+    // Only show public prompts in explore mode
+    if (mode === 'prompts') {
+      filtered = filtered.filter((prompt) => prompt.visibility === 'public')
+    }
+
     // Sort/Filter by tab
     switch (activeTab) {
       case 'trending':
@@ -298,7 +303,7 @@ export function ReposPage({
           ) : (
             <>
               <TabsTrigger value="all">
-                All ({prompts.length})
+                All ({mode === 'prompts' ? prompts.filter((p) => p.visibility === 'public').length : prompts.length})
               </TabsTrigger>
               <TabsTrigger value="trending">
                 Trending
@@ -441,6 +446,7 @@ function PromptList({
           author={prompt.author}
           category={prompt.category}
           tags={prompt.tags}
+          visibility={prompt.visibility}
           stats={{
             hearts: prompt.hearts,
             saves: prompt.saveCount,

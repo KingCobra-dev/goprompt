@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
-import { Heart, Share, BookmarkPlus, GitFork, Edit, Trash2 } from 'lucide-react'
+import { Heart, Share, BookmarkPlus, GitFork, Edit, Trash2, Lock } from 'lucide-react'
 import { categories } from '../lib/data'
 import { PromptImage } from '../lib/types'
 import { useApp } from '../contexts/AppContext'
@@ -46,6 +46,7 @@ interface PromptCardProps {
   onEdit?: () => void
   onDelete?: () => void
   showManagement?: boolean
+  visibility?: 'public' | 'private'
 }
 export function PromptCard({
   id: _id,
@@ -67,6 +68,7 @@ export function PromptCard({
   onEdit,
   onDelete,
   showManagement = false,
+  visibility = 'public',
 }: PromptCardProps) {
   const { state, dispatch } = useApp()
   const [heartAnimating, setHeartAnimating] = useState(false)
@@ -182,6 +184,9 @@ export function PromptCard({
         {/* Title */}
         <h3 className="line-clamp-2 group-hover:text-primary transition-colors">
           {title}
+          {visibility === 'private' && (
+            <Lock className="inline-block ml-2 h-4 w-4 text-muted-foreground" />
+          )}
         </h3>
 
         {/* Author - Text only username */}
@@ -217,6 +222,12 @@ export function PromptCard({
 
         {/* Category Badge and Success Badge */}
         <div className="flex items-center gap-2">
+          {visibility === 'private' && (
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              <Lock className="h-3 w-3 mr-1" />
+              Private
+            </Badge>
+          )}
           {categoryData && categoryData.id !== 'other' ? (
             <Badge
               variant="outline"

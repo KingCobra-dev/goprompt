@@ -24,8 +24,6 @@ import {
   AlertCircle,
   TrendingUp,
   Image as ImageIcon,
-  FileText,
-  Crown,
   CheckCircle,
   MessageCircle,
   Heart,
@@ -476,7 +474,10 @@ export function PromptDetailPage({
   )
 
   // Use authoritative hearts count from global state
-  const heartsCount = state.prompts.find(p => p.id === promptId)?.hearts ?? prompt?.hearts ?? 0
+  const heartsCount = state.prompts.find(p => p.id === promptId)?.hearts ?? 0
+
+  // Debug: Log heart count changes
+  console.log('PromptDetailPage - heartsCount:', heartsCount, 'for promptId:', promptId)
 
   const isOwner = state.user?.id === prompt.userId
 
@@ -595,7 +596,6 @@ export function PromptDetailPage({
                     transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
                   }}
                 />
-                {heartsCount}
               </Button>
             </div>
 </div>
@@ -694,12 +694,8 @@ export function PromptDetailPage({
       )}
 
       <Tabs defaultValue="content" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="template">
-            <FileText className="h-4 w-4 mr-2" />
-            Template
-          </TabsTrigger>
           <TabsTrigger value="discussion" disabled className="opacity-60">
             <Lock className="h-4 w-4 mr-2" />
             Discussion
@@ -748,39 +744,6 @@ export function PromptDetailPage({
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="template" className="space-y-6">
-          {prompt.template ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Template</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  You can copy and customize this template as a starting point
-                  for your own prompt.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-muted p-4 rounded-lg">
-                  <pre className="whitespace-pre-wrap font-mono text-sm">
-                    {prompt.template}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="flex items-center justify-center py-12">
-                <div className="text-center text-muted-foreground">
-                  <Lock className="h-8 w-8 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">Template Locked</h3>
-                  <p className="text-sm">
-                    We're working on an enhanced template feature that will allow you to view and customize prompt templates. Stay tuned for updates!
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="discussion" className="space-y-6">

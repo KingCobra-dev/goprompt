@@ -18,6 +18,7 @@ import {
   Globe,
   Plus,
   Settings,
+  NotebookPen,
 } from 'lucide-react'
 import { getInitials } from '../lib/utils/string'
 import { getRelativeTime } from '../lib/utils/date'
@@ -242,7 +243,7 @@ export function RepoDetailPage({
                   <span>{repo.forkCount} forks</span>
                 </div> */}
                 <div className="flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
+                  <NotebookPen className="h-4 w-4" />
                   <span>{repo.promptCount} prompts</span>
                 </div>
                 <div>Updated {getRelativeTime(repo.updatedAt)}</div>

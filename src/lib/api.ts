@@ -43,6 +43,23 @@ export const repos = {
       const { data, error } = await query.order('updated_at', { ascending: false })
       if (error) throw error
 
+      // Get prompt counts for all repos
+      const repoIds = (data || []).map(row => row.id)
+      const promptCounts: Record<string, number> = {}
+      
+      if (repoIds.length > 0) {
+        const { data: countData, error: countError } = await supabase
+          .from('prompts')
+          .select('repo_id')
+          .in('repo_id', repoIds)
+        
+        if (!countError && countData) {
+          countData.forEach(row => {
+            promptCounts[row.repo_id] = (promptCounts[row.repo_id] || 0) + 1
+          })
+        }
+      }
+
       const mapped: Repo[] = (data || []).map((row: any) => {
         const u = asOne(row.users)
         return ({
@@ -54,7 +71,7 @@ export const repos = {
           visibility: (row.visibility as 'public' | 'private') || 'public',
           starCount: row.star_count ?? 0,
           forkCount: row.fork_count ?? 0,
-          promptCount: 0, // Can be enhanced with a separate count query
+          promptCount: promptCounts[row.id] || 0,
           author: {
             id: u?.id || row.user_id,
             name: u?.full_name || u?.username || 'User',
@@ -92,6 +109,12 @@ export const repos = {
       if (error) throw error
       if (!data) return { error: { message: 'Repository not found' }, data: null }
 
+      // Get prompt count for this repo
+      const { count: promptCount, error: countError } = await supabase
+        .from('prompts')
+        .select('*', { count: 'exact', head: true })
+        .eq('repo_id', repoId)
+
       const u = asOne(data.users)
       const mapped: Repo = {
         id: data.id,
@@ -102,7 +125,7 @@ export const repos = {
         visibility: (data.visibility as 'public' | 'private') || 'public',
         starCount: data.star_count ?? 0,
         forkCount: data.fork_count ?? 0,
-        promptCount: 0,
+        promptCount: countError ? 0 : (promptCount || 0),
         author: {
           id: u?.id || data.user_id,
           name: u?.full_name || u?.username || 'User',
@@ -140,6 +163,12 @@ export const repos = {
       if (error) throw error
       if (!data) return { error: { message: 'Repository not found' }, data: null }
 
+      // Get prompt count for this repo
+      const { count: promptCount, error: countError } = await supabase
+        .from('prompts')
+        .select('*', { count: 'exact', head: true })
+        .eq('repo_id', data.id)
+
       const u2 = asOne(data.users)
       const mapped: Repo = {
         id: data.id,
@@ -150,7 +179,7 @@ export const repos = {
         visibility: (data.visibility as 'public' | 'private') || 'public',
         starCount: data.star_count ?? 0,
         forkCount: data.fork_count ?? 0,
-        promptCount: 0,
+        promptCount: countError ? 0 : (promptCount || 0),
         author: {
           id: u2?.id || data.user_id,
           name: u2?.full_name || u2?.username || 'User',
@@ -205,7 +234,7 @@ export const repos = {
         visibility: (inserted!.visibility as any) || 'public',
         starCount: inserted!.star_count ?? 0,
         forkCount: inserted!.fork_count ?? 0,
-        promptCount: 0,
+        promptCount: 0, // New repos start with 0 prompts
         author: mockUsers[0],
         createdAt: inserted!.created_at,
         updatedAt: inserted!.updated_at,
@@ -262,7 +291,7 @@ export const repos = {
         visibility: (data!.visibility as any) || 'public',
         starCount: data!.star_count ?? 0,
         forkCount: data!.fork_count ?? 0,
-        promptCount: 0,
+        promptCount: 0, // Will be updated when fetching
         author: mockUsers[0],
         createdAt: data!.created_at,
         updatedAt: data!.updated_at,
@@ -578,6 +607,9 @@ export const prompts = {
   getAll: async (filters?: { repoId?: string; userId?: string }) => {
     if (isSupabaseReady) {
       try {
+        // Get current user to filter private prompts
+        const { data: { user } } = await supabase.auth.getUser()
+        
         let query = supabase
           .from('prompts')
           .select(
@@ -589,8 +621,28 @@ export const prompts = {
         if (filters?.repoId) {
           query = query.eq('repo_id', filters.repoId)
         }
-        // Removed: if (filters?.userId) { query = query.eq('user_id', filters.userId) }
-        // Prompts are owned by repos, not users directly
+        
+        // Apply visibility filtering: show public prompts OR private prompts owned by current user
+        if (user) {
+          // Get user's repo IDs for private prompt access
+          const { data: userRepos } = await supabase
+            .from('repos')
+            .select('id')
+            .eq('user_id', user.id)
+          
+          const userRepoIds = (userRepos || []).map(r => r.id)
+          
+          if (userRepoIds.length > 0) {
+            // Show public prompts OR private prompts in user's repos
+            query = query.or(`visibility.eq.public,or(visibility.eq.private,and(repo_id.in.(${userRepoIds.map(id => `"${id}"`).join(',')})))`)
+          } else {
+            // User has no repos, only show public prompts
+            query = query.eq('visibility', 'public')
+          }
+        } else {
+          // No authenticated user, only show public prompts
+          query = query.eq('visibility', 'public')
+        }
 
         const { data, error } = await query
         if (error) throw error
@@ -654,14 +706,22 @@ export const prompts = {
       }
     }
 
-    // Fallback to mock data
+    // Fallback to mock data with visibility filtering
     await delay(100)
     let results = [...mockPrompts]
 
     if (filters?.repoId) {
       results = results.filter(p => p.repoId === filters.repoId)
     }
-    // Removed userId filter from fallback too
+    
+    // Apply visibility filtering for mock data
+    // For mock data, assume current user owns repo 'repo-1'
+    const currentUserRepoIds = ['repo-1']
+    results = results.filter(p => 
+      p.visibility === 'public' || 
+      (p.visibility === 'private' && currentUserRepoIds.includes(p.repoId))
+    )
+    
     return {
       error: null,
       data: results
@@ -674,7 +734,7 @@ export const prompts = {
         const { data, error } = await supabase
           .from('prompts')
           .select(
-            `id, repo_id, title, content, description, tags, created_at, updated_at, hearts,
+            `id, repo_id, title, content, description, type, model_compatibility, tags, visibility, category, created_at, updated_at, hearts,
              repos:repo_id ( id, user_id, users:users!repos_user_id_fkey ( id, username, email, full_name, role, avatar_url ) )`
           )
           .eq('id', promptId)
@@ -693,11 +753,11 @@ export const prompts = {
           slug: toSlug(data.title),
           description: data.description || '',
           content: data.content || '',
-          type: 'text',
-          model_compatibility: [],
+          type: data.type || 'text',
+          model_compatibility: Array.isArray(data.model_compatibility) ? data.model_compatibility : [],
           tags: Array.isArray(data.tags) ? data.tags : [],
-          visibility: 'public',
-          category: 'other',
+          visibility: data.visibility || 'public',
+          category: data.category || 'other',
           language: null,
           version: '1.0.0',
           parent_id: null,
@@ -818,12 +878,15 @@ export const prompts = {
         if (typeof updates.description === 'string') row.description = updates.description
         if (Array.isArray(updates.tags)) row.tags = updates.tags
         if (typeof updates.visibility === 'string') row.visibility = updates.visibility
+        if (typeof updates.category === 'string') row.category = updates.category
+        if (typeof updates.type === 'string') row.type = updates.type
+        if (Array.isArray(updates.modelCompatibility)) row.model_compatibility = updates.modelCompatibility
 
         const { data, error } = await supabase
           .from('prompts')
           .update(row)
           .eq('id', promptId)
-          .select('id, repo_id, title, content, description, tags, visibility, created_at, updated_at')
+          .select('id, repo_id, title, content, description, tags, visibility, category, type, model_compatibility, created_at, updated_at')
           .maybeSingle()
         if (error) throw error
 
@@ -835,10 +898,10 @@ export const prompts = {
           slug: toSlug(data!.title),
           description: data!.description || '',
           content: data!.content || '',
-          type: updates.type || 'text',
-          modelCompatibility: updates.modelCompatibility || [],
+          type: (data!.type as any) || 'text',
+          modelCompatibility: Array.isArray(data!.model_compatibility) ? data!.model_compatibility : [],
           tags: Array.isArray(data!.tags) ? (data!.tags as string[]) : [],
-          category: updates.category || 'other',
+          category: data!.category || 'other',
           version: '1.0.0',
           author: mockUsers[0],
           hearts: 0,
