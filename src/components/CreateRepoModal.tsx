@@ -111,13 +111,13 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
           <DialogDescription>Create a repository to organize your prompts.</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 ">
           <div>
-            <Label htmlFor="repo-name">Name *</Label>
+            <Label htmlFor="repo-name" className="mb-2">Name *</Label>
             <Input id="repo-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. My Prompt Collection" />
           </div>
           <div>
-            <Label htmlFor="repo-description">Description *</Label>
+            <Label htmlFor="repo-description" className="mb-2">Description *</Label>
             <Textarea id="repo-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What is this repository about?" rows={3} />
             <div className="mt-2 space-y-1">
               <div className="flex items-center justify-between text-xs">
@@ -151,7 +151,7 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
             </div>
           </div>
           <div>
-            <Label>Visibility</Label>
+            <Label className="mb-2">Visibility</Label>
             <Select value={visibility} onValueChange={(v) => setVisibility(v as any)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select visibility" />
@@ -164,7 +164,7 @@ export default function CreateRepoModal({ isOpen, onClose, userId, onCreated }: 
           </div>
 
           <div>
-            <Label>Tags *</Label>
+            <Label className="mb-2">Tags *</Label>
             <div className="space-y-2">
               <div className="flex gap-2">
                 <Input

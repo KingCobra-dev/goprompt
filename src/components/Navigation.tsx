@@ -27,7 +27,6 @@ interface NavigationProps {
   user?: {
     name: string
     username: string
-     reputation?: number
     role?: 'general' | 'pro' | 'admin'
     subscriptionStatus?: 'active' | 'cancelled' | 'past_due'
   } | null
@@ -154,7 +153,7 @@ export function Navigation({
                          
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {user.reputation} rep
+                          @{user.username}
                         </div>
                       </div>
                     </Button>
@@ -166,9 +165,6 @@ export function Navigation({
                       </div>
                       <div className="text-sm text-muted-foreground">
                         @{user.username}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {user.reputation} reputation points
                       </div>
                     </div>
                     <DropdownMenuSeparator />

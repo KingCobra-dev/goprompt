@@ -7,7 +7,6 @@ import { Badge } from './ui/badge'
 import { Grid3X3, List, Search, TrendingUp, Clock, Star } from 'lucide-react'
 import { repos as reposApi, repoSocial } from '../lib/api'
 import type { Repo } from '../lib/data'
-import { categories } from '../lib/data'
 import { useApp } from '../contexts/AppContext'
 import { useResponsivePadding } from '@/hooks/src/hooks/useIsDesktop'
 interface ExplorePageProps {
@@ -30,7 +29,6 @@ export function ExplorePage({
   const [filteredRepos, setFilteredRepos] = useState<Repo[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery || '')
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [sortBy, setSortBy] = useState<'trending' | 'recent' | 'stars'>('trending')
   const [starredRepos, setStarredRepos] = useState<Set<string>>(new Set())
   const { containerPadding } = useResponsivePadding()
@@ -41,7 +39,7 @@ export function ExplorePage({
   // Initialize search query from prop
   useEffect(() => {
      filterAndSortRepos()
-  }, [repos, searchQuery, selectedCategory, sortBy])
+  }, [repos, searchQuery, sortBy])
 
   const loadRepos = async () => {
     setLoading(true)
@@ -70,13 +68,6 @@ export function ExplorePage({
           repo.name.toLowerCase().includes(query) ||
           repo.description.toLowerCase().includes(query) ||
           repo.tags?.some((tag) => tag.toLowerCase().includes(query))
-      )
-    }
-
-     // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(
-       (repo) => repo.tags?.includes(selectedCategory)
       )
     }
 
@@ -113,7 +104,7 @@ export function ExplorePage({
     const wasStarred = starredRepos.has(repoId)
     const newStarred = new Set(starredRepos)
     
-    // Optimistically update UI
+    // update UI
     if (wasStarred) {
       newStarred.delete(repoId)
     } else {
@@ -121,7 +112,7 @@ export function ExplorePage({
     }
     setStarredRepos(newStarred)
     
-    // Optimistically update star count
+    
     setRepos(prevRepos => 
       prevRepos.map(repo => 
         repo.id === repoId 
@@ -226,27 +217,6 @@ export function ExplorePage({
         </Tabs>
       </div>
   
-       {/* Category filters */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <Badge
-          variant={selectedCategory === 'all' ? 'default' : 'outline'}
-          className="cursor-pointer"
-          onClick={() => setSelectedCategory('all')}
-        >
-          All
-        </Badge>
-        {categories.map((category) => (
-          <Badge
-            key={category.id}
-            variant={selectedCategory === category.id ? 'default' : 'outline'}
-            className="cursor-pointer"
-            onClick={() => setSelectedCategory(category.id)}
-          >
-            {category.name}
-          </Badge>
-        ))}
-      </div>
-
       {/* Results count */}
       <div className="mb-4 text-sm text-muted-foreground">
         {loading ? 'Loading...' : `${filteredRepos.length} repositories found`}
@@ -254,7 +224,7 @@ export function ExplorePage({
               
       {/* Repository grid/list */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
           ))}
@@ -267,8 +237,8 @@ export function ExplorePage({
         <div
           className={
             viewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 gap-6'
-              : 'space-y-4'
+              ? 'grid grid-cols-1 md:grid-cols-3 gap-6'
+              : 'space-y-2'
           }
         >
           {filteredRepos.map((repo) => (

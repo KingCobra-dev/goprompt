@@ -80,21 +80,10 @@ export function ReposPage({
   const loadPrompts = async () => {
     setLoading(true)
     if (mode === 'my-prompts' && userId) {
-      // For my-prompts mode, load user's repos first, then get prompts from those repos
-      const { data: reposData } = await reposApi.getAll(userId)
-      const allPrompts: Prompt[] = []
-      if (reposData) {
-        for (const repo of reposData) {
-          const { data: repoPrompts } = await promptsApi.getAll({ repoId: repo.id })
-          if (repoPrompts) {
-            allPrompts.push(...repoPrompts)
-          }
-        }
-      }
-      // Sort by creation date, most recent first
-      allPrompts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      setPrompts(allPrompts)
-      dispatch({ type: 'SET_PROMPTS', payload: allPrompts })
+      // For my-prompts mode, load all prompts to support saved tab
+      const { data } = await promptsApi.getAll()
+      setPrompts(data || [])
+      dispatch({ type: 'SET_PROMPTS', payload: data || [] })
     } else {
       // For regular prompts mode, load all prompts
       const { data } = await promptsApi.getAll()
@@ -128,6 +117,13 @@ export function ReposPage({
 
   const filterPrompts = () => {
     let filtered = [...prompts]
+
+    // For my-prompts mode, filter to user's prompts except for saved tab
+    if (mode === 'my-prompts' && userId) {
+      if (activeTab !== 'saved') {
+        filtered = filtered.filter(prompt => prompt.userId === userId)
+      }
+    }
 
     // Filter by search query
     if (searchQuery && typeof searchQuery === 'string') {
@@ -303,7 +299,7 @@ export function ReposPage({
           ) : (
             <>
               <TabsTrigger value="all">
-                All ({mode === 'prompts' ? prompts.filter((p) => p.visibility === 'public').length : prompts.length})
+                All ({mode === 'prompts' ? prompts.filter((p) => p.visibility === 'public').length : mode === 'my-prompts' && userId ? prompts.filter(p => p.userId === userId).length : prompts.length})
               </TabsTrigger>
               <TabsTrigger value="trending">
                 Trending
@@ -312,7 +308,7 @@ export function ReposPage({
                 Recent
               </TabsTrigger>
               <TabsTrigger value="saved">
-                Saved
+                Saved ({state.saves.filter(s => s.userId === userId).length})
               </TabsTrigger>
             </>
           )}
@@ -481,7 +477,7 @@ function RepoList({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-48 bg-muted animate-pulse rounded-lg" />
+          <div key={i} className="h-40 bg-muted animate-pulse rounded-lg" />
         ))}
       </div>
     )

@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
-import { Star, GitFork, FileText, Eye, Lock, NotebookPen } from 'lucide-react'
+import { Star, GitFork, Eye, Lock, NotebookPen } from 'lucide-react'
 import { getInitials } from '../lib/utils/string'
 import { getRelativeTime } from '../lib/utils/date'
 import type { Repo } from '../lib/data'
@@ -33,7 +33,7 @@ export function RepoCard({ repo, onClick, onStar, onFork, isStarred }: RepoCardP
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* Author Avatar */}
-            <Avatar className="h-10 w-10 border flex-shrink-0">
+            <Avatar className="h-8 w-8 border flex-shrink-0">
               <AvatarImage src={repo.author.avatarUrl} />
               <AvatarFallback>{getInitials(repo.author.name)}</AvatarFallback>
             </Avatar>
@@ -50,7 +50,7 @@ export function RepoCard({ repo, onClick, onStar, onFork, isStarred }: RepoCardP
               </p>
 
               {/* Repo title */}
-              <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors">
+              <CardTitle className="text-lg mb-1 group-hover:text-primary transition-colors">
                 {repo.name}
                 {repo.visibility === 'private' && (
                   <Lock className="inline-block ml-2 h-4 w-4 text-muted-foreground" />
@@ -58,7 +58,7 @@ export function RepoCard({ repo, onClick, onStar, onFork, isStarred }: RepoCardP
               </CardTitle>
 
               {/* Description */}
-              <CardDescription className="line-clamp-2">
+              <CardDescription className="line-clamp-3 text-sm text-muted-foreground">
                 {repo.description}
               </CardDescription>
             </div>
@@ -69,7 +69,7 @@ export function RepoCard({ repo, onClick, onStar, onFork, isStarred }: RepoCardP
       <CardContent>
         {/* Tags */}
         {repo.tags && repo.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-2">
             {repo.tags.slice(0, 3).map((tag) => (
               <Badge key={tag} variant="outline" className="text-xs">
                 {tag}
@@ -133,7 +133,7 @@ export function RepoCard({ repo, onClick, onStar, onFork, isStarred }: RepoCardP
         </div>
 
         {/* Updated timestamp */}
-        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-4 pt-4 border-t">
+        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2 pt-2 border-t">
           <Eye className="h-3 w-3" />
           <span>Updated {getRelativeTime(repo.updatedAt)}</span>
         </div>

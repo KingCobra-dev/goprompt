@@ -13,6 +13,7 @@ interface ImageUploadProps {
   onImagesChange: (images: PromptImage[]) => void
   maxImages?: number
   allowPrimarySelection?: boolean
+  disabled?: boolean
 }
 
 export function ImageUpload({
@@ -20,12 +21,13 @@ export function ImageUpload({
   onImagesChange,
   maxImages = 5,
   allowPrimarySelection = true,
+  disabled = false,
 }: ImageUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
 
   const handleFileSelect = useCallback(
     async (files: FileList | null) => {
-      if (!files) return
+      if (!files || disabled) return
 
     // TODO: Re-implement image upload with new Supabase project
       console.warn('Image upload not yet implemented - will be replaced with new database')
@@ -82,20 +84,23 @@ export function ImageUpload({
     (e: React.DragEvent) => {
       e.preventDefault()
       setIsDragging(false)
+      if (disabled) return
       handleFileSelect(e.dataTransfer.files)
     },
-    [handleFileSelect]
+    [handleFileSelect, disabled]
   )
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
+    if (disabled) return
     setIsDragging(true)
-  }, [])
+  }, [disabled])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
+    if (disabled) return
     setIsDragging(false)
-  }, [])
+  }, [disabled])
 
   const removeImage = useCallback(
     (imageId: string) => {
@@ -142,7 +147,7 @@ export function ImageUpload({
       </div>
 
       {/* Upload Area */}
-      {images.length < maxImages && (
+      {images.length < maxImages && !disabled && (
         <Card
           className={`border-2 border-dashed transition-colors ${
             isDragging
@@ -182,6 +187,27 @@ export function ImageUpload({
                 <Upload className="mr-2 h-4 w-4" />
                 Choose Files
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Disabled Message */}
+      {disabled && (
+        <Card className="border-2 border-dashed border-muted-foreground/25 bg-muted/50">
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
+                <Upload className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Image upload is currently disabled
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This feature will be available soon
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -12,7 +12,7 @@ export function Footer({
 }: FooterProps) {
   return (
     <footer className="bg-slate-50 dark:bg-slate-900/50 py-16 mt-12 mb-[20px]">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 py-6">
         {/* Subtle separator line */}
         <div className="border-t border-border/10 mb-12"></div>
 

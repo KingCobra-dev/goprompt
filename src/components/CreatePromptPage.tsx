@@ -526,7 +526,7 @@ export function CreatePromptPage({
                       value={title}
                       onChange={e => setTitle(e.target.value)}
                       placeholder="Enter a descriptive title..."
-                      className={errors.title ? 'border-destructive' : ''}
+                      className={`border border-gray-300 ${errors.title ? 'border-destructive' : ''}`}
                     />
                     {errors.title && (
                       <p className="text-sm text-destructive">{errors.title}</p>
@@ -541,7 +541,7 @@ export function CreatePromptPage({
                       onChange={e => setDescription(e.target.value)}
                       placeholder="Describe what this prompt does and how to use it..."
                       rows={3}
-                      className={errors.description ? 'border-destructive' : ''}
+                      className={`border border-gray-300 ${errors.description ? 'border-destructive' : ''}`}
                     />
                     <div className="flex justify-between text-sm text-muted-foreground">
                       {errors.description && (
@@ -576,7 +576,7 @@ export function CreatePromptPage({
                       onChange={e => setContent(e.target.value)}
                       placeholder="Write your prompt here. Use {{variable}} syntax for dynamic content..."
                       rows={12}
-                      className={`font-mono ${errors.content ? 'border-destructive' : ''}`}
+                      className={`font-mono border border-gray-300 ${errors.content ? 'border-destructive' : ''}`}
                     />
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <div className="flex gap-4">
@@ -609,15 +609,8 @@ export function CreatePromptPage({
                     onImagesChange={setImages}
                     maxImages={5}
                     allowPrimarySelection={true}
+                    disabled={true}
                   />
-                </CardContent>
-              </Card>
-
-              {/* Template Placeholder */}
-              <Card>
-               
-                <CardContent className="space-y-4">
-                    {/* Removed template feature */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -697,7 +690,7 @@ export function CreatePromptPage({
                 <Label htmlFor="category">Category *</Label>
                 <Select value={category} onValueChange={setCategory}>
                   <SelectTrigger
-                    className={errors.category ? 'border-destructive' : ''}
+                    className={`border border-gray-300 ${errors.category ? 'border-destructive' : ''}`}
                   >
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
@@ -740,7 +733,7 @@ export function CreatePromptPage({
                     }
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border border-gray-300">
                     <SelectValue placeholder="Select AI models..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -807,6 +800,7 @@ export function CreatePromptPage({
                   value={newTag}
                   onChange={e => setNewTag(e.target.value)}
                   placeholder="Add a tag..."
+                  className="border border-gray-300"
                   onKeyPress={e => {
                     if (e.key === 'Enter') {
                       e.preventDefault()

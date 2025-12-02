@@ -16,6 +16,7 @@ const AuthModal = lazy(() => import("./components/AuthModal").then(m => ({ defau
 import { Footer } from "./components/Footer";
 import { Prompt } from "./lib/types";
 const CreateRepoModal = lazy(() => import("./components/CreateRepoModal").then(m => ({ default: m.default || m })));
+const AdminPanel = lazy(() => import("./components/AdminPanel").then(m => ({ default: m.default || m })));
 import { prompts as promptsApi } from "./lib/api";
 import { updateUrl, getCurrentPageFromUrl, Page } from "./lib/routing";
 
@@ -157,7 +158,6 @@ console.log("AppContent rendering, state:", state);
               website: f.profiles.website || undefined,
               github: f.profiles.github || undefined,
               twitter: f.profiles.twitter || undefined,
-              reputation: 0,
               createdAt: f.profiles.created_at || f.created_at,
               lastLogin: f.profiles.created_at || f.created_at,
               badges: [],
@@ -170,7 +170,6 @@ console.log("AppContent rendering, state:", state);
               id: f.user_id,
               username: "user",
               name: "User",
-              reputation: 0,
               createdAt: f.created_at,
               lastLogin: f.created_at,
               badges: [],
@@ -431,7 +430,6 @@ console.log("AppContent rendering, state:", state);
                     name: (data as any).profiles.full_name || (data as any).profiles.username,
                     email: (data as any).profiles.email,
                     role: (data as any).profiles.role as any,
-                    reputation: 0,
                     createdAt: (data as any).profiles.created_at,
                     lastLogin: (data as any).profiles.created_at,
                     subscriptionStatus: 'active',
@@ -441,7 +439,6 @@ console.log("AppContent rendering, state:", state);
                     username: 'user',
                     name: 'User',
                     role: 'general',
-                    reputation: 0,
                     createdAt: (data as any).created_at,
                     lastLogin: (data as any).created_at,
                     subscriptionStatus: 'active',
@@ -507,6 +504,7 @@ console.log("AppContent rendering, state:", state);
         {currentPage.type === "about" && <AboutPage onBack={handleBack} />}
         {currentPage.type === "privacy" && <PrivacyPage onBack={handleBack} />}
         {currentPage.type === "terms" && <TermsPage onBack={handleBack} />}
+        {currentPage.type === "admin" && <AdminPanel />}
         </Suspense>
       </main>
 

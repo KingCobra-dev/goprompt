@@ -55,7 +55,6 @@ export interface User extends BaseUser {
   website?: string
   github?: string
   twitter?: string
-  reputation?: number
   badges?: string[]
   skills?: string[]
   createdAt?: string

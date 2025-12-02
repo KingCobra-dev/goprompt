@@ -100,7 +100,6 @@ export function PromptDetailPage({
                 website: fullPromptData.profiles.website || undefined,
                 github: fullPromptData.profiles.github || undefined,
                 twitter: fullPromptData.profiles.twitter || undefined,
-                reputation: 0,
                 createdAt:
                   fullPromptData.profiles.created_at ||
                   fullPromptData.created_at,
@@ -119,7 +118,6 @@ export function PromptDetailPage({
                 username: 'user',
                 email: '',
                 name: 'User',
-                reputation: 0,
                 createdAt: fullPromptData.created_at,
                 lastLogin: fullPromptData.created_at,
                 badges: [],
@@ -618,7 +616,7 @@ export function PromptDetailPage({
             <div>
               <div className="font-medium">{prompt.author.name}</div>
               <div className="text-sm text-muted-foreground">
-                @{prompt.author.username} • {prompt.author.reputation} rep
+                @{prompt.author.username}
               </div>
             </div>
           </div>

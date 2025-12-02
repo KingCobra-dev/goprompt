@@ -51,7 +51,6 @@ export function UserProfilePage({ userId, onBack }: UserProfilePageProps) {
         bio: data.bio,
         avatarUrl: data.avatar_url,
         role: data.role as any,
-        reputation: 0, // Not in data
         createdAt: data.created_at,
         lastLogin: data.created_at,
         subscriptionStatus: 'active', // Default

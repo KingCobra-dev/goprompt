@@ -17,7 +17,8 @@ export type Page =
   | { type: "settings" }
   | { type: "about" }
   | { type: "terms" }
-  | { type: "privacy" };
+  | { type: "privacy" }
+  | { type: "admin" };
 
 /**
  * Convert a page state to URL path and query parameters
@@ -92,6 +93,9 @@ export function pageToUrl(page: Page): { path: string; searchParams: URLSearchPa
 
     case "privacy":
       return { path: "/privacy", searchParams };
+
+    case "admin":
+      return { path: "/admin-bulk-ops", searchParams };
 
     default:
       return { path: "/", searchParams };
@@ -185,6 +189,9 @@ export function urlToPage(pathname: string, searchParams: URLSearchParams): Page
 
     case "privacy":
       return { type: "privacy" };
+
+    case "admin-bulk-ops":
+      return { type: "admin" };
   }
 
   // Default to home if no match

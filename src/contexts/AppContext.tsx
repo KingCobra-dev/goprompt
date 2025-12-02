@@ -408,9 +408,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         role: 'general' as UserRole,
         avatarUrl: u.user_metadata?.avatar_url,
         bio: undefined,
-        // Not part of core type, but some components read it
-        reputation: 0,
-      } as User & { reputation?: number }
+      } as User
     }
 
   const init = async () => {

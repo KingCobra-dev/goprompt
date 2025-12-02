@@ -688,7 +688,6 @@ export const prompts = {
                   name: 'User',
                   username: 'user',
                   role: 'general' as any,
-                  reputation: 0,
                   createdAt: row.created_at,
                   lastLogin: row.created_at,
                   subscriptionStatus: 'active',
