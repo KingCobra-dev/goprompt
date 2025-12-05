@@ -15,7 +15,6 @@ import * as XLSX from 'xlsx';
 import { FileText, Upload, Database, AlertCircle, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 interface PromptRow {
-  repo_name: string;
   title: string;
   content: string;
   description: string;
@@ -23,10 +22,7 @@ interface PromptRow {
   model_compatibility: string;
   tags: string;
   category: string;
-  language?: string;
-  version?: string;
-  template?: string;
-  visibility?: string;
+  visibility: string;
 }
 
 export default function BulkPromptCreator() {
@@ -86,7 +82,7 @@ export default function BulkPromptCreator() {
         rows.forEach((row, index) => {
           if (row.length === 0) return; // Skip empty rows
 
-          const [repo_name, title, content, description, type, model_compatibility, tags, category, language, version, template, visibility] = row;
+          const [title, content, description, model_compatibility, tags, category, visibility] = row;
 
           if (!title || typeof title !== 'string') {
             parseErrors.push(`Row ${index + 2}: Missing or invalid title`);
@@ -99,18 +95,14 @@ export default function BulkPromptCreator() {
           }
 
           parsed.push({
-            repo_name: (repo_name || '').toString().trim(),
             title: title.trim(),
             content: content.trim(),
             description: (description || '').toString().trim(),
-            type: (type || 'text').toString().trim(),
+            type: 'text', // Always default to 'text' type
             model_compatibility: (model_compatibility || '').toString().trim(),
             tags: (tags || '').toString().trim(),
             category: (category || 'other').toString().trim(),
-            language: language ? language.toString().trim() : undefined,
-            version: version ? version.toString().trim() : undefined,
-            template: template ? template.toString().trim() : undefined,
-            visibility: visibility ? visibility.toString().trim() : undefined,
+            visibility: (visibility || 'public').toString().trim(),
           });
         });
 
@@ -160,9 +152,6 @@ export default function BulkPromptCreator() {
           modelCompatibility: row.model_compatibility ? row.model_compatibility.split(',').map(m => m.trim()) : [],
           tags: row.tags ? row.tags.split(',').map(t => t.trim()) : [],
           category: row.category,
-          language: row.language,
-          version: row.version,
-          template: row.template,
           visibility: (row.visibility as 'public' | 'private') || 'public',
         };
 
@@ -198,6 +187,9 @@ export default function BulkPromptCreator() {
             <li>Review the parsed data in the table below</li>
             <li>Click "Create Prompts" to bulk create them</li>
           </ol>
+          <p className="text-xs text-blue-700 mt-2">
+            <strong>Note:</strong> All prompts will be added to the selected repository above.
+          </p>
         </div>
         <div>
           <label className="block text-sm font-medium mb-2">
@@ -228,7 +220,7 @@ export default function BulkPromptCreator() {
             className="cursor-pointer"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Columns: repo_name, title, content, description, type, model_compatibility, tags, category, language, version, template, visibility
+            Columns: title, content, description, model_compatibility, tags, category, visibility
           </p>
         </div>
 
@@ -278,6 +270,8 @@ export default function BulkPromptCreator() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Content</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Tags</TableHead>
@@ -287,6 +281,8 @@ export default function BulkPromptCreator() {
                   {parsedData.map((row, index) => (
                     <TableRow key={index}>
                       <TableCell>{row.title}</TableCell>
+                      <TableCell className="max-w-xs truncate">{row.description}</TableCell>
+                      <TableCell className="max-w-xs truncate">{row.content}</TableCell>
                       <TableCell>{row.type}</TableCell>
                       <TableCell>{row.category}</TableCell>
                       <TableCell>{row.tags}</TableCell>

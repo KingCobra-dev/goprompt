@@ -344,7 +344,7 @@ export const repos = {
       if (repoErr) throw repoErr
        const { data, error } = await supabase
         .from('prompts')
-        .select('id, repo_id, title, content, description, tags, created_at, updated_at')
+        .select('id, repo_id, title, content, description, type, model_compatibility, tags, visibility, category, created_at, updated_at')
         .eq('repo_id', repoId)
         .order('updated_at', { ascending: false })
       if (error) throw error
@@ -373,10 +373,10 @@ export const repos = {
         slug: toSlug(row.title),
         description: row.description || '',
         content: row.content || '',
-        type: 'text',
-        modelCompatibility: [],
+        type: row.type || 'text',
+        modelCompatibility: Array.isArray(row.model_compatibility) ? row.model_compatibility : [],
         tags: Array.isArray(row.tags) ? row.tags : [],
-        category: 'other',
+        category: row.category || 'other',
         version: '1.0.0',
         author,
         hearts: 0,
@@ -802,13 +802,16 @@ export const prompts = {
           title: prompt.title || 'Untitled Prompt',
           content: prompt.content || '',
           description: prompt.description || '',
+          type: prompt.type || 'text',
+          model_compatibility: Array.isArray(prompt.modelCompatibility) ? prompt.modelCompatibility : [],
           tags: Array.isArray(prompt.tags) ? prompt.tags : [],
           visibility: prompt.visibility || 'public',
+          category: prompt.category || 'other',
         }
         const { data, error } = await supabase
           .from('prompts')
           .insert(row)
-          .select('id, repo_id, title, content, description, tags, visibility, created_at, updated_at')
+          .select('id, repo_id, title, content, description, type, model_compatibility, tags, visibility, category, created_at, updated_at')
           .maybeSingle()
         if (error) throw error
 
@@ -820,10 +823,10 @@ export const prompts = {
           slug: toSlug(data!.title),
           description: data!.description || '',
           content: data!.content || '',
-          type: (prompt.type as any) || 'text',
-          modelCompatibility: prompt.modelCompatibility || [],
+          type: (data!.type as any) || 'text',
+          modelCompatibility: Array.isArray(data!.model_compatibility) ? data!.model_compatibility : [],
           tags: Array.isArray(data!.tags) ? (data!.tags as string[]) : [],
-          category: prompt.category || 'other',
+          category: data!.category || 'other',
           version: '1.0.0',
           author: mockUsers[0],
           hearts: 0,
