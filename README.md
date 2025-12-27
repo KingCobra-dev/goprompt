@@ -210,28 +210,6 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
-### Development Workflow
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes and test thoroughly
-4. Run linting and type checking: `npm run lint && npm run type-check`
-5. Commit your changes: `git commit -m 'Add your feature'`
-6. Push to your branch: `git push origin feature/your-feature`
-7. Create a Pull Request
-
-### Code Standards
-
-- **TypeScript**: Strict type checking enabled
-- **ESLint**: Airbnb config with React and TypeScript rules
-- **Prettier**: Consistent code formatting
-- **Conventional Commits**: Structured commit messages
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
